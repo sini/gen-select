@@ -1,6 +1,6 @@
 # gen-select — selector algebra for attributed graph positions
 
-Pure pattern matching library for Nix. Selectors are `{ __sel = tag; ... }` attrsets matched by `matches` against an ID-based accessor context. Depends on gen pure tier only.
+Pure pattern matching library for Nix. Selectors are `{ __sel = tag; ... }` attrsets matched by `matches` against an ID-based accessor context. Depends on gen-algebra pure tier only.
 
 ## Overview
 
@@ -95,10 +95,10 @@ Note: `child` and `descendant` are sugar — they expand to `and` compositions a
 
 `sel.when` wraps a bare lambda as a selector. By default, two `when` selectors cannot be compared for equality (lambdas are not comparable in Nix).
 
-For equality support, pass an intensional function (created via `gen.pure.mkIntensional`):
+For equality support, pass an intensional function (created via `genPure.mkIntensional`):
 
 ```nix
-myPred = gen.pure.mkIntensional {
+myPred = genPure.mkIntensional {
   name = "is-backend";
   closure = { };
   __functor = _: id: ctx: (ctx.data id).role == "backend";
@@ -160,13 +160,14 @@ Maps SQL WHERE clause concepts to gen-select. Demonstrates `sel.attrs` as column
 
 | Library | Role |
 |---------|------|
-| [gen-algebra](https://github.com/sini/gen-algebra) | Core — intensional functions, pure utilities |
-| [gen-schema](https://github.com/sini/gen-schema) | Typed registries — kinds, instances, collections, refs |
-| [gen-aspects](https://github.com/sini/gen-aspects) | Aspect types — traits, classification, dispatch |
-| [gen-graph](https://github.com/sini/gen-graph) | Graph queries — accessor-based combinators, traversal, fixpoint |
-| [gen-scope](https://github.com/sini/gen-scope) | Scope graphs — construction, evaluation, resolution |
-| [gen-select](https://github.com/sini/gen-select) | Selector algebra — pattern matching for attributed graph positions |
-| [gen-bind](https://github.com/sini/gen-bind) | Module binding — inject external args into NixOS modules |
+| [gen-algebra](https://github.com/sini/gen-algebra) | Pure primitives (search, record, identity) |
+| [gen-schema](https://github.com/sini/gen-schema) | Typed registries (kinds, instances, collections, refs) |
+| [gen-aspects](https://github.com/sini/gen-aspects) | Aspect types (traits, classification, dispatch) |
+| [gen-graph](https://github.com/sini/gen-graph) | Graph queries (combinators, traversals, fixpoint) |
+| [gen-scope](https://github.com/sini/gen-scope) | Scope graphs (construction, evaluation, resolution) |
+| [gen-select](https://github.com/sini/gen-select) | Selector algebra (pattern matching over graph positions) |
+| [gen-bind](https://github.com/sini/gen-bind) | Module binding (inject args into NixOS modules) |
+| [gen-derive](https://github.com/sini/gen-derive) | Rule dispatch (stratified phases, fixpoint, conflict resolution) |
 
 ## Performance
 
@@ -199,11 +200,11 @@ Or via nix-unit directly:
 nix-unit --override-input gen-select . --flake ./templates/ci
 ```
 
-## References
+## Theoretical Foundations
 
 | Source | Relevance |
 |--------|-----------|
-| **Palmer & Watts (2011)** — *Computability of Selector Functions* | Theoretical foundation for selector expressiveness bounds |
+| **Palmer (2024)** — *Intensional Functions* | Identity and equality for selector predicates wrapping lambdas |
 | **Arntzenius & Krishnaswami (2016)** — *Datafun: A Functional Datalog* | Monotone pattern matching over lattice-structured data |
 | **Reynolds (1983)** — *Types, Abstraction, and Parametric Polymorphism* | Parametricity constraints on selector generality |
 | **CSS Selectors Level 4** — W3C | `:has()`, `:not()`, combinators — structural selector vocabulary |
