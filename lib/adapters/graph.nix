@@ -1,5 +1,5 @@
 { matches }:
 {
-  mkPredicate = _selector: _ctx: _id: false;
-  mkSelectPredicate = _selector: _ctx: _data: false;
+  mkPredicate = selector: ctx: id: matches selector id ctx;
+  mkSelectPredicate = selector: ctx: data: matches selector data.id ctx;
 }
