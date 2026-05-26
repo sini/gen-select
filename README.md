@@ -1,6 +1,6 @@
 # gen-select — selector algebra for attributed graph positions
 
-[![CI](https://github.com/sini/gen-select/actions/workflows/ci.yml/badge.svg)](https://github.com/sini/gen-select/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/sini/gen-select/actions/workflows/ci.yml/badge.svg)](https://github.com/sini/gen-select/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-pink?logo=github)](https://github.com/sponsors/sini)
 
 Pure pattern matching library for Nix. Selectors are `{ __sel = tag; ... }` attrsets matched by `matches` against an ID-based accessor context. Depends on gen-algebra pure tier only.
 
