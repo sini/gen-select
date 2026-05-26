@@ -173,11 +173,11 @@ adapters.graph.mkSelectPredicate : selector -> context -> (attrset -> bool)
 
 ## Demo Templates
 
-### CSS Selectors (`templates/css-selectors/`)
+### CSS Selectors (`examples/css-selectors/`)
 
 Maps CSS selector syntax concepts to gen-select combinators. Demonstrates `sel.attrs` as element/class selectors, `sel.descendant` and `sel.child` as CSS combinators, `sel.has` as `:has()`, and `sel.not` as `:not()`. Tests verify the mapping against a DOM-like tree context.
 
-### SQL WHERE (`templates/sql-where/`)
+### SQL WHERE (`examples/sql-where/`)
 
 Maps SQL WHERE clause concepts to gen-select. Demonstrates `sel.attrs` as column equality, `sel.and`/`sel.or` as AND/OR, `sel.not` as NOT, and `sel.when` for range predicates and LIKE patterns. Tests verify against a table-like flat context.
 
@@ -197,19 +197,19 @@ Memory consumption is proportional to what the selector inspects, not the total 
 
 ```bash
 # CI test suite (core library)
-cd templates/ci && just ci
+cd ci && just ci
 
 # CSS selectors demo
-cd templates/css-selectors && just ci
+cd examples/css-selectors && just ci
 
 # SQL WHERE demo
-cd templates/sql-where && just ci
+cd examples/sql-where && just ci
 ```
 
 Or via nix-unit directly:
 
 ```bash
-nix-unit --override-input gen-select . --flake ./templates/ci
+nix-unit --override-input gen-select . --flake ./ci
 ```
 
 ## Theoretical Foundations
