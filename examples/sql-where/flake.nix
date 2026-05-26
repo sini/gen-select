@@ -16,8 +16,8 @@
     }@inputs:
     let
       inherit (nixpkgs) lib;
-      genPure = inputs.gen-algebra.pure;
-      selectLib = import "${gen-select}/lib" { inherit lib genPure; };
+      genAlgebra = inputs.gen-algebra.pure;
+      selectLib = import "${gen-select}/lib" { inherit lib genAlgebra; };
       whereLib = import ./lib/where.nix { inherit lib selectLib; };
       forAllSystems = lib.genAttrs lib.systems.flakeExposed;
       testFiles = lib.pipe (builtins.readDir ./tests) [

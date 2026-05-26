@@ -11,7 +11,7 @@
     let
       selectLib = import ./lib {
         lib = nixpkgs.lib;
-        genPure = inputs.gen-algebra.pure;
+        genAlgebra = inputs.gen-algebra.pure;
       };
     in
     {

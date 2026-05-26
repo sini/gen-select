@@ -5,9 +5,15 @@ let
     data =
       id:
       {
-        "env:prod" = { type = "env"; };
-        "host:web" = { type = "host"; };
-        "user:tux" = { type = "user"; };
+        "env:prod" = {
+          type = "env";
+        };
+        "host:web" = {
+          type = "host";
+        };
+        "user:tux" = {
+          type = "user";
+        };
       }
       .${id};
     parent =
@@ -45,22 +51,34 @@ in
   sugar = {
     test-child-eq-desugared = {
       expr =
-        m (sel.child envSel hostSel) "host:web" mockCtx
-        == m (sel.and [ hostSel (sel.parentMatches envSel) ]) "host:web" mockCtx;
+        m (sel.child envSel hostSel) "host:web" mockCtx == m (sel.and [
+          hostSel
+          (sel.parentMatches envSel)
+        ]) "host:web" mockCtx;
       expected = true;
     };
     test-descendant-eq-desugared = {
       expr =
-        m (sel.descendant envSel userSel) "user:tux" mockCtx
-        == m (sel.and [ userSel (sel.within envSel) ]) "user:tux" mockCtx;
+        m (sel.descendant envSel userSel) "user:tux" mockCtx == m (sel.and [
+          userSel
+          (sel.within envSel)
+        ]) "user:tux" mockCtx;
       expected = true;
     };
     test-child-structural-eq = {
-      expr = sel.child envSel hostSel == sel.and [ hostSel (sel.parentMatches envSel) ];
+      expr =
+        sel.child envSel hostSel == sel.and [
+          hostSel
+          (sel.parentMatches envSel)
+        ];
       expected = true;
     };
     test-descendant-structural-eq = {
-      expr = sel.descendant envSel userSel == sel.and [ userSel (sel.within envSel) ];
+      expr =
+        sel.descendant envSel userSel == sel.and [
+          userSel
+          (sel.within envSel)
+        ];
       expected = true;
     };
   };

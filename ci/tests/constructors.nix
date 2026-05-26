@@ -13,15 +13,30 @@ in
       expected = "attrs";
     };
     test-attrs-payload = {
-      expr = (sel.attrs { type = "host"; env = "prod"; }).a;
-      expected = { type = "host"; env = "prod"; };
+      expr =
+        (sel.attrs {
+          type = "host";
+          env = "prod";
+        }).a;
+      expected = {
+        type = "host";
+        env = "prod";
+      };
     };
     test-and-tag = {
-      expr = (sel.and [ sel.star sel.star ]).__sel;
+      expr =
+        (sel.and [
+          sel.star
+          sel.star
+        ]).__sel;
       expected = "and";
     };
     test-or-tag = {
-      expr = (sel.or [ sel.star sel.star ]).__sel;
+      expr =
+        (sel.or [
+          sel.star
+          sel.star
+        ]).__sel;
       expected = "or";
     };
     test-not-tag = {
@@ -50,8 +65,10 @@ in
     };
     test-child-contains-parentMatches = {
       expr =
-        let s = sel.child (sel.attrs { type = "env"; }) (sel.attrs { type = "host"; });
-        in builtins.any (sub: sub.__sel == "parentMatches") s.selectors;
+        let
+          s = sel.child (sel.attrs { type = "env"; }) (sel.attrs { type = "host"; });
+        in
+        builtins.any (sub: sub.__sel == "parentMatches") s.selectors;
       expected = true;
     };
     test-descendant-desugars-to-and = {
@@ -60,8 +77,10 @@ in
     };
     test-descendant-contains-within = {
       expr =
-        let s = sel.descendant (sel.attrs { type = "env"; }) (sel.attrs { type = "host"; });
-        in builtins.any (sub: sub.__sel == "within") s.selectors;
+        let
+          s = sel.descendant (sel.attrs { type = "env"; }) (sel.attrs { type = "host"; });
+        in
+        builtins.any (sub: sub.__sel == "within") s.selectors;
       expected = true;
     };
     test-star-structural-eq = {

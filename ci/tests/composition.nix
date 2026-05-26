@@ -46,10 +46,12 @@ in
       expected = true;
     };
     test-not-or = {
-      expr = m (sel.not (sel.or [
-        (sel.attrs { type = "user"; })
-        (sel.attrs { type = "env"; })
-      ])) "host:web" mockCtx;
+      expr = m (sel.not (
+        sel.or [
+          (sel.attrs { type = "user"; })
+          (sel.attrs { type = "env"; })
+        ]
+      )) "host:web" mockCtx;
       expected = true;
     };
     test-and-single = {

@@ -1,12 +1,19 @@
-{ lib, selectLib, genPure, ... }:
+{
+  lib,
+  selectLib,
+  genAlgebra,
+  ...
+}:
 let
   sel = selectLib;
-  inherit (genPure) mkIntensional intensionalEq;
+  inherit (genAlgebra) mkIntensional intensionalEq;
   mockCtx = {
     data =
       id:
       {
-        "a" = { x = 1; };
+        "a" = {
+          x = 1;
+        };
       }
       .${id};
     parent = _: null;

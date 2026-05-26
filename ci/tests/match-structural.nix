@@ -87,19 +87,27 @@ in
       expected = false;
     };
     test-child-sugar = {
-      expr = m (sel.child (sel.attrs { type = "env"; }) (sel.attrs { type = "host"; })) "host:web" mockCtx;
+      expr = m (sel.child (sel.attrs { type = "env"; }) (
+        sel.attrs { type = "host"; }
+      )) "host:web" mockCtx;
       expected = true;
     };
     test-child-sugar-wrong-parent = {
-      expr = m (sel.child (sel.attrs { type = "host"; }) (sel.attrs { type = "host"; })) "host:web" mockCtx;
+      expr = m (sel.child (sel.attrs { type = "host"; }) (
+        sel.attrs { type = "host"; }
+      )) "host:web" mockCtx;
       expected = false;
     };
     test-descendant-sugar = {
-      expr = m (sel.descendant (sel.attrs { type = "env"; }) (sel.attrs { type = "user"; })) "user:tux" mockCtx;
+      expr = m (sel.descendant (sel.attrs { type = "env"; }) (
+        sel.attrs { type = "user"; }
+      )) "user:tux" mockCtx;
       expected = true;
     };
     test-descendant-not-ancestor = {
-      expr = m (sel.descendant (sel.attrs { type = "user"; }) (sel.attrs { type = "env"; })) "env:prod" mockCtx;
+      expr = m (sel.descendant (sel.attrs { type = "user"; }) (
+        sel.attrs { type = "env"; }
+      )) "env:prod" mockCtx;
       expected = false;
     };
   };

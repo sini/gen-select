@@ -1,4 +1,4 @@
-{ genPure }:
+{ genAlgebra }:
 rec {
   star = { __sel = "star"; };
 
@@ -36,7 +36,7 @@ rec {
       let
         isIntensional = v: builtins.isAttrs v && v ? name && v ? __functor && v ? closure;
       in
-      if isIntensional a.fn && isIntensional b.fn then genPure.intensionalEq a.fn b.fn else false
+      if isIntensional a.fn && isIntensional b.fn then genAlgebra.intensionalEq a.fn b.fn else false
     else
       a == b;
 }

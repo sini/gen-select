@@ -7,19 +7,25 @@ let
       id = "env:prod";
       type = "env";
       parent = null;
-      decls = { env = "prod"; };
+      decls = {
+        env = "prod";
+      };
     };
     "host:web" = {
       id = "host:web";
       type = "host";
       parent = "env:prod";
-      decls = { role = "frontend"; };
+      decls = {
+        role = "frontend";
+      };
     };
     "user:tux" = {
       id = "user:tux";
       type = "user";
       parent = "host:web";
-      decls = { shell = "/bin/zsh"; };
+      decls = {
+        shell = "/bin/zsh";
+      };
     };
   };
   mockScopeResult = {
@@ -97,11 +103,15 @@ in
       expected = false;
     };
     test-graph-mkSelectPredicate = {
-      expr = sel.adapters.graph.mkSelectPredicate (sel.attrs { role = "frontend"; }) ctx { id = "host:web"; };
+      expr = sel.adapters.graph.mkSelectPredicate (sel.attrs { role = "frontend"; }) ctx {
+        id = "host:web";
+      };
       expected = true;
     };
     test-graph-mkSelectPredicate-false = {
-      expr = sel.adapters.graph.mkSelectPredicate (sel.attrs { role = "backend"; }) ctx { id = "host:web"; };
+      expr = sel.adapters.graph.mkSelectPredicate (sel.attrs { role = "backend"; }) ctx {
+        id = "host:web";
+      };
       expected = false;
     };
   };
