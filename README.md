@@ -2,6 +2,19 @@
 
 Pure pattern matching library for Nix. Selectors are `{ __sel = tag; ... }` attrsets matched by `matches` against an ID-based accessor context. Depends on gen-algebra pure tier only.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Gen Ecosystem](#gen-ecosystem)
+- [Quick Start](#quick-start)
+- [Core API](#core-api)
+- [Adapters](#adapters)
+- [Demo Templates](#demo-templates)
+- [Performance](#performance)
+- [Testing](#testing)
+- [Theoretical Foundations](#theoretical-foundations)
+- [License](#license)
+
 ## Overview
 
 gen-select provides a compositional selector algebra for querying positions in attributed graphs. Selectors express structural and data predicates — "nodes whose parent has attribute X", "nodes with a descendant matching Y" — without coupling to any particular graph representation.
@@ -13,6 +26,19 @@ The library has three layers:
 3. **Adapters** — bridge selectors to gen-scope and gen-graph
 
 Selectors are plain attrsets tagged with `__sel`. No special types, no evaluation order dependencies, no side effects.
+
+## Gen Ecosystem
+
+| Library | Role |
+|---------|------|
+| [gen-algebra](https://github.com/sini/gen-algebra) | Pure primitives (search, record, identity) |
+| [gen-schema](https://github.com/sini/gen-schema) | Typed registries (kinds, instances, collections, refs) |
+| [gen-aspects](https://github.com/sini/gen-aspects) | Aspect types (traits, classification, dispatch) |
+| [gen-graph](https://github.com/sini/gen-graph) | Graph queries (combinators, traversals, fixpoint) |
+| [gen-scope](https://github.com/sini/gen-scope) | Scope graphs (construction, evaluation, resolution) |
+| [gen-select](https://github.com/sini/gen-select) | Selector algebra (pattern matching over graph positions) |
+| [gen-bind](https://github.com/sini/gen-bind) | Module binding (inject args into NixOS modules) |
+| [gen-derive](https://github.com/sini/gen-derive) | Rule dispatch (stratified phases, fixpoint, conflict resolution) |
 
 ## Quick Start
 
@@ -156,19 +182,6 @@ Maps CSS selector syntax concepts to gen-select combinators. Demonstrates `sel.a
 
 Maps SQL WHERE clause concepts to gen-select. Demonstrates `sel.attrs` as column equality, `sel.and`/`sel.or` as AND/OR, `sel.not` as NOT, and `sel.when` for range predicates and LIKE patterns. Tests verify against a table-like flat context.
 
-## Gen Ecosystem
-
-| Library | Role |
-|---------|------|
-| [gen-algebra](https://github.com/sini/gen-algebra) | Pure primitives (search, record, identity) |
-| [gen-schema](https://github.com/sini/gen-schema) | Typed registries (kinds, instances, collections, refs) |
-| [gen-aspects](https://github.com/sini/gen-aspects) | Aspect types (traits, classification, dispatch) |
-| [gen-graph](https://github.com/sini/gen-graph) | Graph queries (combinators, traversals, fixpoint) |
-| [gen-scope](https://github.com/sini/gen-scope) | Scope graphs (construction, evaluation, resolution) |
-| [gen-select](https://github.com/sini/gen-select) | Selector algebra (pattern matching over graph positions) |
-| [gen-bind](https://github.com/sini/gen-bind) | Module binding (inject args into NixOS modules) |
-| [gen-derive](https://github.com/sini/gen-derive) | Rule dispatch (stratified phases, fixpoint, conflict resolution) |
-
 ## Performance
 
 gen-select evaluates selectors lazily through accessor functions. When wired to gen-scope:
@@ -202,15 +215,24 @@ nix-unit --override-input gen-select . --flake ./templates/ci
 
 ## Theoretical Foundations
 
-| Source | Relevance |
-|--------|-----------|
-| **Palmer (2024)** — *Intensional Functions* | Identity and equality for selector predicates wrapping lambdas |
-| **Arntzenius & Krishnaswami (2016)** — *Datafun: A Functional Datalog* | Monotone pattern matching over lattice-structured data |
-| **Reynolds (1983)** — *Types, Abstraction, and Parametric Polymorphism* | Parametricity constraints on selector generality |
-| **CSS Selectors Level 4** — W3C | `:has()`, `:not()`, combinators — structural selector vocabulary |
-| **XPath 3.1** — W3C | Axis-based navigation (ancestor, child, descendant, sibling) |
-| **Neron et al. (2015)** — *A Theory of Name Resolution* | Scope graph traversal as selector context model |
-| **Mokhov (2017)** — *Algebraic Graphs with Class* | Algebraic composition of graph predicates |
+gen-select draws on both academic research and industrial standards. Each source falls into one of two categories: **Implements** (the library directly realizes constructs from the source) or **Informed by** (the source shaped design decisions without direct structural correspondence).
+
+### Implements
+
+| Source | Relationship |
+|--------|-------------|
+| **Palmer, Filardo & Wu (2024)** — *Intensional Functions* | `sel.when` wraps lambdas as selectors; `isIdentified` and `selectorEq` realize intensional identity and equality via definition-site + closure comparison (Palmer 2024 §2.2-2.3) |
+| **Neron, Tolmach, Visser & Wachsmuth (2015)** — *A Theory of Name Resolution* | The five-field accessor context (`data`, `parent`, `children`, `ancestors`, `siblings`) models scope graph traversal; `adapters.scope` maps directly to scope graph node/edge structure (Neron 2015 §2.2-2.4) |
+| **CSS Selectors Level 4** — W3C | Structural selector vocabulary: `sel.has` as `:has()`, `sel.not` as `:not()`, `sel.child` and `sel.descendant` as CSS combinators |
+
+### Informed by
+
+| Source | Relationship |
+|--------|-------------|
+| **Arntzenius & Krishnaswami (2016)** — *Datafun: A Functional Datalog* | Monotone pattern matching over lattice-structured data informed the design of composable selector predicates that respect structural ordering |
+| **Reynolds (1983)** — *Types, Abstraction, and Parametric Polymorphism* | Parametricity constraints on selector generality: selectors operate uniformly over any context satisfying the accessor interface, not over concrete representations |
+| **Mokhov (2017)** — *Algebraic Graphs with Class* | Algebraic composition of graph predicates (overlay/connect as selector combinators) informed how `sel.and`/`sel.or` compose without coupling to graph representation |
+| **XPath 3.1** — W3C | Axis-based navigation model (ancestor, child, descendant, sibling) informed the context accessor vocabulary and structural combinator naming |
 
 ## License
 
