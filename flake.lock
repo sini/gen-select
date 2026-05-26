@@ -1,0 +1,43 @@
+{
+  "nodes": {
+    "gen": {
+      "locked": {
+        "lastModified": 1779699783,
+        "narHash": "sha256-Zripqtdy4mUdv+7ZrEDS8p6a3wCnCkrbB0224BRBou4=",
+        "owner": "sini",
+        "repo": "gen",
+        "rev": "a4ab0b100435de63b5e764eb4bb0b4d7f32e8c14",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sini",
+        "repo": "gen",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1779560665,
+        "narHash": "sha256-tpyBcxPpcQb8ukyNF7DoCwfSY3VPsxHoYwj00Cayv5o=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "gen": "gen",
+        "nixpkgs": "nixpkgs"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
