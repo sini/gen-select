@@ -1,7 +1,7 @@
 {
   inputs = {
     gen-select.url = "github:sini/gen-select";
-    gen.url = "github:sini/gen";
+    gen-algebra.url = "github:sini/gen-algebra";
     nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
     nix-unit.url = "github:nix-community/nix-unit";
     nix-unit.inputs.nixpkgs.follows = "nixpkgs";
@@ -10,14 +10,13 @@
   outputs =
     {
       gen-select,
-      gen,
       nixpkgs,
       nix-unit,
       ...
-    }:
+    }@inputs:
     let
       inherit (nixpkgs) lib;
-      genPure = gen.pure;
+      genPure = inputs.gen-algebra.pure;
       selectLib = import "${gen-select}/lib" { inherit lib genPure; };
       forAllSystems = lib.genAttrs lib.systems.flakeExposed;
       testFiles = lib.pipe (builtins.readDir ./tests) [

@@ -160,7 +160,7 @@ Maps SQL WHERE clause concepts to gen-select. Demonstrates `sel.attrs` as column
 
 | Library | Role |
 |---------|------|
-| [gen](https://github.com/sini/gen) | Core — intensional functions, pure utilities |
+| [gen-algebra](https://github.com/sini/gen-algebra) | Core — intensional functions, pure utilities |
 | [gen-schema](https://github.com/sini/gen-schema) | Typed registries — kinds, instances, collections, refs |
 | [gen-aspects](https://github.com/sini/gen-aspects) | Aspect types — traits, classification, dispatch |
 | [gen-graph](https://github.com/sini/gen-graph) | Graph queries — accessor-based combinators, traversal, fixpoint |

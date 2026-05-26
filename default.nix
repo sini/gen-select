@@ -1,10 +1,10 @@
 {
   pkgs ? import <nixpkgs> { },
   lib ? pkgs.lib,
-  gen ? import <gen> { },
+  gen-algebra ? import <gen-algebra> { },
   ...
 }:
 import ./lib {
   inherit lib;
-  genPure = gen.pure;
+  genPure = gen-algebra.pure;
 }
