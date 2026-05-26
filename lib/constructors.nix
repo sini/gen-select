@@ -21,4 +21,22 @@ rec {
   descendant = ancSel: descSel: and [ descSel (within ancSel) ];
 
   when = fn: { __sel = "when"; inherit fn; };
+
+  isIdentified =
+    selector:
+    selector.__sel == "when"
+    && builtins.isAttrs selector.fn
+    && selector.fn ? name
+    && selector.fn ? __functor
+    && selector.fn ? closure;
+
+  selectorEq =
+    a: b:
+    if a.__sel == "when" && b.__sel == "when" then
+      let
+        isIntensional = v: builtins.isAttrs v && v ? name && v ? __functor && v ? closure;
+      in
+      if isIntensional a.fn && isIntensional b.fn then genPure.intensionalEq a.fn b.fn else false
+    else
+      a == b;
 }
