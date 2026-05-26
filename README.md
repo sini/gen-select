@@ -13,7 +13,6 @@ Pure pattern matching library for Nix. Selectors are `{ __sel = tag; ... }` attr
 - [Performance](#performance)
 - [Testing](#testing)
 - [Theoretical Foundations](#theoretical-foundations)
-- [License](#license)
 
 ## Overview
 
@@ -233,7 +232,3 @@ gen-select draws on both academic research and industrial standards. Each source
 | **Reynolds (1983)** — *Types, Abstraction, and Parametric Polymorphism* | Parametricity constraints on selector generality: selectors operate uniformly over any context satisfying the accessor interface, not over concrete representations |
 | **Mokhov (2017)** — *Algebraic Graphs with Class* | Algebraic composition of graph predicates (overlay/connect as selector combinators) informed how `sel.and`/`sel.or` compose without coupling to graph representation |
 | **XPath 3.1** — W3C | Axis-based navigation model (ancestor, child, descendant, sibling) informed the context accessor vocabulary and structural combinator naming |
-
-## License
-
-MIT
