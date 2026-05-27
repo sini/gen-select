@@ -1,4 +1,8 @@
-{ lib, selectLib, cssLib }:
+{
+  lib,
+  selectLib,
+  cssLib,
+}:
 let
   sel = selectLib;
   inherit (cssLib) parse;
@@ -10,10 +14,25 @@ let
   #   |   +-- api  (class=service, env=prod)
   #   +-- db    (class=database, env=staging)
   nodeData = {
-    root = { name = "root"; type = "cluster"; };
-    web = { name = "web"; class = "service"; env = "prod"; };
-    api = { name = "api"; class = "service"; env = "prod"; };
-    db = { name = "db"; class = "database"; env = "staging"; };
+    root = {
+      name = "root";
+      type = "cluster";
+    };
+    web = {
+      name = "web";
+      class = "service";
+      env = "prod";
+    };
+    api = {
+      name = "api";
+      class = "service";
+      env = "prod";
+    };
+    db = {
+      name = "db";
+      class = "database";
+      env = "staging";
+    };
   };
 
   parentMap = {
@@ -24,7 +43,10 @@ let
   };
 
   childMap = {
-    root = [ "web" "db" ];
+    root = [
+      "web"
+      "db"
+    ];
     web = [ "api" ];
     api = [ ];
     db = [ ];
@@ -32,8 +54,10 @@ let
 
   ancestorsOf =
     id:
-    let p = parentMap.${id};
-    in if p == null then [ ] else [ p ] ++ ancestorsOf p;
+    let
+      p = parentMap.${id};
+    in
+    if p == null then [ ] else [ p ] ++ ancestorsOf p;
 
   ctx = {
     data = id: nodeData.${id};

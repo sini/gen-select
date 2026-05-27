@@ -27,23 +27,59 @@ let
           if c == " " then
             go rest
           else if c == "(" then
-            [ { type = "lparen"; val = "("; } ] ++ go rest
+            [
+              {
+                type = "lparen";
+                val = "(";
+              }
+            ]
+            ++ go rest
           else if c == ")" then
-            [ { type = "rparen"; val = ")"; } ] ++ go rest
+            [
+              {
+                type = "rparen";
+                val = ")";
+              }
+            ]
+            ++ go rest
           else if c == "'" then
             let
               m = builtins.match "'([^']*)'(.*)" s;
             in
-            [ { type = "str"; val = at m 0; } ] ++ go (at m 1)
+            [
+              {
+                type = "str";
+                val = at m 0;
+              }
+            ]
+            ++ go (at m 1)
           else if c == "!" then
             let
               m = builtins.match "!=(.*)" s;
             in
-            [ { type = "op"; val = "!="; } ] ++ go (at m 0)
+            [
+              {
+                type = "op";
+                val = "!=";
+              }
+            ]
+            ++ go (at m 0)
           else if c == "=" then
-            [ { type = "op"; val = "="; } ] ++ go rest
+            [
+              {
+                type = "op";
+                val = "=";
+              }
+            ]
+            ++ go rest
           else if c == "," then
-            [ { type = "comma"; val = ","; } ] ++ go rest
+            [
+              {
+                type = "comma";
+                val = ",";
+              }
+            ]
+            ++ go rest
           else
             let
               m = builtins.match "([a-zA-Z_][a-zA-Z0-9_]*)(.*)" s;
@@ -52,9 +88,21 @@ let
               upper = lib.toUpper word;
             in
             if upper == "AND" || upper == "OR" || upper == "NOT" || upper == "IN" then
-              [ { type = "kw"; val = upper; } ] ++ go wordRest
+              [
+                {
+                  type = "kw";
+                  val = upper;
+                }
+              ]
+              ++ go wordRest
             else
-              [ { type = "ident"; val = word; } ] ++ go wordRest;
+              [
+                {
+                  type = "ident";
+                  val = word;
+                }
+              ]
+              ++ go wordRest;
     in
     go str;
 
@@ -73,7 +121,10 @@ let
           in
           collectOr (acc ++ [ next.sel ]) next.rest
         else
-          { sel = if len acc == 1 then at acc 0 else sel.or acc; rest = toks; };
+          {
+            sel = if len acc == 1 then at acc 0 else sel.or acc;
+            rest = toks;
+          };
     in
     collectOr [ first.sel ] first.rest;
 
@@ -89,7 +140,10 @@ let
           in
           collectAnd (acc ++ [ next.sel ]) next.rest
         else
-          { sel = if len acc == 1 then at acc 0 else sel.and acc; rest = toks; };
+          {
+            sel = if len acc == 1 then at acc 0 else sel.and acc;
+            rest = toks;
+          };
     in
     collectAnd [ first.sel ] first.rest;
 
@@ -117,7 +171,10 @@ let
         # skip rparen
         rest = lib.drop 1 inner.rest;
       in
-      { inherit (inner) sel; inherit rest; }
+      {
+        inherit (inner) sel;
+        inherit rest;
+      }
     else if tok.type == "ident" then
       let
         key = tok.val;
@@ -148,19 +205,20 @@ let
           afterLparen = lib.drop 2 remaining; # skip IN and lparen
           collectValues =
             acc: toks:
-            let t = at toks 0;
+            let
+              t = at toks 0;
             in
             if t.type == "rparen" then
-              { vals = acc; rest = lib.drop 1 toks; }
+              {
+                vals = acc;
+                rest = lib.drop 1 toks;
+              }
             else if t.type == "str" then
               let
                 nextToks = lib.drop 1 toks;
                 # skip optional comma
                 skipComma =
-                  if len nextToks > 0 && (at nextToks 0).type == "comma" then
-                    lib.drop 1 nextToks
-                  else
-                    nextToks;
+                  if len nextToks > 0 && (at nextToks 0).type == "comma" then lib.drop 1 nextToks else nextToks;
               in
               collectValues (acc ++ [ t.val ]) skipComma
             else

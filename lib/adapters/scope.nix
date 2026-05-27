@@ -27,9 +27,6 @@
         let
           p = (node id).parent;
         in
-        if p == null then
-          [ ]
-        else
-          builtins.filter (cid: cid != id) (builtins.attrNames (get p "children"));
+        if p == null then [ ] else builtins.filter (cid: cid != id) (builtins.attrNames (get p "children"));
     };
 }

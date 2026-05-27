@@ -23,8 +23,8 @@ gen-select provides a compositional selector algebra for querying positions in a
 The library has three layers:
 
 1. **Constructors** — build selector values (`sel.star`, `sel.attrs`, `sel.and`, `sel.within`, etc.)
-2. **Match engine** — `matches selector id ctx` evaluates a selector against an accessor-based context
-3. **Adapters** — bridge selectors to gen-scope and gen-graph
+1. **Match engine** — `matches selector id ctx` evaluates a selector against an accessor-based context
+1. **Adapters** — bridge selectors to gen-scope and gen-graph
 
 Selectors are plain attrsets tagged with `__sel`. No special types, no evaluation order dependencies, no side effects.
 

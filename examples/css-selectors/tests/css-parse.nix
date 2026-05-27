@@ -1,4 +1,8 @@
-{ lib, selectLib, cssLib }:
+{
+  lib,
+  selectLib,
+  cssLib,
+}:
 let
   sel = selectLib;
   inherit (cssLib) parse parseCompound;
@@ -17,22 +21,30 @@ in
 
     test-bare-name-payload = {
       expr = (parse "app").a;
-      expected = { name = "app"; };
+      expected = {
+        name = "app";
+      };
     };
 
     test-id-selector = {
       expr = (parse "#myid").a;
-      expected = { name = "myid"; };
+      expected = {
+        name = "myid";
+      };
     };
 
     test-class-selector = {
       expr = (parse ".active").a;
-      expected = { class = "active"; };
+      expected = {
+        class = "active";
+      };
     };
 
     test-attr-eq = {
       expr = (parse "[env=prod]").a;
-      expected = { env = "prod"; };
+      expected = {
+        env = "prod";
+      };
     };
 
     test-attr-exists = {
@@ -47,7 +59,9 @@ in
 
     test-not-inner = {
       expr = (parse ":not(.active)").selector.a;
-      expected = { class = "active"; };
+      expected = {
+        class = "active";
+      };
     };
 
     test-has = {
@@ -57,7 +71,9 @@ in
 
     test-has-inner = {
       expr = (parse ":has(.child)").selector.a;
-      expected = { class = "child"; };
+      expected = {
+        class = "child";
+      };
     };
 
     test-within = {
@@ -67,7 +83,9 @@ in
 
     test-within-inner = {
       expr = (parse ":within([env=prod])").selector.a;
-      expected = { env = "prod"; };
+      expected = {
+        env = "prod";
+      };
     };
 
     test-child-combinator = {
@@ -77,8 +95,10 @@ in
 
     test-child-combinator-has-parentMatches = {
       expr =
-        let s = parse "parent > child";
-        in builtins.any (sub: sub.__sel == "parentMatches") s.selectors;
+        let
+          s = parse "parent > child";
+        in
+        builtins.any (sub: sub.__sel == "parentMatches") s.selectors;
       expected = true;
     };
 
@@ -89,8 +109,10 @@ in
 
     test-descendant-combinator-has-within = {
       expr =
-        let s = parse "ancestor child";
-        in builtins.any (sub: sub.__sel == "within") s.selectors;
+        let
+          s = parse "ancestor child";
+        in
+        builtins.any (sub: sub.__sel == "within") s.selectors;
       expected = true;
     };
 
@@ -121,7 +143,9 @@ in
 
     test-parseCompound-name = {
       expr = (parseCompound "foo").a;
-      expected = { name = "foo"; };
+      expected = {
+        name = "foo";
+      };
     };
   };
 }

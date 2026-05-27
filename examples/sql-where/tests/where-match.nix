@@ -1,4 +1,8 @@
-{ lib, selectLib, whereLib }:
+{
+  lib,
+  selectLib,
+  whereLib,
+}:
 let
   sel = selectLib;
   inherit (whereLib) compile;
@@ -6,10 +10,30 @@ let
 
   # Mock data: simple flat nodes
   nodeData = {
-    web1 = { name = "web1"; type = "host"; env = "prod"; region = "us-east"; };
-    web2 = { name = "web2"; type = "host"; env = "prod"; region = "eu-west"; };
-    db1 = { name = "db1"; type = "database"; env = "staging"; region = "us-east"; };
-    cache1 = { name = "cache1"; type = "cache"; env = "prod"; region = "us-east"; };
+    web1 = {
+      name = "web1";
+      type = "host";
+      env = "prod";
+      region = "us-east";
+    };
+    web2 = {
+      name = "web2";
+      type = "host";
+      env = "prod";
+      region = "eu-west";
+    };
+    db1 = {
+      name = "db1";
+      type = "database";
+      env = "staging";
+      region = "us-east";
+    };
+    cache1 = {
+      name = "cache1";
+      type = "cache";
+      env = "prod";
+      region = "us-east";
+    };
   };
 
   # Minimal context (no tree structure needed for SQL WHERE)

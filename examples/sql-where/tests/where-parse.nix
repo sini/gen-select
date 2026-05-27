@@ -1,4 +1,8 @@
-{ lib, selectLib, whereLib }:
+{
+  lib,
+  selectLib,
+  whereLib,
+}:
 let
   sel = selectLib;
   inherit (whereLib) compile;
@@ -12,7 +16,9 @@ in
 
     test-simple-eq-payload = {
       expr = (compile "env = 'prod'").a;
-      expected = { env = "prod"; };
+      expected = {
+        env = "prod";
+      };
     };
 
     test-neq = {
@@ -22,7 +28,9 @@ in
 
     test-neq-inner = {
       expr = (compile "env != 'prod'").selector.a;
-      expected = { env = "prod"; };
+      expected = {
+        env = "prod";
+      };
     };
 
     test-and = {
@@ -67,12 +75,16 @@ in
 
     test-in-first = {
       expr = (builtins.elemAt (compile "env IN ('prod', 'staging')").selectors 0).a;
-      expected = { env = "prod"; };
+      expected = {
+        env = "prod";
+      };
     };
 
     test-in-second = {
       expr = (builtins.elemAt (compile "env IN ('prod', 'staging')").selectors 1).a;
-      expected = { env = "staging"; };
+      expected = {
+        env = "staging";
+      };
     };
 
     test-parens = {

@@ -21,9 +21,7 @@ let
       let
         c = sub 0 1 str;
         rest = sub 1 (-1) str;
-        parseTok =
-          mkSel: m:
-          [ (mkSel (at m 0)) ] ++ parseCompoundTokens (at m 1);
+        parseTok = mkSel: m: [ (mkSel (at m 0)) ] ++ parseCompoundTokens (at m 1);
       in
       if c == "*" then
         [ sel.star ] ++ parseCompoundTokens rest
@@ -67,10 +65,7 @@ let
         let
           m = builtins.match "([a-zA-Z0-9_/-]+)(.*)" str;
         in
-        if m != null then
-          [ (sel.attrs { name = at m 0; }) ] ++ parseCompoundTokens (at m 1)
-        else
-          [ ];
+        if m != null then [ (sel.attrs { name = at m 0; }) ] ++ parseCompoundTokens (at m 1) else [ ];
 
   # Combine a list of tokens into a single selector
   combineTokens =
@@ -95,17 +90,15 @@ let
 
       buildChild =
         parts:
-        builtins.foldl'
-          (acc: p: sel.child acc (parse (trim p)))
-          (parse (trim (builtins.head parts)))
-          (builtins.tail parts);
+        builtins.foldl' (acc: p: sel.child acc (parse (trim p))) (parse (trim (builtins.head parts))) (
+          builtins.tail parts
+        );
 
       buildDesc =
         parts:
-        builtins.foldl'
-          (acc: p: sel.descendant acc (parse (trim p)))
-          (parse (trim (builtins.head parts)))
-          (builtins.tail parts);
+        builtins.foldl' (acc: p: sel.descendant acc (parse (trim p))) (parse (trim (builtins.head parts))) (
+          builtins.tail parts
+        );
     in
     if len orParts > 1 then
       sel.or (map (p: parse (trim p)) orParts)

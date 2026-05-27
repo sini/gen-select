@@ -12,10 +12,7 @@ let
     sha256 = locked.narHash;
   };
   resolvedGenAlgebra =
-    if genAlgebra != null then
-      genAlgebra
-    else
-      (inputs.gen-algebra or (import genAlgebraSrc { })).pure;
+    if genAlgebra != null then genAlgebra else (inputs.gen-algebra or (import genAlgebraSrc { })).pure;
 
   constructors = import ./constructors.nix { genAlgebra = resolvedGenAlgebra; };
   match = import ./match.nix { inherit lib; };
