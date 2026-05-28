@@ -18,6 +18,7 @@ let
   match = import ./match.nix { inherit lib; };
   scopeAdapter = import ./adapters/scope.nix { inherit lib; };
   graphAdapter = import ./adapters/graph.nix { inherit (match) matches; };
+  registryAdapter = import ./adapters/registry.nix { inherit lib; };
 in
 constructors
 // {
@@ -25,6 +26,7 @@ constructors
   adapters = {
     scope = scopeAdapter;
     graph = graphAdapter;
+    registry = registryAdapter;
   };
   _internal = {
     genAlgebra = resolvedGenAlgebra;
