@@ -122,7 +122,7 @@ let
           collectOr (acc ++ [ next.sel ]) next.rest
         else
           {
-            sel = if len acc == 1 then at acc 0 else sel.or acc;
+            sel = if len acc == 1 then at acc 0 else sel.any acc;
             rest = toks;
           };
     in
@@ -226,7 +226,7 @@ let
           collected = collectValues [ ] afterLparen;
         in
         {
-          sel = sel.or (map (v: sel.attrs { ${key} = v; }) collected.vals);
+          sel = sel.any (map (v: sel.attrs { ${key} = v; }) collected.vals);
           inherit (collected) rest;
         }
       else

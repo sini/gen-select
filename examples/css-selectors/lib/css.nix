@@ -101,7 +101,7 @@ let
         );
     in
     if len orParts > 1 then
-      sel.or (map (p: parse (trim p)) orParts)
+      sel.any (map (p: parse (trim p)) orParts)
     else if len childParts > 1 then
       buildChild childParts
     else if len descParts > 1 then

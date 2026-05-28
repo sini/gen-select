@@ -33,7 +33,7 @@ in
     };
     test-or-tag = {
       expr =
-        (sel.or [
+        (sel.any [
           sel.star
           sel.star
         ]).__sel;

@@ -24,7 +24,7 @@ in
     test-nested-and-or = {
       expr = m (sel.and [
         (sel.attrs { type = "host"; })
-        (sel.or [
+        (sel.any [
           (sel.attrs { env = "dev"; })
           (sel.attrs { env = "prod"; })
         ])
@@ -34,7 +34,7 @@ in
     test-nested-and-or-fail = {
       expr = m (sel.and [
         (sel.attrs { type = "host"; })
-        (sel.or [
+        (sel.any [
           (sel.attrs { env = "dev"; })
           (sel.attrs { env = "staging"; })
         ])
@@ -47,7 +47,7 @@ in
     };
     test-not-or = {
       expr = m (sel.not (
-        sel.or [
+        sel.any [
           (sel.attrs { type = "user"; })
           (sel.attrs { type = "env"; })
         ]
@@ -59,7 +59,7 @@ in
       expected = true;
     };
     test-or-single = {
-      expr = m (sel.or [ (sel.attrs { type = "host"; }) ]) "host:web" mockCtx;
+      expr = m (sel.any [ (sel.attrs { type = "host"; }) ]) "host:web" mockCtx;
       expected = true;
     };
   };
