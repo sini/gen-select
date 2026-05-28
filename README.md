@@ -105,7 +105,7 @@ sel.matches (sel.attrs { type = "service"; }) "web" ctx
 | `sel.star` | `-> selector` | always |
 | `sel.attrs a` | `attrset -> selector` | all k:v in `a` equal in `data id`; missing key = no match |
 | `sel.and ss` | `[selector] -> selector` | all match; `sel.and [] = true` |
-| `sel.or ss` | `[selector] -> selector` | any matches; `sel.or [] = false` |
+| `sel.any ss` | `[selector] -> selector` | any matches; `sel.any [] = false` |
 | `sel.not s` | `selector -> selector` | does not match |
 | `sel.has s` | `selector -> selector` | any child matches |
 | `sel.within s` | `selector -> selector` | any ancestor matches |
@@ -181,7 +181,7 @@ Maps CSS selector syntax concepts to gen-select combinators. Demonstrates `sel.a
 
 ### SQL WHERE (`examples/sql-where/`)
 
-Maps SQL WHERE clause concepts to gen-select. Demonstrates `sel.attrs` as column equality, `sel.and`/`sel.or` as AND/OR, `sel.not` as NOT, and `sel.when` for range predicates and LIKE patterns. Tests verify against a table-like flat context.
+Maps SQL WHERE clause concepts to gen-select. Demonstrates `sel.attrs` as column equality, `sel.and`/`sel.any` as AND/OR, `sel.not` as NOT, and `sel.when` for range predicates and LIKE patterns. Tests verify against a table-like flat context.
 
 ## Performance
 
@@ -190,7 +190,7 @@ gen-select evaluates selectors lazily through accessor functions. When wired to 
 - **O(1) data access** — each `ctx.data id` call hits gen-scope's memoized evaluation; repeated access for the same node evaluates once
 - **Proportional to selector structure** — `matches` only inspects what the selector asks for; `sel.attrs { role = "x"; }` touches one field, not the full node
 - **No Tier 2 materialization** — selectors never enumerate all nodes; the caller decides iteration scope
-- **Structural combinators short-circuit** — `sel.and` stops at the first false; `sel.or` stops at the first true
+- **Structural combinators short-circuit** — `sel.and` stops at the first false; `sel.any` stops at the first true
 - **Ancestor/child walks are bounded** — `within` and `has` traverse only the relevant subtree or chain, not the full graph
 
 Memory consumption is proportional to what the selector inspects, not the total graph size.
@@ -232,5 +232,5 @@ gen-select draws on both academic research and industrial standards. Each source
 |--------|-------------|
 | **Arntzenius & Krishnaswami (2016)** — *Datafun: A Functional Datalog* | Monotone pattern matching over lattice-structured data informed the design of composable selector predicates that respect structural ordering |
 | **Reynolds (1983)** — *Types, Abstraction, and Parametric Polymorphism* | Parametricity constraints on selector generality: selectors operate uniformly over any context satisfying the accessor interface, not over concrete representations |
-| **Mokhov (2017)** — *Algebraic Graphs with Class* | Algebraic composition of graph predicates (overlay/connect as selector combinators) informed how `sel.and`/`sel.or` compose without coupling to graph representation |
+| **Mokhov (2017)** — *Algebraic Graphs with Class* | Algebraic composition of graph predicates (overlay/connect as selector combinators) informed how `sel.and`/`sel.any` compose without coupling to graph representation |
 | **XPath 3.1** — W3C | Axis-based navigation model (ancestor, child, descendant, sibling) informed the context accessor vocabulary and structural combinator naming |
