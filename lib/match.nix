@@ -18,7 +18,7 @@ let
     else if tag == "and" then
       builtins.all (s: matchOne s id ctx) selector.selectors
 
-    else if tag == "or" then
+    else if tag == "any" then
       builtins.any (s: matchOne s id ctx) selector.selectors
 
     else if tag == "not" then

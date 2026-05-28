@@ -15,7 +15,7 @@ rec {
   };
 
   any = selectors: {
-    __sel = "or";
+    __sel = "any";
     inherit selectors;
   };
 

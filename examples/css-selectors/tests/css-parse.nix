@@ -118,7 +118,7 @@ in
 
     test-or-combinator = {
       expr = (parse "a, b").__sel;
-      expected = "or";
+      expected = "any";
     };
 
     test-or-combinator-length = {

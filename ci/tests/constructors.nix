@@ -37,7 +37,7 @@ in
           sel.star
           sel.star
         ]).__sel;
-      expected = "or";
+      expected = "any";
     };
     test-not-tag = {
       expr = (sel.not sel.star).__sel;

@@ -114,7 +114,7 @@ sel.matches (sel.attrs { type = "service"; }) "web" ctx
 | `sel.descendant a d` | `sel -> sel -> selector` | sugar: `and [ d (within a) ]` |
 | `sel.when fn` | `fn -> selector` | `fn id ctx` returns true |
 
-The `__sel` tags are: `"star"`, `"attrs"`, `"and"`, `"or"`, `"not"`, `"has"`, `"within"`, `"parentMatches"`, `"child"`, `"descendant"`, `"when"`.
+The `__sel` tags are: `"star"`, `"attrs"`, `"and"`, `"any"`, `"not"`, `"has"`, `"within"`, `"parentMatches"`, `"child"`, `"descendant"`, `"when"`.
 
 Note: `child` and `descendant` are sugar — they expand to `and` compositions at construction time and carry no distinct `__sel` tag at runtime.
 

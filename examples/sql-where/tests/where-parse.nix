@@ -45,7 +45,7 @@ in
 
     test-or = {
       expr = (compile "env = 'prod' OR env = 'staging'").__sel;
-      expected = "or";
+      expected = "any";
     };
 
     test-or-count = {
@@ -65,7 +65,7 @@ in
 
     test-in = {
       expr = (compile "env IN ('prod', 'staging')").__sel;
-      expected = "or";
+      expected = "any";
     };
 
     test-in-count = {
