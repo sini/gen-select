@@ -29,7 +29,7 @@ let
   differentFn = mkIntensional "always-false" { } (id: ctx: false);
 in
 {
-  when = {
+  flake.tests.when = {
     test-bare-callable = {
       expr = m (sel.when bareFn) "a" mockCtx;
       expected = true;

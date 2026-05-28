@@ -48,7 +48,7 @@ let
   userSel = sel.attrs { type = "user"; };
 in
 {
-  sugar = {
+  flake.tests.sugar = {
     test-child-eq-desugared = {
       expr =
         m (sel.child envSel hostSel) "host:web" mockCtx == m (sel.and [

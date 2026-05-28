@@ -3,7 +3,7 @@ let
   sel = selectLib;
 in
 {
-  constructors = {
+  flake.tests.constructors = {
     test-star-tag = {
       expr = sel.star.__sel;
       expected = "star";

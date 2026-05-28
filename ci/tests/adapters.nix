@@ -50,7 +50,7 @@ let
   ctx = sel.adapters.scope.mkContext mockScopeResult;
 in
 {
-  adapters = {
+  flake.tests.adapters = {
     test-scope-data = {
       expr = (ctx.data "host:web").role;
       expected = "frontend";

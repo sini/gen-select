@@ -20,7 +20,7 @@ let
   m = sel.matches;
 in
 {
-  composition = {
+  flake.tests.composition = {
     test-nested-and-or = {
       expr = m (sel.and [
         (sel.attrs { type = "host"; })

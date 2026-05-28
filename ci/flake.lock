@@ -3,6 +3,7 @@
     "devshell": {
       "inputs": {
         "nixpkgs": [
+          "gen",
           "nixpkgs"
         ]
       },
@@ -53,14 +54,39 @@
         "type": "github"
       }
     },
+    "gen": {
+      "inputs": {
+        "devshell": "devshell",
+        "flake-parts": "flake-parts",
+        "flake-root": "flake-root",
+        "import-tree": "import-tree",
+        "nix-unit": "nix-unit",
+        "nixpkgs": "nixpkgs",
+        "treefmt-nix": "treefmt-nix_2"
+      },
+      "locked": {
+        "dirtyRev": "00898898edcd26cf77c0a8680b3282113cd560ed-dirty",
+        "dirtyShortRev": "0089889-dirty",
+        "lastModified": 1779943458,
+        "narHash": "sha256-GN1+muHDvU1Leu2fGN4WfNjSSwe8Lw+8GzgIJiiJEyQ=",
+        "type": "git",
+        "url": "file:///home/sini/Documents/repos/gen"
+      },
+      "original": {
+        "owner": "sini",
+        "repo": "gen",
+        "type": "github"
+      }
+    },
     "gen-algebra": {
       "locked": {
-        "lastModified": 1779827139,
-        "narHash": "sha256-DK3oW5cwvU5xxMoqKUPQJLSxJJTYVBP1bRxXUsbz6bk=",
-        "owner": "sini",
-        "repo": "gen-algebra",
-        "rev": "b95674e22524972ba659a33d2004c84bc1aba812",
-        "type": "github"
+        "lastModified": 1779943662,
+        "narHash": "sha256-tqFJXn4Z/kZeRneYnaPH2zrRWuqeeQGW/0HF263gdRs=",
+        "ref": "refs/heads/main",
+        "rev": "cc9dd1e59a9d3bf9f924f847e5cfa4877a148197",
+        "revCount": 55,
+        "type": "git",
+        "url": "file:///home/sini/Documents/repos/gen-algebra"
       },
       "original": {
         "owner": "sini",
@@ -68,9 +94,25 @@
         "type": "github"
       }
     },
+    "import-tree": {
+      "locked": {
+        "lastModified": 1749958812,
+        "narHash": "sha256-zdo2CwxdUK3FpQjLBjkJnXvl7OPoTpjdW5OvOzQffoQ=",
+        "owner": "sini",
+        "repo": "import-tree",
+        "rev": "6fcfa909614de6dd6c712db8229b8c0261791e39",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sini",
+        "repo": "import-tree",
+        "type": "github"
+      }
+    },
     "nix-github-actions": {
       "inputs": {
         "nixpkgs": [
+          "gen",
           "nix-unit",
           "nixpkgs"
         ]
@@ -93,6 +135,7 @@
       "inputs": {
         "nix-github-actions": "nix-github-actions",
         "nixpkgs": [
+          "gen",
           "nixpkgs"
         ],
         "treefmt-nix": "treefmt-nix"
@@ -139,20 +182,54 @@
         "type": "github"
       }
     },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1779560665,
+        "narHash": "sha256-NpH8iEQ5JHv/BtUuzTEXUMDxPLetCDzIv4OxL8H7Kps=",
+        "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+        "type": "tarball",
+        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.05pre1004030.64c08a7ca051/nixexprs.tar.xz?lastModified=1779560665&rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz"
+      }
+    },
     "root": {
       "inputs": {
-        "devshell": "devshell",
-        "flake-parts": "flake-parts",
-        "flake-root": "flake-root",
+        "devshell": [
+          "gen",
+          "devshell"
+        ],
+        "flake-parts": [
+          "gen",
+          "flake-parts"
+        ],
+        "flake-root": [
+          "gen",
+          "flake-root"
+        ],
+        "gen": "gen",
         "gen-algebra": "gen-algebra",
-        "nix-unit": "nix-unit",
-        "nixpkgs": "nixpkgs",
-        "treefmt-nix": "treefmt-nix_2"
+        "import-tree": [
+          "gen",
+          "import-tree"
+        ],
+        "nix-unit": [
+          "gen",
+          "nix-unit"
+        ],
+        "nixpkgs": "nixpkgs_2",
+        "treefmt-nix": [
+          "gen",
+          "treefmt-nix"
+        ]
       }
     },
     "treefmt-nix": {
       "inputs": {
         "nixpkgs": [
+          "gen",
           "nix-unit",
           "nixpkgs"
         ]
@@ -174,6 +251,7 @@
     "treefmt-nix_2": {
       "inputs": {
         "nixpkgs": [
+          "gen",
           "nixpkgs"
         ]
       },

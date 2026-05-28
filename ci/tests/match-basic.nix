@@ -38,7 +38,7 @@ let
   m = sel.matches;
 in
 {
-  match-basic = {
+  flake.tests.match-basic = {
     test-star = {
       expr = m sel.star "host:web" mockCtx;
       expected = true;

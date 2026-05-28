@@ -49,7 +49,7 @@ let
   m = sel.matches;
 in
 {
-  match-structural = {
+  flake.tests.match-structural = {
     test-has-direct-child = {
       expr = m (sel.has (sel.attrs { type = "host"; })) "env:prod" mockCtx;
       expected = true;
