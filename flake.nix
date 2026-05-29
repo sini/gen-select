@@ -9,12 +9,12 @@
   outputs =
     { nixpkgs, ... }@inputs:
     let
-      selectLib = import ./lib {
+      genSelect = import ./lib {
         lib = nixpkgs.lib;
         genAlgebra = inputs.gen-algebra.pure;
       };
     in
     {
-      lib = selectLib;
+      lib = genSelect;
     };
 }
