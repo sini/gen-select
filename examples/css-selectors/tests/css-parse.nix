@@ -1,10 +1,10 @@
 {
   lib,
-  selectLib,
+  genSelect,
   cssLib,
 }:
 let
-  sel = selectLib;
+  sel = genSelect;
   inherit (cssLib) parse parseCompound;
 in
 {

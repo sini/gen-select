@@ -1,11 +1,11 @@
 {
   lib,
-  selectLib,
+  genSelect,
   genAlgebra,
   ...
 }:
 let
-  sel = selectLib;
+  sel = genSelect;
   inherit (genAlgebra) mkIntensional intensionalEq;
   mockCtx = {
     data =

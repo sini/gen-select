@@ -1,6 +1,6 @@
-{ lib, selectLib }:
+{ lib, genSelect }:
 let
-  sel = selectLib;
+  sel = genSelect;
   at = builtins.elemAt;
   len = builtins.length;
   trim =

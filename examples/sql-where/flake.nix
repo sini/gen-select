@@ -17,15 +17,15 @@
     let
       inherit (nixpkgs) lib;
       genAlgebra = inputs.gen-algebra.pure;
-      selectLib = import "${gen-select}/lib" { inherit lib genAlgebra; };
-      whereLib = import ./lib/where.nix { inherit lib selectLib; };
+      genSelect = import "${gen-select}/lib" { inherit lib genAlgebra; };
+      whereLib = import ./lib/where.nix { inherit lib genSelect; };
       forAllSystems = lib.genAttrs lib.systems.flakeExposed;
       testFiles = lib.pipe (builtins.readDir ./tests) [
         (lib.filterAttrs (n: v: v == "regular" && lib.hasSuffix ".nix" n))
         builtins.attrNames
       ];
       tests = lib.foldl' (
-        acc: file: acc // (import ./tests/${file} { inherit lib selectLib whereLib; })
+        acc: file: acc // (import ./tests/${file} { inherit lib genSelect whereLib; })
       ) { } testFiles;
     in
     {

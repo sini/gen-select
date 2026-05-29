@@ -1,6 +1,6 @@
-{ lib, selectLib, ... }:
+{ lib, genSelect, ... }:
 let
-  sel = selectLib;
+  sel = genSelect;
   # Three-level graph: env:prod -> host:web -> user:tux
   mockCtx = {
     data =

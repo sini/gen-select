@@ -2,10 +2,10 @@
 let
   nixpkgs = import (builtins.getFlake "nixpkgs") { };
   inherit (nixpkgs) lib;
-  selectLib = import ../lib { inherit lib; };
+  genSelect = import ../lib { inherit lib; };
 in
 {
-  inherit lib selectLib;
-  sel = selectLib;
+  inherit lib genSelect;
+  sel = genSelect;
 }
-// selectLib
+// genSelect

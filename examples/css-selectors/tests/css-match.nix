@@ -1,12 +1,12 @@
 {
   lib,
-  selectLib,
+  genSelect,
   cssLib,
 }:
 let
-  sel = selectLib;
+  sel = genSelect;
   inherit (cssLib) parse;
-  inherit (selectLib) matches;
+  inherit (genSelect) matches;
 
   # Mock graph context: a simple tree
   #   root

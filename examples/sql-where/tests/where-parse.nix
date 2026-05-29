@@ -1,10 +1,10 @@
 {
   lib,
-  selectLib,
+  genSelect,
   whereLib,
 }:
 let
-  sel = selectLib;
+  sel = genSelect;
   inherit (whereLib) compile;
 in
 {

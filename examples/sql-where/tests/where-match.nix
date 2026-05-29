@@ -1,12 +1,12 @@
 {
   lib,
-  selectLib,
+  genSelect,
   whereLib,
 }:
 let
-  sel = selectLib;
+  sel = genSelect;
   inherit (whereLib) compile;
-  inherit (selectLib) matches;
+  inherit (genSelect) matches;
 
   # Mock data: simple flat nodes
   nodeData = {

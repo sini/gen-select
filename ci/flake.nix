@@ -10,12 +10,12 @@
     let
       inherit (nixpkgs) lib;
       genAlgebra = inputs.gen-algebra.pure;
-      selectLib = import ../lib { inherit lib genAlgebra; };
+      genSelect = import ../lib { inherit lib genAlgebra; };
     in
     gen.lib.mkCi {
       inherit inputs;
       name = "gen-select";
       testModules = ./tests;
-      specialArgs = { inherit selectLib genAlgebra; };
+      specialArgs = { inherit genSelect genAlgebra; };
     };
 }

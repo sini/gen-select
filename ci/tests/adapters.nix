@@ -1,6 +1,6 @@
-{ lib, selectLib, ... }:
+{ lib, genSelect, ... }:
 let
-  sel = selectLib;
+  sel = genSelect;
 
   nodeMap = {
     "env:prod" = {
