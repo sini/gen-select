@@ -222,14 +222,14 @@ gen-select draws on both academic research and industrial standards. Each source
 
 | Source | Relationship |
 |--------|-------------|
-| **Palmer, Filardo & Wu (2024)** — *Intensional Functions* | `sel.when` wraps lambdas as selectors; `isIdentified` and `selectorEq` realize intensional identity and equality via definition-site + closure comparison (Palmer 2024 §2.2-2.3) |
-| **Neron, Tolmach, Visser & Wachsmuth (2015)** — *A Theory of Name Resolution* | The five-field accessor context (`data`, `parent`, `children`, `ancestors`, `siblings`) models scope graph traversal; `adapters.scope` maps directly to scope graph node/edge structure (Neron 2015 §2.2-2.4) |
+| **Palmer, Filardo & Wu (2024)** — *Intensional Functions* | `sel.when` wraps lambdas as selectors; `isIdentified` and `selectorEq` realize intensional identity and equality via program point (name) comparison ONLY — a further conservative approximation (Palmer 2024 Theorem 1 (closure consistency) / §2.3 conservative-equality model) |
 | **CSS Selectors Level 4** — W3C | Structural selector vocabulary: `sel.has` as `:has()`, `sel.not` as `:not()`, `sel.child` and `sel.descendant` as CSS combinators |
 
 ### Informed by
 
 | Source | Relationship |
 |--------|-------------|
+| **Neron, Tolmach, Visser & Wachsmuth (2015)** — *A Theory of Name Resolution* | The five-field accessor context (`data`, `parent`, `children`, `ancestors`, `siblings`) models the P-edge (parent/child/ancestor) traversal axes of a scope graph; does NOT implement the resolution calculus (no well-formedness, specificity, shadowing, or import edges) |
 | **Arntzenius & Krishnaswami (2016)** — *Datafun: A Functional Datalog* | Monotone pattern matching over lattice-structured data informed the design of composable selector predicates that respect structural ordering |
 | **Reynolds (1983)** — *Types, Abstraction, and Parametric Polymorphism* | Parametricity constraints on selector generality: selectors operate uniformly over any context satisfying the accessor interface, not over concrete representations |
 | **Mokhov (2017)** — *Algebraic Graphs with Class* | Algebraic composition of graph predicates (overlay/connect as selector combinators) informed how `sel.and`/`sel.any` compose without coupling to graph representation |
