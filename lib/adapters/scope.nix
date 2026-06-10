@@ -1,9 +1,17 @@
 { lib }:
 {
   mkContext =
-    { node, get }:
     {
-      data = id: (node id).decls;
+      node,
+      get,
+      # Projection from a scope node to the attrset that `attrs` selectors
+      # match against. The default surfaces the node's `type` alongside its
+      # decls so `entityKind` works out of the box; node type wins over a
+      # same-named decl key because positional kind is authoritative.
+      project ? (n: (n.decls or { }) // { inherit (n) type; }),
+    }:
+    {
+      data = id: project (node id);
       parent = id: (node id).parent;
       children = id: builtins.attrNames (get id "children");
       ancestors =

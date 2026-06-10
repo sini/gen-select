@@ -9,6 +9,10 @@ rec {
     inherit a;
   };
 
+  # Sugar: matches nodes of a given entity kind. Requires a context whose
+  # data projection surfaces node type (adapters.scope.mkContext default).
+  entityKind = kind: attrs { type = kind; };
+
   and = selectors: {
     __sel = "and";
     inherit selectors;

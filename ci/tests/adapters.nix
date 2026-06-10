@@ -94,6 +94,64 @@ in
       expr = sel.matches (sel.within (sel.attrs { env = "prod"; })) "user:tux" ctx;
       expected = true;
     };
+    test-scope-data-includes-type = {
+      expr = (ctx.data "user:tux").type;
+      expected = "user";
+    };
+    test-scope-entitykind-match = {
+      expr = sel.matches (sel.entityKind "user") "user:tux" ctx;
+      expected = true;
+    };
+    test-scope-entitykind-no-match = {
+      expr = sel.matches (sel.entityKind "host") "user:tux" ctx;
+      expected = false;
+    };
+    test-scope-entitykind-composed = {
+      expr = sel.matches (sel.and [
+        (sel.entityKind "host")
+        (sel.attrs { role = "frontend"; })
+      ]) "host:web" ctx;
+      expected = true;
+    };
+    test-scope-entitykind-within = {
+      # neededBy shape: "user scopes under a prod env"
+      expr = sel.matches (sel.and [
+        (sel.entityKind "user")
+        (sel.within (sel.attrs { env = "prod"; }))
+      ]) "user:tux" ctx;
+      expected = true;
+    };
+    test-scope-type-wins-over-decl = {
+      # Positional node type is authoritative over a same-named decl key.
+      expr =
+        let
+          shadowCtx = sel.adapters.scope.mkContext {
+            node = _: {
+              id = "svc:db";
+              type = "svc";
+              parent = null;
+              decls = {
+                type = "userdata";
+              };
+            };
+            get = _: _: throw "unused";
+          };
+        in
+        (shadowCtx.data "svc:db").type;
+      expected = "svc";
+    };
+    test-scope-project-override = {
+      # Custom projection replaces the default entirely.
+      expr =
+        let
+          bareCtx = sel.adapters.scope.mkContext {
+            inherit (mockScopeResult) node get;
+            project = n: n.decls;
+          };
+        in
+        bareCtx.data "user:tux" ? type;
+      expected = false;
+    };
     test-graph-mkPredicate = {
       expr = sel.adapters.graph.mkPredicate (sel.attrs { role = "frontend"; }) ctx "host:web";
       expected = true;
