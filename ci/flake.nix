@@ -1,21 +1,20 @@
 {
   inputs = {
     gen.url = "github:sini/gen";
-    gen-algebra.url = "github:sini/gen-algebra";
+    # nixpkgs is the CI runner's dependency (test harness, treefmt). gen-select itself
+    # (../lib) takes no inputs — see the zero-dependency note in ../flake.nix.
     nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
   };
 
   outputs =
-    inputs@{ gen, nixpkgs, ... }:
+    inputs@{ gen, ... }:
     let
-      inherit (nixpkgs) lib;
-      genAlgebra = inputs.gen-algebra.pure;
-      genSelect = import ../lib { inherit lib genAlgebra; };
+      genSelect = import ../lib { };
     in
     gen.lib.mkCi {
       inherit inputs;
       name = "gen-select";
       testModules = ./tests;
-      specialArgs = { inherit genSelect genAlgebra; };
+      specialArgs = { inherit genSelect; };
     };
 }

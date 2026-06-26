@@ -1,24 +1,13 @@
-{
-  inputs ? { },
-  lib,
-  genAlgebra ? null,
-}:
+# gen-select has zero library dependencies — builtins only. intensionalEq is inlined
+# into constructors.nix; the former nixpkgs.lib (always unused) and gen-algebra (one
+# trivial function) dependencies are gone.
+{ ... }:
 let
-  # No-flakes import: resolve gen-algebra from CI flake.lock
-  lock = builtins.fromJSON (builtins.readFile ../../ci/flake.lock);
-  inherit (lock.nodes.gen-algebra) locked;
-  genAlgebraSrc = builtins.fetchTarball {
-    url = "https://github.com/${locked.owner}/${locked.repo}/archive/${locked.rev}.zip";
-    sha256 = locked.narHash;
-  };
-  resolvedGenAlgebra =
-    if genAlgebra != null then genAlgebra else (inputs.gen-algebra or (import genAlgebraSrc { })).pure;
-
-  constructors = import ./constructors.nix { genAlgebra = resolvedGenAlgebra; };
-  match = import ./match.nix { inherit lib; };
-  scopeAdapter = import ./adapters/scope.nix { inherit lib; };
+  constructors = import ./constructors.nix;
+  match = import ./match.nix;
+  scopeAdapter = import ./adapters/scope.nix;
   graphAdapter = import ./adapters/graph.nix { inherit (match) matches; };
-  registryAdapter = import ./adapters/registry.nix { inherit lib; };
+  registryAdapter = import ./adapters/registry.nix;
 in
 constructors
 // {
@@ -27,8 +16,5 @@ constructors
     scope = scopeAdapter;
     graph = graphAdapter;
     registry = registryAdapter;
-  };
-  _internal = {
-    genAlgebra = resolvedGenAlgebra;
   };
 }

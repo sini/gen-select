@@ -1,4 +1,3 @@
-{ genAlgebra }:
 rec {
   star = {
     __sel = "star";
@@ -75,8 +74,12 @@ rec {
     if a.__sel == "when" && b.__sel == "when" then
       let
         isIntensional = v: builtins.isAttrs v && v ? name && v ? __functor && v ? closure;
+        # Conservative equality by program point (Palmer §2.3). Inlined from the former
+        # gen-algebra.intensionalEq (`a: b: a.name == b.name`) — one trivial line, not
+        # worth a library dependency.
+        intensionalEq = x: y: x.name == y.name;
       in
-      if isIntensional a.fn && isIntensional b.fn then genAlgebra.intensionalEq a.fn b.fn else false
+      if isIntensional a.fn && isIntensional b.fn then intensionalEq a.fn b.fn else false
     else
       a == b;
 }

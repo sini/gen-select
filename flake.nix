@@ -1,20 +1,12 @@
 {
   description = "gen-select: selector algebra for attributed graph positions";
 
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    gen-algebra.url = "github:sini/gen-algebra";
-  };
-
+  # Zero dependencies — gen-select is builtins-only (intensionalEq inlined; no
+  # nixpkgs.lib, no gen-algebra). The flake therefore declares no inputs, so consumers
+  # gain no transitive dependency.
   outputs =
-    { nixpkgs, ... }@inputs:
-    let
-      genSelect = import ./lib {
-        lib = nixpkgs.lib;
-        genAlgebra = inputs.gen-algebra.pure;
-      };
-    in
+    { ... }:
     {
-      lib = genSelect;
+      lib = import ./lib { };
     };
 }

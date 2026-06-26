@@ -1,4 +1,3 @@
-{ lib }:
 let
   matchOne =
     selector: id: ctx:

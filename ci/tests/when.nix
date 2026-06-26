@@ -1,12 +1,15 @@
 {
-  lib,
   genSelect,
-  genAlgebra,
   ...
 }:
 let
   sel = genSelect;
-  inherit (genAlgebra) mkIntensional intensionalEq;
+  # Intensional function constructor (Palmer §2.2). Inlined from the former
+  # gen-algebra.mkIntensional to keep gen-select (and its tests) dependency-free.
+  mkIntensional = name: closure: fn: {
+    inherit name fn closure;
+    __functor = self: self.fn;
+  };
   mockCtx = {
     data =
       id:

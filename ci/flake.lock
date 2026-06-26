@@ -148,21 +148,6 @@
         "type": "github"
       }
     },
-    "gen-algebra_4": {
-      "locked": {
-        "lastModified": 1780016231,
-        "narHash": "sha256-Npzue0F2ANmqpmh51056QBTSo9Ef416HBQvLDTTavI4=",
-        "owner": "sini",
-        "repo": "gen-algebra",
-        "rev": "28c4925f64bb637176bb4a8ffb9677d7c1d12e91",
-        "type": "github"
-      },
-      "original": {
-        "owner": "sini",
-        "repo": "gen-algebra",
-        "type": "github"
-      }
-    },
     "gen-aspects": {
       "locked": {
         "lastModified": 1780015600,
@@ -514,7 +499,6 @@
     "root": {
       "inputs": {
         "gen": "gen",
-        "gen-algebra": "gen-algebra_4",
         "nixpkgs": "nixpkgs_7"
       }
     },
