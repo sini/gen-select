@@ -17,15 +17,26 @@ let
       map (line: lib.head (lib.splitString "#" line)) (lib.splitString "\n" text)
     );
 
-  readNix =
+  # Recursively collect every .nix under a directory (covers lib/adapters/ too).
+  walk =
     dir:
-    map (name: {
-      inherit name;
-      code = stripComments (builtins.readFile (dir + "/${name}"));
-    }) (lib.filter (lib.hasSuffix ".nix") (lib.attrNames (builtins.readDir dir)));
+    lib.concatLists (
+      lib.mapAttrsToList (
+        name: type:
+        if type == "directory" then
+          walk (dir + "/${name}")
+        else if lib.hasSuffix ".nix" name then
+          [ (dir + "/${name}") ]
+        else
+          [ ]
+      ) (builtins.readDir dir)
+    );
 
   sources =
-    readNix libDir
+    map (p: {
+      name = toString p;
+      code = stripComments (builtins.readFile p);
+    }) (walk libDir)
     ++
       map
         (rel: {
