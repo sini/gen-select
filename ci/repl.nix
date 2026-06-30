@@ -5,7 +5,7 @@
 let
   nixpkgs = import (builtins.getFlake "nixpkgs") { };
   inherit (nixpkgs) lib;
-  genSelect = import ../lib { };
+  genSelect = import ../lib;
 in
 {
   inherit lib genSelect;
