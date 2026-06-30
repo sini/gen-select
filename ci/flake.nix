@@ -9,7 +9,7 @@
   outputs =
     inputs@{ gen, ... }:
     let
-      genSelect = import ../lib { };
+      genSelect = import ../lib;
     in
     gen.lib.mkCi {
       inherit inputs;

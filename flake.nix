@@ -7,6 +7,6 @@
   outputs =
     { ... }:
     {
-      lib = import ./lib { };
+      lib = import ./lib;
     };
 }
