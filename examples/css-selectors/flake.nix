@@ -15,7 +15,7 @@
     }:
     let
       inherit (nixpkgs) lib;
-      genSelect = import "${gen-select}/lib" { };
+      genSelect = import "${gen-select}/lib";
       cssLib = import ./lib/css.nix { inherit lib genSelect; };
       forAllSystems = lib.genAttrs lib.systems.flakeExposed;
       testFiles = lib.pipe (builtins.readDir ./tests) [

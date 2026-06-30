@@ -1,32 +1,13 @@
 {
   "nodes": {
-    "gen": {
-      "locked": {
-        "lastModified": 1779699783,
-        "narHash": "sha256-Zripqtdy4mUdv+7ZrEDS8p6a3wCnCkrbB0224BRBou4=",
-        "owner": "sini",
-        "repo": "gen",
-        "rev": "a4ab0b100435de63b5e764eb4bb0b4d7f32e8c14",
-        "type": "github"
-      },
-      "original": {
-        "owner": "sini",
-        "repo": "gen",
-        "type": "github"
-      }
-    },
     "gen-select": {
-      "inputs": {
-        "gen": "gen",
-        "nixpkgs": "nixpkgs"
-      },
       "locked": {
-        "dirtyRev": "6b2c3b29c7001548a774f7a3b6cc69c960951eb8-dirty",
-        "dirtyShortRev": "6b2c3b2-dirty",
-        "lastModified": 1779758650,
-        "narHash": "sha256-dInCw0RAIqBnT/jq63XhfTjvEx1Emaj5pL+RkCNoMLo=",
-        "type": "git",
-        "url": "file:///home/sini/Documents/repos/gen-select"
+        "lastModified": 1782849738,
+        "narHash": "sha256-AW2VpoiqI1WUIYdLYI6ULi0eZ04I2pt7/X5oW2rLpeM=",
+        "owner": "sini",
+        "repo": "gen-select",
+        "rev": "0557090d0c28c5df53459c10422c519c94c608cb",
+        "type": "github"
       },
       "original": {
         "owner": "sini",
@@ -80,22 +61,6 @@
     "nixpkgs": {
       "locked": {
         "lastModified": 1779560665,
-        "narHash": "sha256-tpyBcxPpcQb8ukyNF7DoCwfSY3VPsxHoYwj00Cayv5o=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs_2": {
-      "locked": {
-        "lastModified": 1779560665,
         "narHash": "sha256-NpH8iEQ5JHv/BtUuzTEXUMDxPLetCDzIv4OxL8H7Kps=",
         "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
         "type": "tarball",
@@ -110,7 +75,7 @@
       "inputs": {
         "gen-select": "gen-select",
         "nix-unit": "nix-unit",
-        "nixpkgs": "nixpkgs_2"
+        "nixpkgs": "nixpkgs"
       }
     },
     "treefmt-nix": {
