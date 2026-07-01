@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/sini/gen-select/actions/workflows/ci.yml/badge.svg)](https://github.com/sini/gen-select/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-pink?logo=github)](https://github.com/sponsors/sini)
 
-Pure pattern matching library for Nix. Selectors are `{ __sel = tag; ... }` attrsets matched by `matches` against an ID-based accessor context. Depends on gen-algebra pure tier only.
+Pure pattern matching library for Nix. Selectors are `{ __sel = tag; ... }` attrsets matched by `matches` against an ID-based accessor context. Zero dependencies (Class A pure) — builtins only, no nixpkgs.lib and no gen-algebra; the intensional-equality check is inlined.
 
 ## Table of Contents
 
@@ -32,14 +32,18 @@ Selectors are plain attrsets tagged with `__sel`. No special types, no evaluatio
 
 | Library | Role |
 |---------|------|
-| [gen-algebra](https://github.com/sini/gen-algebra) | Pure primitives (search, record, identity) |
+| [gen-prelude](https://github.com/sini/gen-prelude) | Pure nixpkgs-lib-free utility base (builtins re-exports + vendored lib utils) |
+| [gen-algebra](https://github.com/sini/gen-algebra) | Pure primitives (record, search monad, either, intensional identity) |
 | [gen-schema](https://github.com/sini/gen-schema) | Typed registries (kinds, instances, collections, refs) |
-| [gen-aspects](https://github.com/sini/gen-aspects) | Aspect types (traits, classification, dispatch) |
-| [gen-graph](https://github.com/sini/gen-graph) | Graph queries (combinators, traversals, fixpoint) |
-| [gen-scope](https://github.com/sini/gen-scope) | Scope graphs (construction, evaluation, resolution) |
+| [gen-aspects](https://github.com/sini/gen-aspects) | Aspect type system (traits, classification, dispatch) |
+| [gen-scope](https://github.com/sini/gen-scope) | HOAG scope-graph evaluator (demand-driven, \_eval memoization, circular attributes) |
+| [gen-graph](https://github.com/sini/gen-graph) | Accessor-based graph query combinators (traversal, condensation, phaseOrder) |
 | [gen-select](https://github.com/sini/gen-select) | Selector algebra (pattern matching over graph positions) |
-| [gen-bind](https://github.com/sini/gen-bind) | Module binding (inject args into NixOS modules) |
-| [gen-derive](https://github.com/sini/gen-derive) | Rule dispatch (stratified phases, fixpoint, conflict resolution) |
+| [gen-bind](https://github.com/sini/gen-bind) | Module binding (inject external args into NixOS modules) |
+| [gen-dispatch](https://github.com/sini/gen-dispatch) | Relational rule dispatch STEP (stratified phases, conflict resolution) |
+| [gen-resolve](https://github.com/sini/gen-resolve) | Demand-driven RAG evaluator over scope graphs (attribute schedule + convergence loop) |
+| [gen-rebuild](https://github.com/sini/gen-rebuild) | Pure-Nix incremental rebuilder (change propagation, AFFECTED set) |
+| [gen-vars](https://github.com/sini/gen-vars) | Pure-Nix vars/secrets (den-agnostic) |
 
 ## Quick Start
 
@@ -48,9 +52,8 @@ Selectors are plain attrsets tagged with `__sel`. No special types, no evaluatio
 ```nix
 {
   inputs.gen-select.url = "github:sini/gen-select";
-  outputs = { gen-select, nixpkgs, ... }:
+  outputs = { gen-select, ... }:
     let
-      lib = nixpkgs.lib;
       sel = gen-select.lib;
     in {
       # sel.matches, sel.star, sel.attrs, sel.and, ...
@@ -58,12 +61,13 @@ Selectors are plain attrsets tagged with `__sel`. No special types, no evaluatio
 }
 ```
 
+gen-select declares no flake inputs, so it adds no transitive dependency — not even nixpkgs.
+
 ### Without flakes
 
 ```nix
 let
-  lib = (import <nixpkgs> {}).lib;
-  sel = import ./path/to/gen-select { inherit lib; };
+  sel = (import ./path/to/gen-select).lib;
 in
 sel.matches (sel.attrs { role = "backend"; }) "api" myContext
 # => true if myContext.data "api" has role = "backend"
@@ -122,10 +126,10 @@ Note: `child` and `descendant` are sugar — they expand to `and` compositions a
 
 `sel.when` wraps a bare lambda as a selector. By default, two `when` selectors cannot be compared for equality (lambdas are not comparable in Nix).
 
-For equality support, pass an intensional function (created via `genPure.mkIntensional`):
+For equality support, pass an intensional function — a plain attrset carrying a `name`, a `closure`, and a `__functor`. gen-select is zero-dep, so you construct this record directly (no `mkIntensional` helper is bundled):
 
 ```nix
-myPred = genPure.mkIntensional {
+myPred = {
   name = "is-backend";
   closure = { };
   __functor = _: id: ctx: (ctx.data id).role == "backend";
@@ -142,7 +146,7 @@ selectorEq   : selector -> selector -> bool
 
 `isIdentified` returns true when a `when` selector wraps an intensional function (has `name`, `__functor`, and `closure` fields).
 
-`selectorEq` compares two selectors. For `when` selectors, it delegates to `genPure.intensionalEq` when both are intensional; otherwise returns false. For all other selector types, it uses structural equality (`==`).
+`selectorEq` compares two selectors. For `when` selectors, when both wrap intensional functions it compares them by program point (name equality) — a conservative check inlined from the former `gen-algebra.intensionalEq` (Palmer §2.3), so gen-select carries no dependency for it; otherwise it returns false. For all other selector types, it uses structural equality (`==`).
 
 ## Adapters
 
@@ -213,6 +217,8 @@ Or via nix-unit directly:
 ```bash
 nix-unit --override-input gen-select . --flake ./ci
 ```
+
+The core suite is **104 tests across 9 suites** (`constructors`, `match-basic`, `match-structural`, `composition`, `sugar`, `when`, `adapters`, `adapter-registry`, `purity`) and requires [nix-unit](https://github.com/nix-community/nix-unit).
 
 ## Theoretical Foundations
 
