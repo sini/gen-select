@@ -9,8 +9,7 @@ Pure pattern matching library for Nix. Selectors are `{ __sel = tag; ... }` attr
 - [Overview](#overview)
 - [Gen Ecosystem](#gen-ecosystem)
 - [Quick Start](#quick-start)
-- [Core API](#core-api)
-- [Adapters](#adapters)
+- [API Reference](#api-reference)
 - [Demo Templates](#demo-templates)
 - [Performance](#performance)
 - [Testing](#testing)
@@ -38,7 +37,7 @@ Selectors are plain attrsets tagged with `__sel`. No special types, no evaluatio
 | [gen-aspects](https://github.com/sini/gen-aspects) | Aspect type system (traits, classification, dispatch) |
 | [gen-scope](https://github.com/sini/gen-scope) | HOAG scope-graph evaluator (demand-driven, \_eval memoization, circular attributes) |
 | [gen-graph](https://github.com/sini/gen-graph) | Accessor-based graph query combinators (traversal, condensation, phaseOrder) |
-| [gen-select](https://github.com/sini/gen-select) | Selector algebra (pattern matching over graph positions) |
+| [gen-select](https://github.com/sini/gen-select) | **This lib** — Selector algebra (pattern matching over graph positions) |
 | [gen-bind](https://github.com/sini/gen-bind) | Module binding (inject external args into NixOS modules) |
 | [gen-dispatch](https://github.com/sini/gen-dispatch) | Relational rule dispatch STEP (stratified phases, conflict resolution) |
 | [gen-resolve](https://github.com/sini/gen-resolve) | Demand-driven RAG evaluator over scope graphs (attribute schedule + convergence loop) |
@@ -73,7 +72,7 @@ sel.matches (sel.attrs { role = "backend"; }) "api" myContext
 # => true if myContext.data "api" has role = "backend"
 ```
 
-## Core API
+## API Reference
 
 ### Context shape
 
@@ -108,6 +107,7 @@ sel.matches (sel.attrs { type = "service"; }) "web" ctx
 |-------------|-----------|--------------|
 | `sel.star` | `-> selector` | always |
 | `sel.attrs a` | `attrset -> selector` | all k:v in `a` equal in `data id`; missing key = no match |
+| `sel.entityKind k` | `string -> selector` | sugar: `attrs { type = k; }` (node's `type` field equals `k`) |
 | `sel.and ss` | `[selector] -> selector` | all match; `sel.and [] = true` |
 | `sel.any ss` | `[selector] -> selector` | any matches; `sel.any [] = false` |
 | `sel.not s` | `selector -> selector` | does not match |
@@ -118,9 +118,9 @@ sel.matches (sel.attrs { type = "service"; }) "web" ctx
 | `sel.descendant a d` | `sel -> sel -> selector` | sugar: `and [ d (within a) ]` |
 | `sel.when fn` | `fn -> selector` | `fn id ctx` returns true |
 
-The `__sel` tags are: `"star"`, `"attrs"`, `"and"`, `"any"`, `"not"`, `"has"`, `"within"`, `"parentMatches"`, `"child"`, `"descendant"`, `"when"`.
+The distinct `__sel` tags are: `"star"`, `"attrs"`, `"and"`, `"any"`, `"not"`, `"has"`, `"within"`, `"parentMatches"`, `"when"`.
 
-Note: `child` and `descendant` are sugar — they expand to `and` compositions at construction time and carry no distinct `__sel` tag at runtime.
+Note: `child`, `descendant`, and `entityKind` are sugar — they expand at construction time (`child`/`descendant` to `and` compositions, `entityKind` to an `attrs` selector) and carry no distinct `__sel` tag at runtime.
 
 ### sel.when and identity
 
@@ -148,9 +148,11 @@ selectorEq   : selector -> selector -> bool
 
 `selectorEq` compares two selectors. For `when` selectors, when both wrap intensional functions it compares them by program point (name equality) — a conservative check inlined from the former `gen-algebra.intensionalEq` (Palmer §2.3), so gen-select carries no dependency for it; otherwise it returns false. For all other selector types, it uses structural equality (`==`).
 
-## Adapters
+### Adapters
 
-### adapters.scope — gen-scope bridge
+The `adapters` attrset bridges selectors to concrete graph representations. Each adapter produces (or is fed into) a five-field context; `matches` never depends on any adapter directly.
+
+#### adapters.scope — gen-scope bridge
 
 ```
 adapters.scope.mkContext : { node, get } -> context
@@ -166,7 +168,7 @@ Builds a selector context from gen-scope's accessor pair. Maps scope accessors t
 | `ancestors` | walks `parent` chain, cycle-safe |
 | `siblings` | children of parent, excluding self |
 
-### adapters.graph — gen-graph bridge
+#### adapters.graph — gen-graph bridge
 
 ```
 adapters.graph.mkPredicate      : selector -> context -> (id -> bool)
@@ -176,6 +178,14 @@ adapters.graph.mkSelectPredicate : selector -> context -> (attrset -> bool)
 `mkPredicate` curries `matches` into a predicate suitable for gen-graph traversal filters (e.g., `reachableWhere`).
 
 `mkSelectPredicate` wraps `matches` for use with `graph.select`, expecting an attrset with an `id` field.
+
+#### adapters.registry — flat node-list bridge
+
+```
+adapters.registry.mkContext : { nodes, data, parent } -> context
+```
+
+Builds a selector context from a flat registry: an explicit `nodes` list plus `data` and `parent` accessors. The adapter derives the remaining three fields from `nodes` and `parent` — `children` and `siblings` by filtering `nodes` on `parent`, and `ancestors` by walking the `parent` chain (cycle-safe). Use this when nodes are held as a plain list rather than behind a gen-scope evaluator.
 
 ## Demo Templates
 
@@ -203,6 +213,8 @@ Memory consumption is proportional to what the selector inspects, not the total 
 
 ```bash
 # CI test suite (core library)
+nix flake check ./ci
+# or, from the ci/ dir with the devshell:
 cd ci && just ci
 
 # CSS selectors demo
@@ -212,13 +224,7 @@ cd examples/css-selectors && just ci
 cd examples/sql-where && just ci
 ```
 
-Or via nix-unit directly:
-
-```bash
-nix-unit --override-input gen-select . --flake ./ci
-```
-
-The core suite is **104 tests across 9 suites** (`constructors`, `match-basic`, `match-structural`, `composition`, `sugar`, `when`, `adapters`, `adapter-registry`, `purity`) and requires [nix-unit](https://github.com/nix-community/nix-unit).
+The core suite is **104 tests across 9 suites** — `constructors` (17), `match-basic` (22), `match-structural` (13), `composition` (6), `sugar` (4), `when` (8), `adapters` (21), `adapter-registry` (12), and `purity` (1) — driven by [nix-unit](https://github.com/nix-community/nix-unit). The `purity` suite is the Class-A invariant: it scans every `lib/**.nix` (plus the root `flake.nix`/`default.nix`) for forbidden tokens (`nixpkgs`, `lib.`, `evalModules`, `mkOption`, `gen-algebra`) and fails CI if any dependency tether creeps back in.
 
 ## Theoretical Foundations
 
