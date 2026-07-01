@@ -2,11 +2,11 @@
   "nodes": {
     "gen-select": {
       "locked": {
-        "lastModified": 1782849738,
-        "narHash": "sha256-AW2VpoiqI1WUIYdLYI6ULi0eZ04I2pt7/X5oW2rLpeM=",
+        "lastModified": 1782932841,
+        "narHash": "sha256-K28q/7ERG6dOb9ZOUmVMZOt9W1aXjGjYw9nz8R/VagA=",
         "owner": "sini",
         "repo": "gen-select",
-        "rev": "0557090d0c28c5df53459c10422c519c94c608cb",
+        "rev": "210825deffb1f1ec51b50149bb33e9b03a8e3b0f",
         "type": "github"
       },
       "original": {
