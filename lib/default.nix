@@ -9,6 +9,7 @@ let
   scopeAdapter = import ./adapters/scope.nix;
   graphAdapter = import ./adapters/graph.nix { inherit (match) matches; };
   registryAdapter = import ./adapters/registry.nix;
+  productAdapter = import ./adapters/product.nix { inherit (constructors) and; };
 in
 constructors
 // {
@@ -17,5 +18,6 @@ constructors
     scope = scopeAdapter;
     graph = graphAdapter;
     registry = registryAdapter;
+    product = productAdapter;
   };
 }
