@@ -36,7 +36,7 @@ let
       if p == null then false else matchOne selector.selector p ctx
 
     else if tag == "entity" then
-      # Identity match against the projected __identity record (§4.2). Absence of the
+      # Identity match against the projected __identity record. Absence of the
       # key marks an identity-blind context — a projection gap, loud not silent (the
       # 2026-06-09 readiness audit's A1 silent-never-match failure class). `null` is a
       # well-formed "not entity-backed" node and matches nothing without throwing.
@@ -71,7 +71,7 @@ let
     else if tag == "coord" then
       # Product-coordinate match (Imrich & Klavžar, Handbook of Product Graphs): a cell
       # is a coordinate tuple; this tests membership of the sub-product fixing one
-      # coordinate. Coordinate-blind context throws (P3, the identity-blind twin); a
+      # coordinate. Coordinate-blind context throws, the identity-blind twin; a
       # cell lacking the dimension is a legitimate heterogeneous union → false; a
       # coordinate value without id_hash throws on the `.id_hash` access (malformed).
       let
