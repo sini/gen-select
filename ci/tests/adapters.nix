@@ -98,27 +98,21 @@ in
       expr = (ctx.data "user:tux").type;
       expected = "user";
     };
-    test-scope-entitykind-match = {
-      expr = sel.matches (sel.entityKind "user") "user:tux" ctx;
-      expected = true;
-    };
-    test-scope-entitykind-no-match = {
-      expr = sel.matches (sel.entityKind "host") "user:tux" ctx;
+    # sel.entityKind was removed (superseded by sel.kind); the one-release stub throws
+    # at construction with the migration line. Positional-type matching that entityKind
+    # used to provide is now sel.attrs { type = …; } (below); kind classification is
+    # sel.kind through an identity-projecting context (see match-identity / integration).
+    test-scope-entitykind-removed = {
+      expr =
+        let
+          r = builtins.tryEval (sel.entityKind "user");
+        in
+        r.success;
       expected = false;
     };
-    test-scope-entitykind-composed = {
-      expr = sel.matches (sel.and [
-        (sel.entityKind "host")
-        (sel.attrs { role = "frontend"; })
-      ]) "host:web" ctx;
-      expected = true;
-    };
-    test-scope-entitykind-within = {
-      # neededBy shape: "user scopes under a prod env"
-      expr = sel.matches (sel.and [
-        (sel.entityKind "user")
-        (sel.within (sel.attrs { env = "prod"; }))
-      ]) "user:tux" ctx;
+    test-scope-positional-type-via-attrs = {
+      # The exact old entityKind semantics (positional node type) survive as attrs.
+      expr = sel.matches (sel.attrs { type = "user"; }) "user:tux" ctx;
       expected = true;
     };
     test-scope-type-wins-over-decl = {

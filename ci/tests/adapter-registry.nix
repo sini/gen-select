@@ -30,10 +30,14 @@ in
 {
   flake.tests.adapter-registry = {
     test-data-passthrough = {
+      # Enrichment is additive (Law E8): the datum passes through unchanged, with a
+      # reserved __identity projected last (null here — these mock nodes carry no
+      # id_hash, so the default entryFor finds no entry).
       expr = ctx.data "host:a";
       expected = {
         type = "host";
         role = "web";
+        __identity = null;
       };
     };
     test-parent-passthrough = {
