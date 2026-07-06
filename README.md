@@ -110,7 +110,8 @@ sel.matches (sel.attrs { type = "service"; }) "web" ctx
 |-------------|-----------|--------------|
 | `sel.star` | `-> selector` | always |
 | `sel.attrs a` | `attrset -> selector` | all k:v in `a` equal in `data id`; missing key = no match |
-| `sel.entityKind k` | `string -> selector` | sugar: `attrs { type = k; }` (node's `type` field equals `k`) |
+| `sel.entity e` | `registry-entry -> selector` | the node's projected identity (`__identity.id_hash`) equals the entry's `id_hash` |
+| `sel.kind K` | `kind-value -> selector` | the node's projected kind (`__identity.kind`) equals `K.kind` |
 | `sel.and ss` | `[selector] -> selector` | all match; `sel.and [] = true` |
 | `sel.any ss` | `[selector] -> selector` | any matches; `sel.any [] = false` |
 | `sel.not s` | `selector -> selector` | does not match |
@@ -121,9 +122,45 @@ sel.matches (sel.attrs { type = "service"; }) "web" ctx
 | `sel.descendant a d` | `sel -> sel -> selector` | sugar: `and [ d (within a) ]` |
 | `sel.when fn` | `fn -> selector` | `fn id ctx` returns true |
 
-The distinct `__sel` tags are: `"star"`, `"attrs"`, `"and"`, `"any"`, `"not"`, `"has"`, `"within"`, `"parentMatches"`, `"when"`.
+The distinct `__sel` tags are: `"star"`, `"attrs"`, `"entity"`, `"kind"`, `"and"`, `"any"`, `"not"`, `"has"`, `"within"`, `"parentMatches"`, `"when"` (and `"coord"` from the product adapter).
 
-Note: `child`, `descendant`, and `entityKind` are sugar — they expand at construction time (`child`/`descendant` to `and` compositions, `entityKind` to an `attrs` selector) and carry no distinct `__sel` tag at runtime.
+Note: `child` and `descendant` are sugar — they expand at construction time to `and` compositions and carry no distinct `__sel` tag at runtime. (`sel.entityKind` was removed — see [Identity-bearing selectors](#identity-bearing-selectors).)
+
+### Identity-bearing selectors
+
+`sel.entity` and `sel.kind` match by **entity identity** and **entity kind** rather than by attribute values or structural position. They take values carrying identity — a registry entry, a gen-schema kind value — never `"kind:name"` strings (the identity law: strings are internal keys and display rendering only).
+
+```nix
+sel.entity den.hosts.axon-01   # => { __sel = "entity"; id_hash = "<sha256>"; name = "axon-01"; }
+sel.kind   schema.user         # => { __sel = "kind";   kind = "user"; }
+```
+
+- **`sel.entity <registry-entry>`** validates its argument structurally at construction (`entry ? id_hash`); a string, or any value lacking `id_hash`, throws immediately with an identity-law message. Only `id_hash` (identity) and `name` (display/errors) are stored — never the entry itself, whose methods would make Nix `==` on selectors throw. Because `id_hash` is content-addressed over the kind plus identity fields, storing it loses no identity information.
+- **`sel.kind <kind-value>`** takes a gen-schema kind value and validates it with the same structural guard registries use (`? kind && ? options`); a string throws. It stores the kind **name** as its internal key.
+
+Both match against a reserved `__identity` record the enriched adapters project alongside node data (shape below). The dispatch is loud where silence would hide a bug:
+
+| `__identity` state | `sel.entity` | `sel.kind` |
+|---|---|---|
+| key **absent** from `data id` | **throw** (identity-blind context) | **throw** (identity-blind context) |
+| `null` (node is not entity-backed) | `false` | `false` |
+| record with `kind == null` | matches on `id_hash` | **throw** (kind-blind projection) |
+| record | `id_hash` equality | `kind` equality |
+
+The throws convert a projection gap (the historical silent-never-match failure) into a named configuration error. A node carrying a positional `type` but no entry does **not** match `sel.kind` — positional-type matching remains `sel.attrs { type = "…"; }`.
+
+`sel.entityKind` (a former string-based sugar) **was removed**; for one release it is a throwing stub naming the migration path (`sel.kind <kind-value>`, or `sel.attrs { type = "…"; }` for bare positional typing).
+
+The `__identity` record projected into `data id` by the enriched adapters:
+
+```nix
+__identity = null;                    # node is not entity-backed
+__identity = {
+  id_hash = "<sha256>";               # gen-schema content-addressed identity
+  kind    = "<name>" or null;         # positional kind (scope: node.type; registry: normalized kindFor)
+  entry   = <registry-entry>;         # the full entry, for sel.when predicates & consumer interrogation
+};
+```
 
 ### sel.when and identity
 
@@ -149,7 +186,7 @@ selectorEq   : selector -> selector -> bool
 
 `isIdentified` returns true when a `when` selector wraps an intensional function (has `name`, `__functor`, and `closure` fields).
 
-`selectorEq` compares two selectors. For `when` selectors, when both wrap intensional functions it compares them by program point (name equality) — a conservative check inlined from the former `gen-algebra.intensionalEq` (Palmer §2.3), so gen-select carries no dependency for it; otherwise it returns false. For all other selector types, it uses structural equality (`==`).
+`selectorEq` compares two selectors. For `when` selectors, when both wrap intensional functions it compares them by program point (name equality) — a conservative check inlined from the former `gen-algebra.intensionalEq` (Palmer §2.3), so gen-select carries no dependency for it; otherwise it returns false. For `entity` selectors it compares `id_hash`, and for `coord` selectors `(dim, id_hash)` — the display-only `name` field is excluded, so two entries with equal `id_hash` but differing display names dedup as equal (raw `==` would wrongly distinguish them). `kind` payloads carry no display field, so they fall through to structural equality (`==`), as do all remaining selector types.
 
 ### Adapters
 
@@ -158,18 +195,25 @@ The `adapters` attrset bridges selectors to concrete graph representations. Each
 #### adapters.scope — gen-scope bridge
 
 ```
-adapters.scope.mkContext : { node, get } -> context
+adapters.scope.mkContext : {
+  node,
+  get,
+  project  ? (n: (n.decls or {}) // { inherit (n) type; }),   # projection surfacing node type
+  entryFor ? (id: (node id).decls.__entry or null),           # id -> entry | null
+} -> context
 ```
 
 Builds a selector context from gen-scope's accessor pair. Maps scope accessors to the five context fields:
 
 | Context field | Implementation |
 |---------------|---------------|
-| `data` | `id: (node id).decls` |
+| `data` | `id: (project (node id)) // { __identity = …; }` |
 | `parent` | `id: (node id).parent` |
 | `children` | `id: attrNames (get id "children")` |
 | `ancestors` | walks `parent` chain, cycle-safe |
 | `siblings` | children of parent, excluding self |
+
+The enriched adapter composes a reserved `__identity` record (record or `null`) **outside** the projection and merges it last, so identity/kind selectors work through it and a user decl named `__identity` can never shadow it. `__identity.kind` is copied from the positional node `type` (coherence by construction); `entryFor` defaults to the `decls.__entry` registration convention. `__identity` is always present through this adapter, so entity/kind selectors are never silently inert.
 
 #### adapters.graph — gen-graph bridge
 
@@ -185,10 +229,34 @@ adapters.graph.mkSelectPredicate : selector -> context -> (attrset -> bool)
 #### adapters.registry — flat node-list bridge
 
 ```
-adapters.registry.mkContext : { nodes, data, parent } -> context
+adapters.registry.mkContext : {
+  nodes, data, parent,
+  kind     ? null,                                                      # the registry's kind VALUE
+  entryFor ? (id: let d = data id; in if d ? id_hash then d else null), # id -> entry | null
+  kindFor  ? (_: kind),                                                 # id -> kindValue | kindName | null
+} -> context
 ```
 
 Builds a selector context from a flat registry: an explicit `nodes` list plus `data` and `parent` accessors. The adapter derives the remaining three fields from `nodes` and `parent` — `children` and `siblings` by filtering `nodes` on `parent`, and `ancestors` by walking the `parent` chain (cycle-safe). Use this when nodes are held as a plain list rather than behind a gen-scope evaluator.
+
+Identity enrichment is symmetric with the scope adapter, with one wrinkle: real gen-schema instances carry no kind field, so kind projection **cannot** default from the datum. Pass the registry's `kind` value (registries are per-kind by construction) — validated with the same guard as `sel.kind` and normalized to its name — or an explicit per-id `kindFor` for heterogeneous unions. Omitting both projects `__identity.kind = null`, and any `sel.kind` match then throws (loud kind-blind projection) while `sel.entity` continues to work. The default `entryFor` suits the common case where `data id` **is** the entry.
+
+#### adapters.product — gen-product bridge
+
+```
+adapters.product = {
+  coord   : dim-name -> registry-entry -> selector;   # coord "host" den.hosts.axon-01
+  inSlice : { <dim> = registry-entry; … } -> selector; # sugar: and (coord per fixed dimension)
+  mkContext : {
+    cellIds,                  # [ cellId ]        — gen-product's pgraph.nodes
+    coordsFor,                # cellId -> coords   — gen-product's product.coordsOf
+    dataFor ? (_: {}),        # extra matchable cell data
+    parent  ? (_: null),      # product lattices are flat by default
+  } -> context;
+};
+```
+
+Matches cells within a gen-product slice by **product coordinates** given as registry entries. `coord dim e` validates the entry like `sel.entity` and matches a cell whose `__coords.${dim}.id_hash` equals `e.id_hash`; a cell lacking the dimension is a legitimate heterogeneous union (`false`), a coordinate-blind context or a malformed coordinate value throws. `inSlice` expands at construction to the conjunction of one `coord` per fixed dimension (`inSlice { }` is vacuously true). `mkContext` projects `__coords` (and `__identity = null` — cells are not entities) and derives structure from `parent` when supplied. The adapter consumes gen-product's accessor shape without importing gen-product.
 
 ## Demo Templates
 
@@ -227,7 +295,7 @@ cd examples/css-selectors && just ci
 cd examples/sql-where && just ci
 ```
 
-The core suite is **104 tests across 9 suites** — `constructors` (17), `match-basic` (22), `match-structural` (13), `composition` (6), `sugar` (4), `when` (8), `adapters` (21), `adapter-registry` (12), and `purity` (1) — driven by [nix-unit](https://github.com/nix-community/nix-unit). The `purity` suite is the Class-A invariant: it scans every `lib/**.nix` (plus the root `flake.nix`/`default.nix`) for forbidden tokens (`nixpkgs`, `lib.`, `evalModules`, `mkOption`, `gen-algebra`) and fails CI if any dependency tether creeps back in.
+The core suite is **191 tests across 15 suites**, driven by [nix-unit](https://github.com/nix-community/nix-unit). Alongside the original structural suites (`constructors`, `match-basic`, `match-structural`, `composition`, `sugar`, `when`, `adapters`, `adapter-registry`, `purity`) the identity-selector work adds `constructors-identity`, `match-identity`, `adapter-scope-identity`, `adapter-registry-identity`, `adapter-product`, and `integration-scope`. The last is the acceptance test for the identity/kind routing surface: it drives `sel.kind`/`sel.entity` through a **real `gen-scope.eval` graph seeded from real gen-schema instances**, including the neededBy predicate shape. The `purity` suite is the Class-A invariant: it scans every `lib/**.nix` (plus the root `flake.nix`/`default.nix`) for forbidden tokens (`nixpkgs`, `lib.`, `evalModules`, `mkOption`, `gen-algebra`) and fails CI if any dependency tether creeps back in — the identity work stays builtins-only (identity validation is structural, `entry ? id_hash`, not a gen-schema import).
 
 ## Theoretical Foundations
 
@@ -238,7 +306,10 @@ gen-select draws on both academic research and industrial standards. Each source
 | Source | Relationship |
 |--------|-------------|
 | **Palmer, Filardo & Wu (2024)** — *Intensional Functions* | `sel.when` wraps lambdas as selectors; `isIdentified` and `selectorEq` realize intensional identity and equality via program point (name) comparison ONLY — a further conservative approximation (Palmer 2024 Theorem 1 (closure consistency) / §2.3 conservative-equality model) |
-| **CSS Selectors Level 4** — W3C | Structural selector vocabulary: `sel.has` as `:has()`, `sel.not` as `:not()`, `sel.child` and `sel.descendant` as CSS combinators |
+| **CSS Selectors Level 4** — W3C | Structural selector vocabulary: `sel.has` as `:has()`, `sel.not` as `:not()`, `sel.child` and `sel.descendant` as CSS combinators; §5.1 type (element-name) selector `E` lifted from element names to schema kinds as `sel.kind` |
+| **Neron, Tolmach, Visser & Wachsmuth (2015)** — *A Theory of Name Resolution* | `sel.entity` is a declaration-identity predicate: `id_hash` plays the declaration-position role, so shadowing/homonym nodes (equal names, distinct declarations) never cross-match |
+| **gen-schema** — `mkIdentityModule` content-addressed identity | `sel.entity` delegates identity to gen-schema: it performs no hashing, comparing the `id_hash` gen-schema defines. Equality is exactly gen-schema's instance-identity relation |
+| **Imrich & Klavžar** — *Handbook of Product Graphs* | `coord`/`inSlice` are the vertex-membership predicate of the sub-product obtained by fixing the given coordinates; product graph vertices are coordinate tuples |
 
 ### Informed by
 
