@@ -42,10 +42,13 @@ in
     {
       # Cells are not entities: __identity is null (an entity-backed-cell variant can
       # pass richer dataFor later). __coords carries the coordinate tuple; merged last.
-      data = id: (dataFor id) // {
-        __coords = coordsFor id;
-        __identity = null;
-      };
+      data =
+        id:
+        (dataFor id)
+        // {
+          __coords = coordsFor id;
+          __identity = null;
+        };
       inherit parent;
       # With the default flat `parent` these all yield [ ]; when `parent` is supplied
       # the registry adapter's derivations apply (structural selectors over the

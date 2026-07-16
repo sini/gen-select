@@ -80,10 +80,13 @@ in
           c = sel.adapters.scope.mkContext (
             base
             // {
-              project = n: (n.decls or { }) // {
-                __identity = "HACKED";
-                inherit (n) type;
-              };
+              project =
+                n:
+                (n.decls or { })
+                // {
+                  __identity = "HACKED";
+                  inherit (n) type;
+                };
             }
           );
         in

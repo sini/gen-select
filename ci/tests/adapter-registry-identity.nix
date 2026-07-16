@@ -132,7 +132,9 @@ in
           nodes = userNodes;
           data = userData;
           parent = _: null;
-          kind = { kind = "user"; }; # missing options
+          kind = {
+            kind = "user";
+          }; # missing options
         }).data
       );
       expected = true;

@@ -13,7 +13,13 @@
       kind ? null,
       # id -> entry | null. Default suits the common case where `data id` IS the
       # entry (gen-schema instances carry id_hash, so identity is the datum itself).
-      entryFor ? (id: let d = data id; in if d ? id_hash then d else null),
+      entryFor ? (
+        id:
+        let
+          d = data id;
+        in
+        if d ? id_hash then d else null
+      ),
       # id -> kindValue | kindName | null. Default = the constant registry kind (every
       # node in a per-kind registry projects that kind); heterogeneous unions pass an
       # explicit per-id accessor. Accepts a kind value (preferred, identity law) or a
@@ -28,7 +34,14 @@
           kind
         else
           throw "gen-select: adapters.registry.mkContext `kind` expects a kind value (an attrset with `kind` and `options`, e.g. schema.user) or null; got ${builtins.typeOf kind}.";
-      normalizeKind = k: if k == null then null else if builtins.isAttrs k then k.kind else k;
+      normalizeKind =
+        k:
+        if k == null then
+          null
+        else if builtins.isAttrs k then
+          k.kind
+        else
+          k;
     in
     # Force the kind-value guard when the caller relies on it (seq to WHNF): a
     # malformed `kind` argument throws as soon as the context is used.

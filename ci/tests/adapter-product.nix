@@ -66,7 +66,11 @@ let
   # Malformed coordinate value (no id_hash).
   badCtx = P.mkContext {
     cellIds = [ "b" ];
-    coordsFor = _: { host = { name = "nope"; }; };
+    coordsFor = _: {
+      host = {
+        name = "nope";
+      };
+    };
   };
 
   throws = x: !(builtins.tryEval (builtins.deepSeq x x)).success;
@@ -96,10 +100,12 @@ in
       ];
     };
     test-inslice-single-cell = {
-      expr = matchCells (P.inSlice {
-        host = h1;
-        user = u2;
-      });
+      expr = matchCells (
+        P.inSlice {
+          host = h1;
+          user = u2;
+        }
+      );
       expected = [ "c12" ];
     };
     test-inslice-empty-all = {
@@ -159,10 +165,12 @@ in
       expected = false;
     };
     test-coord-eq-name-excluded = {
-      expr = sel.selectorEq (P.coord "host" h1) (P.coord "host" {
-        id_hash = "h-axon";
-        name = "other";
-      });
+      expr = sel.selectorEq (P.coord "host" h1) (
+        P.coord "host" {
+          id_hash = "h-axon";
+          name = "other";
+        }
+      );
       expected = true;
     };
 

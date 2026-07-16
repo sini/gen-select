@@ -86,7 +86,10 @@ let
           c = data.__coords.${selector.dim};
         in
         # A coordinate value without id_hash is a malformed projection, not a mismatch.
-        if c ? id_hash then c.id_hash == selector.id_hash else throw "gen-select: coord matched a malformed coordinate value for dimension '${selector.dim}' on node ${id} (no id_hash). Coordinates must be registry entries."
+        if c ? id_hash then
+          c.id_hash == selector.id_hash
+        else
+          throw "gen-select: coord matched a malformed coordinate value for dimension '${selector.dim}' on node ${id} (no id_hash). Coordinates must be registry entries."
 
     else if tag == "when" then
       selector.fn id ctx

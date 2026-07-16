@@ -50,7 +50,9 @@ let
     kindblind.__identity = {
       id_hash = "h-x";
       kind = null; # entity-backed but kind-blind projection
-      entry = { id_hash = "h-x"; };
+      entry = {
+        id_hash = "h-x";
+      };
     };
     typed = {
       __identity = null;
@@ -60,7 +62,17 @@ let
   ctx = {
     data = id: idMap.${id};
     parent = _: null;
-    children = id: if id == "root" then [ "u1" "u2" "h1" "plain" ] else [ ];
+    children =
+      id:
+      if id == "root" then
+        [
+          "u1"
+          "u2"
+          "h1"
+          "plain"
+        ]
+      else
+        [ ];
     ancestors = _: [ ];
     siblings = _: [ ];
   };
