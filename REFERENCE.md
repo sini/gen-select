@@ -86,8 +86,8 @@ kind   : kind-value        -> selector
 - A node carrying a positional `type` but no entry does not match `kind` — use
   `attrs { type = "…"; }` for positional-type matching.
 
-**`entityKind`** — removed; a one-release throwing stub whose message names the migration
-(`kind <kind-value>`, or `attrs { type = "…"; }` for positional typing).
+**`entityKind`** — removed. Use `kind <kind-value>`, or `attrs { type = "…"; }` for
+positional typing.
 
 ### Product-coordinate selectors
 
@@ -216,7 +216,7 @@ which reads only the positional kind.
 | E5 | `__identity = null` yields `false` (non-entity nodes are quiet — structural recursion over mixed graphs needs no guards). |
 | E6 | Through the enriched adapters `__identity` is present for every node; `null` iff no entry; `id_hash`/`kind` coherent by construction; `__identity` overrides same-named projection keys; a malformed entry errors at `id_hash` access, `kind` matching unaffected. |
 | E7 | `entity`/`kind`/`coord` selectors are function-free (Nix `==` total); `selectorEq` compares identity fields only (display `name` excluded). |
-| E8 | Backward compatible: existing selectors, the five-accessor contract, and the graph adapter are byte-compatible; enrichment is additive (`data` output is a superset). Sole break: `sel.entityKind` is a throwing stub. |
+| E8 | Backward compatible: existing selectors, the five-accessor contract, and the graph adapter are byte-compatible; enrichment is additive (`data` output is a superset). Sole break: `sel.entityKind` is removed. |
 | P1 | `coord dim e` matches iff `__coords` is projected, the cell has `dim`, and `__coords.${dim}.id_hash == e.id_hash`. |
 | P2 | `inSlice coords` matches iff every fixed coordinate matches; `inSlice { }` is vacuously true; equal to the hand-written conjunction. |
 | P3 | `__coords` absent → throw; dim absent from a cell → `false`; malformed coordinate value → throw. |

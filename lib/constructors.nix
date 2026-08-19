@@ -48,16 +48,6 @@ rec {
         inherit (kindValue) kind;
       };
 
-  # Removed — superseded by `sel.kind <kind-value>`. A one-release throwing stub
-  # (deleted the following release) so out-of-tree callers get a named migration
-  # path instead of a bare attribute-missing error.
-  entityKind =
-    _:
-    throw ''
-      gen-select: sel.entityKind was removed. Use sel.kind <kind-value>
-      (e.g. sel.kind schema.user), or sel.attrs { type = "..."; } for bare
-      positional typing.'';
-
   and = selectors: {
     __sel = "and";
     inherit selectors;

@@ -98,20 +98,9 @@ in
       expr = (ctx.data "user:tux").type;
       expected = "user";
     };
-    # sel.entityKind was removed (superseded by sel.kind); the one-release stub throws
-    # at construction with the migration line. Positional-type matching that entityKind
-    # used to provide is now sel.attrs { type = …; } (below); kind classification is
-    # sel.kind through an identity-projecting context (see match-identity / integration).
-    test-scope-entitykind-removed = {
-      expr =
-        let
-          r = builtins.tryEval (sel.entityKind "user");
-        in
-        r.success;
-      expected = false;
-    };
     test-scope-positional-type-via-attrs = {
-      # The exact old entityKind semantics (positional node type) survive as attrs.
+      # Positional-type matching is sel.attrs { type = …; }; kind classification is
+      # sel.kind through an identity-projecting context (see match-identity / integration).
       expr = sel.matches (sel.attrs { type = "user"; }) "user:tux" ctx;
       expected = true;
     };

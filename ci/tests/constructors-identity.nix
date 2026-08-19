@@ -114,11 +114,5 @@ in
       expr = sel.selectorEq (sel.kind kindUser) (sel.kind kindHost);
       expected = false;
     };
-
-    # ---- E8: entityKind is a one-release throwing stub ----
-    test-entitykind-stub-throws = {
-      expr = throws (sel.entityKind "user");
-      expected = true;
-    };
   };
 }

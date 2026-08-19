@@ -149,7 +149,7 @@ Both match against a reserved `__identity` record the enriched adapters project 
 
 The throws convert a projection gap (the historical silent-never-match failure) into a named configuration error. A node carrying a positional `type` but no entry does **not** match `sel.kind` — positional-type matching remains `sel.attrs { type = "…"; }`.
 
-`sel.entityKind` (a former string-based sugar) **was removed**; for one release it is a throwing stub naming the migration path (`sel.kind <kind-value>`, or `sel.attrs { type = "…"; }` for bare positional typing).
+`sel.entityKind` (a former string-based sugar) **was removed**; the migration path is `sel.kind <kind-value>`, or `sel.attrs { type = "…"; }` for bare positional typing.
 
 The `__identity` record projected into `data id` by the enriched adapters:
 
@@ -295,7 +295,7 @@ cd examples/css-selectors && just ci
 cd examples/sql-where && just ci
 ```
 
-The core suite is **191 tests across 15 suites**, driven by [nix-unit](https://github.com/nix-community/nix-unit). Alongside the original structural suites (`constructors`, `match-basic`, `match-structural`, `composition`, `sugar`, `when`, `adapters`, `adapter-registry`, `purity`) the identity-selector work adds `constructors-identity`, `match-identity`, `adapter-scope-identity`, `adapter-registry-identity`, `adapter-product`, and `integration-scope`. The last is the acceptance test for the identity/kind routing surface: it drives `sel.kind`/`sel.entity` through a **real `gen-scope.eval` graph seeded from real gen-schema instances**, including the neededBy predicate shape. The `purity` suite is the Class-A invariant: it scans every `lib/**.nix` (plus the root `flake.nix`/`default.nix`) for forbidden tokens (`nixpkgs`, `lib.`, `evalModules`, `mkOption`, `gen-algebra`) and fails CI if any dependency tether creeps back in — the identity work stays builtins-only (identity validation is structural, `entry ? id_hash`, not a gen-schema import).
+The core suite is **189 tests across 15 suites**, driven by [nix-unit](https://github.com/nix-community/nix-unit). Alongside the original structural suites (`constructors`, `match-basic`, `match-structural`, `composition`, `sugar`, `when`, `adapters`, `adapter-registry`, `purity`) the identity-selector work adds `constructors-identity`, `match-identity`, `adapter-scope-identity`, `adapter-registry-identity`, `adapter-product`, and `integration-scope`. The last is the acceptance test for the identity/kind routing surface: it drives `sel.kind`/`sel.entity` through a **real `gen-scope.eval` graph seeded from real gen-schema instances**, including the neededBy predicate shape. The `purity` suite is the Class-A invariant: it scans every `lib/**.nix` (plus the root `flake.nix`/`default.nix`) for forbidden tokens (`nixpkgs`, `lib.`, `evalModules`, `mkOption`, `gen-algebra`) and fails CI if any dependency tether creeps back in — the identity work stays builtins-only (identity validation is structural, `entry ? id_hash`, not a gen-schema import).
 
 ## Theoretical Foundations
 

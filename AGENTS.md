@@ -33,7 +33,6 @@ Entry: `inputs.gen-select.lib` (flake). Root `default.nix` and `import ./lib` ar
 | `attrs` | `attrset -> selector` |
 | `entity` | `registryEntry -> selector` (requires `? id_hash`; stores `id_hash` + display `name` only) |
 | `kind` | `kindValue -> selector` (requires `? kind && ? options`; stores the kind *name*) |
-| `entityKind` | `_ -> throw` — tombstone, see traps |
 
 **Combinators** — `lib/constructors.nix`
 
@@ -102,7 +101,6 @@ Each row verified in this run by evaluating the expression against `import ./lib
 
 | Trap | Evidence |
 |---|---|
-| `entityKind` is *listed* by `attrNames` but every call throws | `lib/constructors.nix:54-59`; `sel ? entityKind` ⇒ `true`, `(builtins.tryEval (sel.entityKind "user")).success` ⇒ `false`. Tests: `test-entitykind-stub-throws` (`ci/tests/constructors-identity.nix`), `test-scope-entitykind-removed` (`ci/tests/adapters.nix`) |
 | `entity`/`kind` against an identity-blind context **throw**, they do not return false | `lib/match.nix:46-47,62-63`; both `tryEval` runs ⇒ `success = false`. Positive control, same matcher, identity-projecting ctx: `matches (entity entry)` ⇒ `true` |
 | `kind` throws on a kind-blind projection *even when* `__identity` is present and `entity` matching works on that same context | `lib/match.nix:66-67`; `kind` ⇒ threw, `entity` on the identical ctx ⇒ `true` |
 | `registry.mkContext` called without `kind`/`kindFor` projects `kind = null`, so every later `sel.kind` throws | `lib/adapters/registry.nix:11-27` + `lib/match.nix:67`; ctx built with only `{ nodes; data; parent; }` ⇒ `sel.kind` threw |
@@ -112,9 +110,9 @@ Each row verified in this run by evaluating the expression against `import ./lib
 | `and []` ⇒ true, `any []` ⇒ false, `inSlice {}` ⇒ true (it is `and []`) | `lib/match.nix:17-21`, `lib/adapters/product.nix:33`; observed `true` / `false` / `true` |
 | `attrs` treats a missing key as no-match, never an error | `lib/match.nix:15`; `matches (attrs { nope = 1; })` ⇒ `false` |
 | `scope.mkContext` default projection lets node `type` **override** a decl key named `type` | `lib/adapters/scope.nix:11`; `(ctx.data "x").type` ⇒ `"NODETYPE"` with `decls.type = "DECLTYPE"`. Test: `test-scope-type-wins-over-decl` (`ci/tests/adapters.nix`) |
-| `child`/`descendant` carry no distinct tag — both are `and` at runtime | `lib/constructors.nix:91-103`; `(child star star).__sel` and `(descendant star star).__sel` ⇒ `"and"` |
-| `selectorEq` on two `when`s wrapping the **same bare lambda** ⇒ `false` (intensional record required) | `lib/constructors.nix:126-134`; observed `false` |
-| `selectorEq` is coarser than `==`: entity/coord display `name` is excluded | `lib/constructors.nix:135-138`; two entries, equal `id_hash`, differing `name` ⇒ `selectorEq` `true`, `==` `false` |
+| `child`/`descendant` carry no distinct tag — both are `and` at runtime | `lib/constructors.nix:82-94`; `(child star star).__sel` and `(descendant star star).__sel` ⇒ `"and"` |
+| `selectorEq` on two `when`s wrapping the **same bare lambda** ⇒ `false` (intensional record required) | `lib/constructors.nix:117-125`; observed `false` |
+| `selectorEq` is coarser than `==`: entity/coord display `name` is excluded | `lib/constructors.nix:126-129`; two entries, equal `id_hash`, differing `name` ⇒ `selectorEq` `true`, `==` `false` |
 | Argument order differs between the engine and the graph adapter | `matches selector id ctx` (`lib/match.nix:3`) vs `mkPredicate selector ctx id` and `mkSelectPredicate selector ctx data` (`lib/adapters/graph.nix:3-8`); all three evaluated `true` on `star` |
 | Constructors reject name strings at construction time | `lib/constructors.nix:22-25,41-44`; `entity "axon-01"` and `kind "user"` both threw |
 | An unknown `__sel` tag throws rather than returning false | `lib/match.nix:97-98`; `matches { __sel = "bogus"; }` threw |
@@ -125,7 +123,7 @@ Claimed in `README.md:300-322`, which splits its sources into **Implements** and
 
 **Implements**
 
-- **Palmer, Filardo & Wu (2024), *Intensional Functions*** — `when`/`isIdentified`/`selectorEq` realize intensional identity and equality by program point (name) comparison only; README cites Theorem 1 (closure consistency) and §2.3 conservative equality. Inlined at `lib/constructors.nix:129-132`.
+- **Palmer, Filardo & Wu (2024), *Intensional Functions*** — `when`/`isIdentified`/`selectorEq` realize intensional identity and equality by program point (name) comparison only; README cites Theorem 1 (closure consistency) and §2.3 conservative equality. Inlined at `lib/constructors.nix:120-123`.
 - **W3C CSS Selectors Level 4** — structural vocabulary: `has` = `:has()`, `not` = `:not()`, `child`/`descendant` = CSS combinators; §5.1 type selector `E` lifted from element names to schema kinds as `kind` (`lib/constructors.nix:33-38`).
 - **Neron, Tolmach, Visser & Wachsmuth (2015), *A Theory of Name Resolution*** — `entity` is a declaration-identity predicate, `id_hash` playing the declaration-position role (`lib/constructors.nix:11-19`).
 - **gen-schema `mkIdentityModule` content-addressed identity** — `sel.entity` delegates identity to gen-schema and performs no hashing of its own.
@@ -144,7 +142,7 @@ nix eval --json .#lib --apply 'l: { top = builtins.attrNames l; adapters = built
 Current output (verbatim):
 
 ```json
-{"adapters":{"graph":["mkPredicate","mkSelectPredicate"],"product":["coord","inSlice","mkContext"],"registry":["mkContext"],"scope":["mkContext"]},"top":["adapters","and","any","attrs","child","descendant","entity","entityKind","has","isIdentified","kind","matches","not","parentMatches","selectorEq","star","when","within"]}
+{"adapters":{"graph":["mkPredicate","mkSelectPredicate"],"product":["coord","inSlice","mkContext"],"registry":["mkContext"],"scope":["mkContext"]},"top":["adapters","and","any","attrs","child","descendant","entity","has","isIdentified","kind","matches","not","parentMatches","selectorEq","star","when","within"]}
 ```
 
 **Checks.** Test-runner invocation (from the repo root; CI runs the same command with `working-directory: ci`, `.github/workflows/ci.yml:13,18`):
