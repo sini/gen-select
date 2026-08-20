@@ -119,10 +119,37 @@ selectorEq   : selector -> selector -> bool
 
 `selectorEq` is the canonical dedup relation:
 
-- `when` selectors wrapping intensional functions: program-point (name) equality;
+- `when` selectors wrapping intensional functions: **conservative equality** (Palmer
+  §2.3/§5.3), dispatched on the wrapped value's `__mint` tag — digest equality when
+  minted, Nix `==` on the reified value MINUS `__id` when unmintable, `name` equality
+  while unmigrated;
 - `entity`: `id_hash` only (display-only `name` excluded);
 - `coord`: `(dim, id_hash)` (display-only `name` excluded);
-- everything else (including `kind`, whose payload has no display field): structural `==`.
+- everything else (including `kind`, whose payload has no display field): structural `==`
+  on the selector, which forces whatever the payload holds — see the caveat below.
+
+Fig. 5 is a conjunction over identity AND closure, so a name-only relation ships one
+conjunct: a program point is constant across a constructor's instances, and comparing it
+alone declares behaviourally distinct values equal. The unmintable arm compares the VALUE
+rather than a component list — an attribute selection is an indirection, so a
+component-wise form is false even against itself and the relation would be empty rather
+than finer. Its precision is an allocation artefact: separately-constructed equal-shaped
+values compare unequal, which merges strictly less than Fig. 5 and never more.
+
+That arm excludes `__id` and nothing else. `__id` is an accessor rather than
+distinguishing content, and in this regime it IS the named refusal, so comparing the
+value whole would force the refusal inside the decision it exists to permit. One
+exclusion suffices: `__mint.minted` is the only other refusal-valued accessor, and the
+tagged sum shields it — its minted and sealed arms live under different key names, and
+Nix `==` decides on the name set before forcing any value.
+
+**Caveat on the structural fall-through.** The last bullet is plain Nix `==` on two
+selector records, so it forces every value reachable in their payloads. A selector whose
+payload holds a throwing value — under any key name, `__id` included — aborts rather than
+deciding. This is a property of structural equality over caller-supplied match
+specifications, not of the identity regimes: an ordinary key carrying a throw aborts
+identically, measured. The `entity` and `coord` branches are unaffected, comparing
+`id_hash` and never the payload.
 
 Raw `==` is finer than `selectorEq` exactly on the display-only `name`; dedup paths
 (neededBy sets, dispatch rule-sets) use `selectorEq`.

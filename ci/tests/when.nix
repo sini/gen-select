@@ -30,6 +30,22 @@ let
   identifiedFn = mkIntensional "always-true" { } (id: ctx: true);
   identifiedFn2 = mkIntensional "always-true" { } (id: ctx: true);
   differentFn = mkIntensional "always-false" { } (id: ctx: false);
+
+  # Fixtures for the two regimes a producer stamps. The records above carry no
+  # `__mint` and are therefore UNMIGRATED, which is where every shipped value sits
+  # until a producer lands — that arm is what keeps the cells above unchanged.
+  mintedFn = digest: fn: (mkIntensional "shared-point" { } fn) // { __mint.minted = digest; };
+  unmintableFn =
+    fn:
+    (mkIntensional "shared-point" { } fn)
+    // {
+      __mint.unmintable = {
+        reason = "distinguishing content is a caller-supplied lambda";
+        ctor = "shared-point";
+      };
+    };
+  sealedA = unmintableFn (id: ctx: true);
+  sealedB = unmintableFn (id: ctx: false);
 in
 {
   flake.tests.when = {
@@ -64,6 +80,149 @@ in
     test-structural-eq-star = {
       expr = sel.selectorEq sel.star sel.star;
       expected = true;
+    };
+
+    # ── conservative equality by identity REGIME ─────────────────────────────
+    # `test-same-name-eq` above is the UNMIGRATED arm and is unchanged. The cells
+    # below cover the two regimes a producer stamps.
+
+    # THE REPAIR: two values sharing one program point and behaving differently
+    # are NOT equal. A program point is constant across a constructor's
+    # instances, so the retired `x.name == y.name` called this pair equal.
+    test-unmintable-distinct-neq = {
+      expr = sel.selectorEq (sel.when sealedA) (sel.when sealedB);
+      expected = false;
+    };
+    # CONTROL, and it is the one that matters: the predicate's failure mode is
+    # EMPTINESS, not coarseness. A value compared with ITSELF must be equal, or
+    # the relation is false for every pair and the cell above passes for the
+    # wrong reason. (The whole value takes the evaluator's cell fast path; a
+    # component-wise form would be false even here.)
+    test-unmintable-self-eq = {
+      expr = sel.selectorEq (sel.when sealedA) (sel.when sealedA);
+      expected = true;
+    };
+    # The precision of that arm is an ALLOCATION ARTEFACT, asserted rather than
+    # assumed: two separately-constructed equal-shaped values compare unequal, so
+    # the relation merges strictly less than Palmer's Fig. 5 and never more.
+    test-unmintable-separately-constructed-neq = {
+      expr = sel.selectorEq (sel.when (unmintableFn (id: ctx: true))) (
+        sel.when (unmintableFn (id: ctx: true))
+      );
+      expected = false;
+    };
+    # The MINTED arm: the digest decides, and it is total in the distinguishing
+    # content — so two values with one digest merge even though the records were
+    # built separately, which is exactly what the unmintable arm cannot do.
+    test-minted-same-digest-eq = {
+      expr = sel.selectorEq (sel.when (mintedFn "its:aaaa" (id: ctx: true))) (
+        sel.when (mintedFn "its:aaaa" (id: ctx: true))
+      );
+      expected = true;
+    };
+    test-minted-different-digest-neq = {
+      expr = sel.selectorEq (sel.when (mintedFn "its:aaaa" (id: ctx: true))) (
+        sel.when (mintedFn "its:bbbb" (id: ctx: false))
+      );
+      expected = false;
+    };
+    # The sealed arm compares the reified value MINUS `__id`: that accessor is what a
+    # consumer reads when it DEMANDS an identity, and where nothing is minted it IS the
+    # named refusal. Forcing it inside a decision would detonate the very decision the
+    # refusal exists to permit, so a poisoned accessor must not disturb the relation.
+    test-sealed-comparison-does-not-force-id = {
+      expr =
+        let
+          poison =
+            v:
+            v
+            // {
+              __id = throw "identity: 'shared-point' has no mintable identity";
+            };
+          a = poison (unmintableFn (id: ctx: true));
+          b = poison (unmintableFn (id: ctx: false));
+        in
+        {
+          self = sel.selectorEq (sel.when a) (sel.when a);
+          distinct = sel.selectorEq (sel.when a) (sel.when b);
+        };
+      expected = {
+        self = true;
+        distinct = false;
+      };
+    };
+
+    # ★ THE STRUCTURAL FALL-THROUGH'S BOUNDARY, PINNED AS MEASURED — this cell asserts a
+    # LIMIT, not a fix. `selectorEq`'s last arm is plain Nix `==` on two selector
+    # records, so it forces every value reachable in their payloads, and a throwing one
+    # aborts rather than deciding.
+    #
+    # The second reading is why `comparisonSubject` is not the remedy here: `__id` is
+    # NOT distinguished — an ordinary payload key aborts IDENTICALLY — so this is a
+    # property of structural equality over caller-supplied match specifications, not of
+    # the identity regimes. Closing it needs a bounded recursive walk, which is a design
+    # decision. If a future change closes it, the first two readings flip together and
+    # the boundary comment in `lib/constructors.nix` is what needs rewriting.
+    test-structural-fallthrough-forces-its-payload = {
+      expr =
+        let
+          decides = e: (builtins.tryEval e).success;
+        in
+        {
+          withRefusingAccessor = decides (
+            sel.selectorEq
+              (sel.attrs {
+                k = "v";
+                __id = throw "identity: no mintable identity";
+              })
+              (
+                sel.attrs {
+                  k = "v";
+                  __id = throw "identity: no mintable identity";
+                }
+              )
+          );
+          # CONTROL: an ordinary key name aborts identically, so `__id` is not special.
+          withOrdinaryKey = decides (
+            sel.selectorEq
+              (sel.attrs {
+                k = "v";
+                zz = throw "plain";
+              })
+              (
+                sel.attrs {
+                  k = "v";
+                  zz = throw "plain";
+                }
+              )
+          );
+          # CONTROL: no refusing value at all — the arm decides, and decides correctly.
+          withNoRefusal = sel.selectorEq (sel.attrs { k = "v"; }) (sel.attrs { k = "v"; });
+          withNoRefusalDiffering = sel.selectorEq (sel.attrs { k = "v"; }) (sel.attrs { k = "w"; });
+          # CONTROL: the entity branch never reaches the payload, so it is unaffected.
+          entityBranchUnaffected = decides (
+            sel.selectorEq
+              (sel.entity {
+                id_hash = "h";
+                name = "n";
+                __id = throw "identity: no mintable identity";
+              })
+              (
+                sel.entity {
+                  id_hash = "h";
+                  name = "n";
+                  __id = throw "identity: no mintable identity";
+                }
+              )
+          );
+        };
+      expected = {
+        withRefusingAccessor = false;
+        withOrdinaryKey = false;
+        withNoRefusal = true;
+        withNoRefusalDiffering = false;
+        entityBranchUnaffected = true;
+      };
     };
   };
 }

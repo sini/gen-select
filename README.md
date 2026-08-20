@@ -186,7 +186,21 @@ selectorEq   : selector -> selector -> bool
 
 `isIdentified` returns true when a `when` selector wraps an intensional function (has `name`, `__functor`, and `closure` fields).
 
-`selectorEq` compares two selectors. For `when` selectors, when both wrap intensional functions it compares them by program point (name equality) — a conservative check inlined from the former `gen-algebra.intensionalEq` (Palmer §2.3), so gen-select carries no dependency for it; otherwise it returns false. For `entity` selectors it compares `id_hash`, and for `coord` selectors `(dim, id_hash)` — the display-only `name` field is excluded, so two entries with equal `id_hash` but differing display names dedup as equal (raw `==` would wrongly distinguish them). `kind` payloads carry no display field, so they fall through to structural equality (`==`), as do all remaining selector types.
+`selectorEq` compares two selectors. For `when` selectors, when both wrap intensional functions it applies **conservative equality** (Palmer's own term, §2.3/§5.3), which dispatches on the wrapped value's identity REGIME rather than reading one field; otherwise it returns false. For `entity` selectors it compares `id_hash`, and for `coord` selectors `(dim, id_hash)` — the display-only `name` field is excluded, so two entries with equal `id_hash` but differing display names dedup as equal (raw `==` would wrongly distinguish them). `kind` payloads carry no display field, so they fall through to structural equality (`==`), as do all remaining selector types.
+
+The three regimes are read off the wrapped value's `__mint` field, which is a **tagged sum** and is total — a reader that branched on field presence and then read `.minted` raw would abort uncatchably on a value that has no mintable identity:
+
+| regime | the value carries | the relation |
+|--------|-------------------|--------------|
+| minted | `__mint.minted` | digest equality — the identity is total in the distinguishing content |
+| unmintable | `__mint`, no `minted` | Nix `==` on the reified value **minus `__id`** |
+| unmigrated | no `__mint` | `name` equality — the shipped relation, live until a producer stamps the value |
+
+Palmer's Fig. 5 is a **conjunction** over identity *and* closure, and comparing `name` alone ships its first conjunct only: a program point is constant across a constructor's instances, so a name-only relation calls behaviourally distinct values equal — the coarsening direction §2.3 forbids. What replaces it is the regime dispatch rather than a second conjunct, because a minted identity is already total over the distinguishing content and needs none.
+
+Where nothing is minted the decision compares **the value itself**, never a list of components: an attribute selection is an indirection, so a component-wise form is false even against itself and the relation would be *empty* rather than finer. The whole-value form takes the evaluator's cell fast path instead — two selectors reaching one value compare equal. Its precision is therefore an **allocation artefact**: two separately-constructed equal-shaped values compare unequal, so the relation merges strictly less than Fig. 5 and never more, which is the safe direction for a relation that merely merges work.
+
+The compared subject is that value **minus `__id`**, and minus nothing else. `__id` is an accessor rather than distinguishing content, and in this regime that accessor *is* the named refusal — so comparing the value whole would force the refusal inside the very decision it exists to permit. **One exclusion is sufficient, not arbitrary:** `__mint.minted` is the only other refusal-valued accessor, and the tagged sum shields it, since its minted and sealed arms live under *different key names* and Nix `==` decides on the name set before forcing any value. The one path that does force a mint is a minted-against-minted comparison, which never reaches this arm.
 
 ### Adapters
 
@@ -305,7 +319,7 @@ gen-select draws on both academic research and industrial standards. Each source
 
 | Source | Relationship |
 |--------|-------------|
-| **Palmer, Filardo & Wu (2024)** — *Intensional Functions* | `sel.when` wraps lambdas as selectors; `isIdentified` and `selectorEq` realize intensional identity and equality via program point (name) comparison ONLY — a further conservative approximation (Palmer 2024 Theorem 1 (closure consistency) / §2.3 conservative-equality model) |
+| **Palmer, Filardo & Wu (2024)** — *Intensional Functions* | `sel.when` wraps lambdas as selectors; `isIdentified` is the shape guard and `selectorEq` applies **conservative equality** (§2.3, §5.3), dispatching on the wrapped value's identity regime. Program-point (name) comparison survives only on the unmigrated regime, and nowhere that it keys or mints: Fig. 5 is a conjunction, so a name-only relation ships one conjunct and coarsens. Neither regime realizes Theorem 1, which is a preservation theorem about 𝜆ITS reduction — gen is not 𝜆ITS and the theorem's soundness does not transfer |
 | **CSS Selectors Level 4** — W3C | Structural selector vocabulary: `sel.has` as `:has()`, `sel.not` as `:not()`, `sel.child` and `sel.descendant` as CSS combinators; §5.1 type (element-name) selector `E` lifted from element names to schema kinds as `sel.kind` |
 | **Neron, Tolmach, Visser & Wachsmuth (2015)** — *A Theory of Name Resolution* | `sel.entity` is a declaration-identity predicate: `id_hash` plays the declaration-position role, so shadowing/homonym nodes (equal names, distinct declarations) never cross-match |
 | **gen-schema** — `mkIdentityModule` content-addressed identity | `sel.entity` delegates identity to gen-schema: it performs no hashing, comparing the `id_hash` gen-schema defines. Equality is exactly gen-schema's instance-identity relation |
