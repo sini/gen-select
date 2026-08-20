@@ -4,8 +4,20 @@
 }:
 let
   sel = genSelect;
-  # Intensional function constructor (Palmer §2.2). Inlined from the former
-  # gen-algebra.mkIntensional to keep gen-select (and its tests) dependency-free.
+  # Intensional function constructor (Palmer §2.2), INLINED — and the reason it is inlined
+  # has changed. It was "to keep gen-select dependency-free", and that contract is retired:
+  # the library now takes gen-algebra for the identity-regime discipline.
+  #
+  # ★ WHAT KEEPS THIS COPY IS THAT THE CELLS CHOOSE THE REGIME AND THE DIGEST, AND AN
+  # ENCODER-BUILT VALUE CANNOT LET THEM. These fixtures need an intensional-SHAPED record
+  # whose regime the cell picks — unmigrated, sealed, or minted with a STATED digest — and
+  # gen-algebra's constructor DERIVES its digest from the identity coordinate. That is the
+  # whole point of it, and it is exactly what makes it unusable here: `test-minted-same-
+  # digest-eq` and `-different-digest-neq` hand-pick `its:aaaa` against `its:bbbb` to drive
+  # the two sides of the minted arm, and a derived digest cannot be hand-picked. The
+  # secondary cost is the same either way — every fixture would have to carry a mint stub
+  # and a registry to exercise a SELECTOR. Retiring the shape fixtures is tracked separately
+  # and is not this file's call.
   mkIntensional = name: closure: fn: {
     inherit name fn closure;
     __functor = self: self.fn;

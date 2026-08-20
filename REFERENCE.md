@@ -1,8 +1,8 @@
 # gen-select — API Reference
 
 Selector algebra for attributed graph positions. Selectors are `{ __sel = tag; … }`
-attrsets matched by `matches` against an ID-based accessor context. Class A (builtins
-only, zero dependencies).
+attrsets matched by `matches` against an ID-based accessor context. Class A (builtins plus one
+library dependency, gen-algebra, for the identity-regime discipline `selectorEq` reads).
 
 - [Context contract](#context-contract)
 - [matches](#matches)

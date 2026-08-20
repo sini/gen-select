@@ -18,12 +18,12 @@ Quoted text is the owner's own `flake.nix` `description` field, verbatim.
 | Constructing intensional functions (`mkIntensional`); gen-select bundles no helper and inlines its own conservative-equality dispatch — the private `identityOf` and `comparisonSubject` plus `selectorEq`'s `conservativeEq` in `lib/constructors.nix`, no longer the one line the earlier note priced | `gen-algebra` — "gen-algebra: pure Nix algebra — search monad, records, intensional functions, either" |
 | Aspect traits/classification | `gen-aspects` — "gen-aspects: aspect-oriented composition types (pure-gen, re-hosted on gen-merge)" |
 | Type checking / `verify` | `gen-types` — "gen-types: pure, nixpkgs-lib-free structural type checker for the gen ecosystem" |
-| General utilities (gen-select is zero-dep, builtins-only; `flake.nix:4-6`) | `gen-prelude` — "gen-prelude: vendored, nixpkgs-lib-free pure utilities for the gen ecosystem" |
+| General utilities (gen-select's only library dependency is gen-algebra; `flake.nix`) | `gen-prelude` — "gen-prelude: vendored, nixpkgs-lib-free pure utilities for the gen ecosystem" |
 | Channels / dataflow that *consume* selectors | `gen-pipe` — "gen-pipe — scoped channels + dataflow algebra (map/filter/fold/scan/route/join/tee) with B5 determinism, provenance, dedup, and class-aware contributions"; `gen/lib/mkGenLibs.nix:24-26` records its deps as `prelude+select+scope` |
 
 ## Exports
 
-Entry: `inputs.gen-select.lib` (flake). Root `default.nix` and `import ./lib` are the same bare value — not a function, so it takes no dependency argument.
+Entry: `inputs.gen-select.lib` (flake), which IS a bare value — the flake supplies the dependency argument, so consumers see no signature change. Root `default.nix` and `import ./lib` are FUNCTIONS of `{ algebra }`: `import ./. { algebra = <gen-algebra.lib>; }`. The bare-value claim this replaces held while gen-select vendored the identity-regime discipline; the edge on gen-algebra was taken deliberately when that copy stopped being worth its price (see the checked invariant below).
 
 **Leaf selectors** — `lib/constructors.nix`
 
@@ -97,7 +97,7 @@ Entry: `inputs.gen-select.lib` (flake). Root `default.nix` and `import ./lib` ar
 
 ## Measured traps
 
-Each row verified in this run by evaluating the expression against `import ./lib` (bare `sel`; `blindCtx` = a context whose `data` projects no `__identity`; `entry = { id_hash = "abc"; name = "n1"; }`; `kindV = { kind = "user"; options = {}; }`).
+Each row verified in this run by evaluating the expression against `import ./lib { algebra = <gen-algebra.lib>; }` (bound as `sel`; the argument is what the flake supplies, and `ci/repl.nix` resolves the same rev out of `ci/flake.lock` if you want the rows reproducible from a repl; `blindCtx` = a context whose `data` projects no `__identity`; `entry = { id_hash = "abc"; name = "n1"; }`; `kindV = { kind = "user"; options = {}; }`).
 
 | Trap | Evidence |
 |---|---|
@@ -133,7 +133,7 @@ Claimed in `README.md:300-322`, which splits its sources into **Implements** and
 
 **Informed by** (README's own label; no result claimed): Neron et al. (2015) again, for the five-accessor context as the P-edge traversal axes of a scope graph — README states it does **not** implement the resolution calculus (no well-formedness, specificity, shadowing, or import edges); Arntzenius & Krishnaswami (2016) *Datafun*; Reynolds (1983) *Types, Abstraction, and Parametric Polymorphism*; Mokhov (2017) *Algebraic Graphs with Class*; W3C XPath 3.1.
 
-**Checked invariant**: zero dependencies (builtins only, no nixpkgs.lib, no gen-algebra) is enforced by `ci/tests/purity.nix` over `lib/**.nix` + root `flake.nix` + `default.nix`.
+**Checked invariant**: nixpkgs-free (no nixpkgs.lib, no module-system tier) over `lib/**.nix` + root `flake.nix` + `default.nix`, AND a dependency budget of exactly one — the root flake's declared inputs must be `[ "gen-algebra" ]`, read from the lock rather than the flake expression. Both are enforced by `ci/tests/purity.nix`. The budget arm is what keeps the narrowed invariant as strong as the zero-dependency one it replaced: dropping the `gen-algebra` token alone would have let a SECOND library dependency in unnoticed.
 
 ## Drift check
 

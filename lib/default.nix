@@ -1,14 +1,18 @@
-# gen-select has zero library dependencies — builtins only. Conservative equality over
-# the three identity regimes is inlined into constructors.nix (`identityOf` +
-# `conservativeEq`); the former nixpkgs.lib (always unused) and gen-algebra dependencies
-# are gone. The relation is no longer the "one trivial line" the earlier note priced —
-# it dispatches on a tagged sum and one of its arms is a mint comparison — but
-# gen-select is dependency-free by construction, so the discipline is written here
-# rather than imported.
+# gen-select takes ONE library dependency: gen-algebra, for the identity-regime discipline
+# `selectorEq` reads. Nothing else — no nixpkgs.lib, which was always unused.
 #
-# Zero dependencies, so this is a bare value (not a function): `import ./lib`.
+# ★ THE ZERO-DEPENDENCY CLAIM IS RETIRED KNOWINGLY, not eroded. It held while conservative
+# equality was `a.name == b.name` and the vendored copy really was the "one trivial line"
+# the old note priced. It stopped holding when the relation became a dispatch over a tagged
+# sum with a mint comparison on one arm: a ~40-line discipline in four libraries is four
+# readers of one sum that can drift apart, and gen-algebra is the one that AUTHORS the tag.
+# gen-algebra declares no inputs of its own, so a consumer of gen-select gains a leaf and
+# no closure — which is what makes the edge cheap enough to be worth the consolidation.
+#
+# Takes its dependency as a named argument: `import ./lib { algebra = <gen-algebra.lib>; }`.
+{ algebra }:
 let
-  constructors = import ./constructors.nix;
+  constructors = import ./constructors.nix { inherit algebra; };
   match = import ./match.nix;
   scopeAdapter = import ./adapters/scope.nix;
   graphAdapter = import ./adapters/graph.nix { inherit (match) matches; };

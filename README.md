@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/sini/gen-select/actions/workflows/ci.yml/badge.svg)](https://github.com/sini/gen-select/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-pink?logo=github)](https://github.com/sponsors/sini)
 
-Pure pattern matching library for Nix. Selectors are `{ __sel = tag; ... }` attrsets matched by `matches` against an ID-based accessor context. Zero dependencies (Class A pure) — builtins only, no nixpkgs.lib and no gen-algebra; the intensional-equality check is inlined.
+Pure pattern matching library for Nix. Selectors are `{ __sel = tag; ... }` attrsets matched by `matches` against an ID-based accessor context. One dependency — gen-algebra, for the identity-regime discipline `selectorEq` reads. No nixpkgs.lib and no module-system tier; gen-algebra declares no inputs of its own, so a consumer gains a leaf and no closure.
 
 ## Table of Contents
 
@@ -63,7 +63,7 @@ Selectors are plain attrsets tagged with `__sel`. No special types, no evaluatio
 }
 ```
 
-gen-select declares no flake inputs, so it adds no transitive dependency — not even nixpkgs.
+gen-select declares exactly one flake input, `gen-algebra`, which itself declares none — so a consumer gains that leaf and nothing behind it, and no nixpkgs. The zero-inputs claim this replaces was retired deliberately: it held while conservative equality was `a.name == b.name`, and the vendored copy of the identity-regime discipline stopped being worth its price once the relation became a dispatch over a tagged sum with a mint comparison on one arm. Four libraries holding four copies of one tagged sum is how the four stop agreeing, and gen-algebra is the one that AUTHORS the tag. The dependency budget is pinned at exactly one by `ci/tests/purity.nix`.
 
 ### Without flakes
 
@@ -166,7 +166,7 @@ __identity = {
 
 `sel.when` wraps a bare lambda as a selector. By default, two `when` selectors cannot be compared for equality (lambdas are not comparable in Nix).
 
-For equality support, pass an intensional function — a plain attrset carrying a `name`, a `closure`, and a `__functor`. gen-select is zero-dep, so you construct this record directly (no `mkIntensional` helper is bundled):
+For equality support, pass an intensional function — a plain attrset carrying a `name`, a `closure`, and a `__functor`. gen-select bundles no `mkIntensional` helper — it depends on gen-algebra for the identity-regime discipline `selectorEq` reads, not for the constructor — so you either construct this record directly or build it with `gen-algebra.mkIntensional`, which is a four-argument encoder taking an injected mint and a registry before its constructor name and argument value — worth it where you want a derived identity, overkill where you just need the shape:
 
 ```nix
 myPred = {
@@ -309,7 +309,7 @@ cd examples/css-selectors && just ci
 cd examples/sql-where && just ci
 ```
 
-The core suite is **189 tests across 15 suites**, driven by [nix-unit](https://github.com/nix-community/nix-unit). Alongside the original structural suites (`constructors`, `match-basic`, `match-structural`, `composition`, `sugar`, `when`, `adapters`, `adapter-registry`, `purity`) the identity-selector work adds `constructors-identity`, `match-identity`, `adapter-scope-identity`, `adapter-registry-identity`, `adapter-product`, and `integration-scope`. The last is the acceptance test for the identity/kind routing surface: it drives `sel.kind`/`sel.entity` through a **real `gen-scope.eval` graph seeded from real gen-schema instances**, including the neededBy predicate shape. The `purity` suite is the Class-A invariant: it scans every `lib/**.nix` (plus the root `flake.nix`/`default.nix`) for forbidden tokens (`nixpkgs`, `lib.`, `evalModules`, `mkOption`, `gen-algebra`) and fails CI if any dependency tether creeps back in — the identity work stays builtins-only (identity validation is structural, `entry ? id_hash`, not a gen-schema import).
+The core suite is **197 tests across 15 suites**, driven by [nix-unit](https://github.com/nix-community/nix-unit). Alongside the original structural suites (`constructors`, `match-basic`, `match-structural`, `composition`, `sugar`, `when`, `adapters`, `adapter-registry`, `purity`) the identity-selector work adds `constructors-identity`, `match-identity`, `adapter-scope-identity`, `adapter-registry-identity`, `adapter-product`, and `integration-scope`. The last is the acceptance test for the identity/kind routing surface: it drives `sel.kind`/`sel.entity` through a **real `gen-scope.eval` graph seeded from real gen-schema instances**, including the neededBy predicate shape. The `purity` suite is the Class-A invariant, and it now has two arms. It scans every `lib/**.nix` (plus the root `flake.nix`/`default.nix`) for forbidden tokens (`nixpkgs`, `lib.`, `evalModules`, `mkOption`) and fails CI if a nixpkgs or module-system tether creeps back in; and it pins the library's dependency budget at exactly one by asserting the root flake's declared inputs are `[ "gen-algebra" ]`, read from the lock. `gen-algebra` left the forbidden list when the edge was taken deliberately, and the budget arm is what keeps the narrowed invariant as strong as the one it replaced — dropping the token alone would have let a second dependency in unnoticed. Identity validation itself is still structural (`entry ? id_hash`, not a gen-schema import).
 
 ## Theoretical Foundations
 

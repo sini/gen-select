@@ -1,53 +1,22 @@
-let
-  # The ONE access discipline over the three identity regimes, and it is TOTAL OVER
-  # THOSE THREE REGIMES — not over the two populations of the migration window, which
-  # is the narrower claim it replaced and which omits the sealed regime entirely.
-  # `__mint` is a TAGGED SUM, so no reader may branch on FIELD PRESENCE and then read
-  # `.minted` raw: on a value that has no mintable identity `v ? __mint` holds and
-  # `.minted` is absent, and that read aborts uncatchably rather than refusing.
-  #
-  #   minted     — an identity over a preimage total in the value's distinguishing
-  #                content; consumable as a key, an endpoint or an override handle.
-  #   unmintable — no identity AND no substitute. A decision compares the reified
-  #                value; a consumer demanding an identity is refused by name.
-  #   unmigrated — the migration window: no producer has stamped this value, so the
-  #                shipped program-point name is still all a decision has.
-  #
-  # PRIVATE. The dispatch is a discipline every reader in this library goes through,
-  # not a surface consumers select on.
-  identityOf =
-    v:
-    if v ? __mint && v.__mint ? minted then
-      { inherit (v.__mint) minted; }
-    else if v ? __mint then
-      { inherit (v.__mint) unmintable; }
-    else
-      { unmigrated = v.name; };
-
-  # The comparison SUBJECT for the sealed arm: the reified value MINUS `__id`, and
-  # minus nothing else. `__id` is the ACCESSOR a consumer reads when it DEMANDS an
-  # identity, and in the sealed regime that accessor is the named refusal itself — so
-  # it is not distinguishing content, and forcing it inside a comparison detonates the
-  # decision the refusal exists to permit. Removing the field rather than making it
-  # absent is what keeps the refusal reachable for a consumer that does demand one.
-  #
-  # `removeAttrs` preserves the evaluator's cell fast path (measured: a value compared
-  # with itself through it stays equal, and two separately-built values stay unequal),
-  # so this excludes the accessor without emptying the relation.
-  #
-  # ★ WHY EXCLUDING `__id` IS SUFFICIENT AND NOT ARBITRARY. It is the only OTHER
-  # refusal-valued accessor a compared value can carry, because `__mint.minted` is
-  # shielded by the tagged sum's own shape: the minted and sealed arms live under
-  # DIFFERENT KEY NAMES, and Nix `==` decides on the name set before forcing any value.
-  # Measured, with its control: a throwing payload under a differently-named key is
-  # never reached, while the SAME name on both sides DOES force — so the short-circuit
-  # is the name check, not throws being ignored. Two sealed values carry inert payloads
-  # under one name, so nothing forces there either. The one path that does force a mint
-  # is a minted-against-minted comparison, and that arm never reaches here: it compares
-  # digests, which is a genuine DEMAND for an identity, where a catchable named refusal
-  # is the correct outcome rather than a hazard.
-  comparisonSubject = v: removeAttrs v [ "__id" ];
-in
+# gen-select's selector constructors.
+#
+# ★ THE IDENTITY-REGIME DISCIPLINE IS IMPORTED, NOT VENDORED. `identityOf`,
+# `comparisonSubject` and `conservativeEq` were written out here in full because gen-select
+# declared zero library dependencies, and the copy was priced as "one trivial line" back
+# when the relation WAS one line — `a.name == b.name`. It stopped being trivial the moment
+# it became a dispatch over a tagged sum with a mint comparison on one arm, and a ~40-line
+# discipline duplicated across libraries is how two readers of one tagged sum stop agreeing.
+#
+# The dependency edge on gen-algebra is taken deliberately and is a knowing change to this
+# library's zero-inputs contract: gen-algebra itself declares no inputs, so a consumer gains
+# a leaf and no closure. gen-algebra is where the constructor that EMITS the tag lives, which
+# makes it the discipline's author rather than just another holder of a copy.
+# `identityOf`, `comparisonSubject` and the arm-by-arm reasoning all live with the
+# constructor that EMITS the tag; nothing here re-derives them. See
+# `gen-algebra/lib/intensional.nix` for why each arm exists, why no reader may branch on
+# field presence and read `.minted` raw, and why the sealed arm's comparison subject
+# excludes `__id`.
+{ algebra }:
 rec {
   star = {
     __sel = "star";
@@ -164,39 +133,19 @@ rec {
   selectorEq =
     a: b:
     if a.__sel == "when" && b.__sel == "when" then
+      # CONSERVATIVE EQUALITY — Palmer's own term (§2.3, §5.3), and gen-algebra's binding
+      # rather than a copy of it. Fig. 5 is a CONJUNCTION over identity AND closure, and the
+      # relation this replaced shipped the first conjunct alone: `name` is the PROGRAM POINT,
+      # constant across a constructor's instances, so comparing it alone calls behaviourally
+      # distinct values equal — the coarsening direction §2.3 forbids. What replaces it is
+      # not a second conjunct but the regime dispatch.
+      #
+      # The SHAPE GUARD stays here: it is gen-select's own admission test for what counts as
+      # an intensional payload on a `when` selector, not part of the identity discipline.
       let
         isIntensional = v: builtins.isAttrs v && v ? name && v ? __functor && v ? closure;
-        # CONSERVATIVE EQUALITY (Palmer's own term, §2.3/§5.3). Palmer's Fig. 5 is a
-        # CONJUNCTION over identity AND closure, and the relation this replaces shipped
-        # the first conjunct alone: `name` is the PROGRAM POINT, constant across a
-        # constructor's instances, so comparing it alone calls behaviourally distinct
-        # values equal — the coarsening direction §2.3 forbids. What replaces it is not
-        # a second conjunct but the regime dispatch: a minted identity is already total
-        # over the distinguishing content, and where nothing is minted the decision
-        # compares THE REIFIED VALUE ITSELF.
-        #
-        # It must be the whole value minus `comparisonSubject`'s ONE exclusion, and
-        # never a list of components. An attribute selection is an indirection, so a
-        # component-wise form is false even against itself and the relation would be
-        # EMPTY rather than finer. The whole-value form takes the evaluator's cell fast
-        # path instead: two selectors reaching one value compare equal. Its precision is
-        # therefore an ALLOCATION ARTEFACT — two separately-constructed equal-shaped
-        # values compare unequal — which merges strictly less than Fig. 5 and never
-        # more. For a relation that merely merges work that is the safe direction.
-        conservativeEq =
-          x: y:
-          let
-            ix = identityOf x;
-            iy = identityOf y;
-          in
-          if ix ? minted && iy ? minted then
-            ix.minted == iy.minted
-          else if ix ? unmigrated && iy ? unmigrated then
-            ix.unmigrated == iy.unmigrated
-          else
-            comparisonSubject x == comparisonSubject y;
       in
-      if isIntensional a.fn && isIntensional b.fn then conservativeEq a.fn b.fn else false
+      if isIntensional a.fn && isIntensional b.fn then algebra.conservativeEq a.fn b.fn else false
     else if a.__sel == "entity" && b.__sel == "entity" then
       a.id_hash == b.id_hash
     else if a.__sel == "coord" && b.__sel == "coord" then
