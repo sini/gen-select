@@ -4,22 +4,29 @@
 }:
 let
   sel = genSelect;
-  # Intensional function constructor (Palmer §2.2), INLINED — and the reason it is inlined
-  # has changed. It was "to keep gen-select dependency-free", and that contract is retired:
-  # the library now takes gen-algebra for the identity-regime discipline.
+  # A record of the INTENSIONAL SHAPE (Palmer §2.2) — the four fields `isIdentified`'s
+  # `when`-limb reads. It is NOT gen-algebra's constructor and no longer bears its name:
+  # that constructor is an ENCODER — `mkIntensional : hashIdentity -> registry -> ctor ->
+  # args` — so a fixture wearing its name in a three-argument call states a contract the
+  # substrate does not have, whatever it evaluates to.
   #
-  # ★ WHAT KEEPS THIS COPY IS THAT THE CELLS CHOOSE THE REGIME AND THE DIGEST, AND AN
-  # ENCODER-BUILT VALUE CANNOT LET THEM. These fixtures need an intensional-SHAPED record
-  # whose regime the cell picks — unmigrated, sealed, or minted with a STATED digest — and
-  # gen-algebra's constructor DERIVES its digest from the identity coordinate. That is the
-  # whole point of it, and it is exactly what makes it unusable here: `test-minted-same-
-  # digest-eq` and `-different-digest-neq` hand-pick `its:aaaa` against `its:bbbb` to drive
-  # the two sides of the minted arm, and a derived digest cannot be hand-picked. The
-  # secondary cost is the same either way — every fixture would have to carry a mint stub
-  # and a registry to exercise a SELECTOR. Retiring the shape fixtures is tracked separately
-  # and is not this file's call.
-  mkIntensional = name: closure: fn: {
-    inherit name fn closure;
+  # ★ WHAT KEEPS A SHAPED RECORD HERE IS THAT THE CELLS CHOOSE THE REGIME AND THE DIGEST,
+  # AND AN ENCODER-BUILT VALUE CANNOT LET THEM. Each cell picks its own arm — unmigrated,
+  # sealed, or minted with a STATED digest — while the encoder DERIVES its digest from the
+  # identity coordinate and emits the minted arm always. That is the whole point of it, and
+  # it is exactly what makes it unusable here: `test-minted-same-digest-eq` and
+  # `-different-digest-neq` hand-pick `its:aaaa` against `its:bbbb` to drive the two sides
+  # of the minted arm, and a derived digest cannot be hand-picked; the unmigrated arm is
+  # defined by the ABSENCE of `__mint`, which no constructor call can produce. Constructing
+  # a value and overriding its `__mint` would assert about a value the constructor cannot
+  # emit while reading as though it could. The secondary cost is the same either way —
+  # every fixture would have to carry a mint stub and a registry to exercise a SELECTOR.
+  #
+  # What would RETIRE these records is the migration that turns a selector's distinguishing
+  # content from a caller-supplied lambda into a first-order term the substrate interprets:
+  # once that lands the encoder can build them, and the regime stops being a cell's choice.
+  intensionalLike = name: closure: fn: {
+    inherit name closure fn;
     __functor = self: self.fn;
   };
   mockCtx = {
@@ -39,17 +46,17 @@ let
   m = sel.matches;
 
   bareFn = id: ctx: true;
-  identifiedFn = mkIntensional "always-true" { } (id: ctx: true);
-  identifiedFn2 = mkIntensional "always-true" { } (id: ctx: true);
-  differentFn = mkIntensional "always-false" { } (id: ctx: false);
+  identifiedFn = intensionalLike "always-true" { } (id: ctx: true);
+  identifiedFn2 = intensionalLike "always-true" { } (id: ctx: true);
+  differentFn = intensionalLike "always-false" { } (id: ctx: false);
 
   # Fixtures for the two regimes a producer stamps. The records above carry no
   # `__mint` and are therefore UNMIGRATED, which is where every shipped value sits
   # until a producer lands — that arm is what keeps the cells above unchanged.
-  mintedFn = digest: fn: (mkIntensional "shared-point" { } fn) // { __mint.minted = digest; };
+  mintedFn = digest: fn: (intensionalLike "shared-point" { } fn) // { __mint.minted = digest; };
   unmintableFn =
     fn:
-    (mkIntensional "shared-point" { } fn)
+    (intensionalLike "shared-point" { } fn)
     // {
       __mint.unmintable = {
         reason = "distinguishing content is a caller-supplied lambda";
