@@ -19,7 +19,7 @@ Quoted text is the owner's own `flake.nix` `description` field, verbatim.
 | Aspect traits/classification | `gen-aspects` — "gen-aspects: aspect-oriented composition types (pure-gen, re-hosted on gen-merge)" |
 | Type checking / `verify` | `gen-types` — "gen-types: pure, nixpkgs-lib-free structural type checker for the gen ecosystem" |
 | General utilities (gen-select's only library dependency is gen-algebra; `flake.nix`) | `gen-prelude` — "gen-prelude: vendored, nixpkgs-lib-free pure utilities for the gen ecosystem" |
-| Channels / dataflow that *consume* selectors | `gen-pipe` — "gen-pipe — scoped channels + dataflow algebra (map/filter/fold/scan/route/join/tee) with B5 determinism, provenance, dedup, and class-aware contributions"; `gen/lib/mkGenLibs.nix:24-26` records its deps as `prelude+select+scope` |
+| Channels / dataflow that *consume* selectors | **`gen-view`, which inherited it — `gen-pipe` RETIRED as a library rather than moving as one.** ADR-0010 §3 retires gen-pipe into the movement vocabulary; twelve of its seventeen exports name gen-view constructs (the fourth destination §3 gained on 2026-08-20). The gen-pipe repository orphans as reference under ADR-0031 §3's F3 pattern, off the `gen/lib/mkGenLibs.nix` roster and not a `gen` hub input. ★ **One export came HERE:** gen-pipe's `sel` was a re-export of this library's `select`, and it retires into gen-select — consumers that reached the selector algebra through gen-pipe now bind this library directly, which is what the re-export was always standing in for |
 
 ## Exports
 
