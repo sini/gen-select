@@ -97,6 +97,8 @@ Entry: `inputs.gen-select.lib` (flake), which IS a bare value — the flake supp
 
 ## Measured traps
 
+<!-- gen-citations:begin -->
+
 Each row verified in this run by evaluating the expression against `import ./lib { algebra = <gen-algebra.lib>; }` (bound as `sel`; the argument is what the flake supplies, and `ci/repl.nix` resolves the same rev out of `ci/flake.lock` if you want the rows reproducible from a repl; `blindCtx` = a context whose `data` projects no `__identity`; `entry = { id_hash = "abc"; name = "n1"; }`; `kindV = { kind = "user"; options = {}; }`).
 
 | Trap | Evidence |
@@ -113,11 +115,13 @@ Each row verified in this run by evaluating the expression against `import ./lib
 | `child`/`descendant` carry no distinct tag — both are `and` at runtime | `lib/constructors.nix:82-94`; `(child star star).__sel` and `(descendant star star).__sel` ⇒ `"and"` |
 | `selectorEq` on two `when`s wrapping the **same bare lambda** ⇒ `false` (intensional record required) | `lib/constructors.nix`, binding `selectorEq`'s `isIntensional` guard; observed `false` |
 | `selectorEq` is coarser than `==`: entity/coord display `name` is excluded | `lib/constructors.nix`, `selectorEq`'s entity/coord branches; two entries, equal `id_hash`, differing `name` ⇒ `selectorEq` `true`, `==` `false` |
-| On the `when` branch `selectorEq` is **finer** than the retired name-only relation, and its precision is an allocation artefact | `lib/constructors.nix`'s `selectorEq` calls gen-algebra's `conservativeEq` (`gen-algebra/lib/intensional.nix`, binding `conservativeEq`; imported, not local — see the checked invariant below); two unmintable values sharing one program point and behaving differently ⇒ `false`, where `x.name == y.name` ⇒ `true`. A value compared with **itself** ⇒ `true`, but two separately-constructed equal-shaped values ⇒ `false` |
+| On the `when` branch `selectorEq` is **finer** than the retired name-only relation, and its precision is an allocation artefact | `lib/constructors.nix`'s `selectorEq` calls gen-algebra's `conservativeEq` (gen-algebra/lib/intensional.nix, binding `conservativeEq`; imported, not local — see the checked invariant below); two unmintable values sharing one program point and behaving differently ⇒ `false`, where `x.name == y.name` ⇒ `true`. A value compared with **itself** ⇒ `true`, but two separately-constructed equal-shaped values ⇒ `false` |
 | A reader that branches on `? __mint` and then reads `.minted` raw **aborts uncatchably** on an unmintable value | `attribute 'minted' missing` escaping `tryEval`; the same reader on a minted value returns cleanly, and `identityOf`'s tag dispatch returns cleanly on both. `__mint` is a tagged sum, and its totality is exactly what makes presence-branching wrong |
 | Argument order differs between the engine and the graph adapter | `matches selector id ctx` (`lib/match.nix:3`) vs `mkPredicate selector ctx id` and `mkSelectPredicate selector ctx data` (`lib/adapters/graph.nix:3-8`); all three evaluated `true` on `star` |
 | Constructors reject name strings at construction time | `lib/constructors.nix:22-25,41-44`; `entity "axon-01"` and `kind "user"` both threw |
 | An unknown `__sel` tag throws rather than returning false | `lib/match.nix:97-98`; `matches { __sel = "bogus"; }` threw |
+
+<!-- gen-citations:end -->
 
 ## Theory
 
