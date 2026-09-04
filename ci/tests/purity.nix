@@ -62,15 +62,25 @@ let
     ) srcs;
 
   # Recursively collect every .nix under a directory (covers lib/adapters/ too).
+  # walk : string -> path -> [ { name; path; } ], `name` being `prefix` extended by the entry's
+  # position in the tree. The label a red CI prints is the whole product of a failing cell, and a
+  # `toString` of the path value renders the store copy the flake is evaluated from
+  # (`/nix/store/<hash>-source/lib/default.nix`) — a file no reader can open in their own checkout,
+  # whose hash moves on any unrelated edit. Same shape as gen-link's and gen-graph's, deliberately.
   walk =
-    dir:
+    prefix: dir:
     lib.concatLists (
       lib.mapAttrsToList (
-        name: type:
+        entry: type:
         if type == "directory" then
-          walk (dir + "/${name}")
-        else if lib.hasSuffix ".nix" name then
-          [ (dir + "/${name}") ]
+          walk "${prefix}${entry}/" (dir + "/${entry}")
+        else if lib.hasSuffix ".nix" entry then
+          [
+            {
+              name = "${prefix}${entry}";
+              path = dir + "/${entry}";
+            }
+          ]
         else
           [ ]
       ) (builtins.readDir dir)
@@ -81,26 +91,32 @@ let
   # the read; and `sources` is then a total per-element function of `rawSources` — the name passes
   # through, the code is the strip of the text — so pinning either one pins the other, and the cells
   # over each COMPOSE instead of hoping two independent reads of the same tree agree.
-  rawSources =
-    map (p: {
-      name = toString p;
-      text = builtins.readFile p;
-    }) (walk libDir)
-    ++
-      map
-        (rel: {
-          name = rel;
-          text = builtins.readFile (../.. + "/${rel}");
-        })
-        [
-          "flake.nix"
-          "default.nix"
-        ];
+  raw =
+    entries:
+    map (e: {
+      inherit (e) name;
+      text = builtins.readFile e.path;
+    }) entries;
 
-  sources = map (s: {
-    inherit (s) name;
-    code = stripComments s.text;
-  }) rawSources;
+  strip =
+    entries:
+    map (e: {
+      inherit (e) name;
+      code = stripComments e.text;
+    }) entries;
+
+  rawSources = raw (walk "lib/" libDir) ++ [
+    {
+      name = "flake.nix";
+      text = builtins.readFile ../../flake.nix;
+    }
+    {
+      name = "default.nix";
+      text = builtins.readFile ../../default.nix;
+    }
+  ];
+
+  sources = strip rawSources;
 
   # Tokens signalling a nixpkgs-lib tether or the module-system tier. `gen-algebra` is no
   # longer among them — it is the one declared dependency, and the arm below is what keeps
@@ -120,15 +136,72 @@ let
   declaredInputs = builtins.attrNames (builtins.fromJSON (builtins.readFile ../../flake.lock))
     .nodes.root.inputs;
 
-  violations = lib.concatMap (
-    src:
-    map (tok: "${src.name}: '${tok}'") (lib.filter (tok: genPrelude.hasInfix tok src.code) forbidden)
-  ) sources;
+  # scan : [ { name; code; } ] -> [ "file: 'tok'" ]. Factored out of `violations` so the detector
+  # cell below runs THE SAME call over the same source list with one entry appended, rather than a
+  # second copy of the predicate that could drift from this one.
+  scan =
+    srcs:
+    lib.concatMap (
+      src:
+      map (tok: "${src.name}: '${tok}'") (lib.filter (tok: genPrelude.hasInfix tok src.code) forbidden)
+    ) srcs;
+
+  violations = scan sources;
 in
 {
   flake.tests.purity.test-library-source-is-nixpkgs-free = {
     expr = violations;
     expected = [ ];
+  };
+
+  # What the cell above is a statement ABOUT. Its `[ ]` is produced just as readily by a scan that
+  # reads the wrong tree, or no tree, as by a library that is clean, and neither the detector cell
+  # below nor a guard on the source list's SIZE can tell those apart — the first never touches
+  # `sources`, and the second answers a question about how many rather than which. The library tree
+  # is small and its membership is a deliberate surface, so it is written down. A new library file
+  # then arrives as a RED that has to be read, rather than being absorbed silently.
+  #
+  # WHAT IT IS SILENT ON: content. A read handing every entry one fixed string satisfies this cell
+  # exactly, and no cell here sees that; the membership half is what this one carries.
+  flake.tests.purity.test-scan-subject-is-the-library-tree = {
+    expr = map (s: s.name) sources;
+    expected = [
+      "lib/adapters/graph.nix"
+      "lib/adapters/product.nix"
+      "lib/adapters/registry.nix"
+      "lib/adapters/scope.nix"
+      "lib/constructors.nix"
+      "lib/default.nix"
+      "lib/match.nix"
+      "flake.nix"
+      "default.nix"
+    ];
+  };
+
+  # The detector has teeth, and it grows them on the real subject: the scan runs over exactly the
+  # source list the cell above asserts, with one synthetic entry appended. So the firing is proven by
+  # the same call that reports the tree clean, and the expectation states both halves at once — the
+  # library contributes nothing and the planted tether contributes precisely this.
+  #
+  # The expectation is the violation LIST, not merely that one was produced: a detector that fires on
+  # the wrong token, or whose `file: 'tok'` message has decayed into something a reader cannot act on
+  # off a red CI, is broken in the way that matters and a bare non-emptiness check would pass it. The
+  # synthetic entry is never written to disk, and its label is bracketed so it cannot be read as one
+  # of the repo-root-relative paths it now sits beside. Its trailing comment names `nixpkgs`, which
+  # the strip removes — so this cell also fails if the strip stops running.
+  flake.tests.purity.test-detector-catches-injected-violation = {
+    expr = scan (
+      sources
+      ++ [
+        {
+          name = "<injected>";
+          code = stripComments "  foo = lib.types.str; # comment mentioning nixpkgs is stripped";
+        }
+      ]
+    );
+    expected = [
+      "<injected>: 'lib.'"
+    ];
   };
 
   # THE DEPENDENCY BUDGET, pinned by contents rather than by count — a count is satisfied by
