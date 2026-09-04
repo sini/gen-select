@@ -20,13 +20,13 @@ library dependency, gen-algebra, for the identity-regime discipline `selectorEq`
 `matches` takes a context record of five accessor functions. The `id` argument is not
 stored in the context — it is the second argument to `matches`.
 
-| Field | Type | Purpose |
-|-------|------|---------|
-| `data` | `id -> attrset` | attribute data for a node (identity-aware adapters also project `__identity`; the product adapter projects `__coords`) |
-| `parent` | `id -> id \| null` | immediate parent |
-| `children` | `id -> [id]` | direct children |
-| `ancestors` | `id -> [id]` | ancestor chain (parent → root) |
-| `siblings` | `id -> [id]` | sibling nodes (same parent, excluding self) |
+| Field       | Type               | Purpose                                                                                                                |
+| ----------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `data`      | `id -> attrset`    | attribute data for a node (identity-aware adapters also project `__identity`; the product adapter projects `__coords`) |
+| `parent`    | `id -> id \| null` | immediate parent                                                                                                       |
+| `children`  | `id -> [id]`       | direct children                                                                                                        |
+| `ancestors` | `id -> [id]`       | ancestor chain (parent → root)                                                                                         |
+| `siblings`  | `id -> [id]`       | sibling nodes (same parent, excluding self)                                                                            |
 
 ## matches
 
@@ -43,19 +43,19 @@ construction-time sugar with no distinct runtime tag.)
 
 ### Structural & data selectors
 
-| Constructor | Signature | Matches when |
-|-------------|-----------|--------------|
-| `star` | `-> selector` | always |
-| `attrs a` | `attrset -> selector` | every k:v in `a` equals in `data id`; missing key = no match |
-| `and ss` | `[selector] -> selector` | all match; `and [] = true` |
-| `any ss` | `[selector] -> selector` | any matches; `any [] = false` |
-| `not s` | `selector -> selector` | `s` does not match |
-| `has s` | `selector -> selector` | some child matches `s` |
-| `within s` | `selector -> selector` | some ancestor matches `s` |
-| `parentMatches s` | `selector -> selector` | the immediate parent matches `s` |
-| `child p c` | `sel -> sel -> selector` | sugar: `and [ c (parentMatches p) ]` |
-| `descendant a d` | `sel -> sel -> selector` | sugar: `and [ d (within a) ]` |
-| `when fn` | `fn -> selector` | `fn id ctx` returns true |
+| Constructor       | Signature                | Matches when                                                 |
+| ----------------- | ------------------------ | ------------------------------------------------------------ |
+| `star`            | `-> selector`            | always                                                       |
+| `attrs a`         | `attrset -> selector`    | every k:v in `a` equals in `data id`; missing key = no match |
+| `and ss`          | `[selector] -> selector` | all match; `and [] = true`                                   |
+| `any ss`          | `[selector] -> selector` | any matches; `any [] = false`                                |
+| `not s`           | `selector -> selector`   | `s` does not match                                           |
+| `has s`           | `selector -> selector`   | some child matches `s`                                       |
+| `within s`        | `selector -> selector`   | some ancestor matches `s`                                    |
+| `parentMatches s` | `selector -> selector`   | the immediate parent matches `s`                             |
+| `child p c`       | `sel -> sel -> selector` | sugar: `and [ c (parentMatches p) ]`                         |
+| `descendant a d`  | `sel -> sel -> selector` | sugar: `and [ d (within a) ]`                                |
+| `when fn`         | `fn -> selector`         | `fn id ctx` returns true                                     |
 
 ### Identity-bearing selectors
 
@@ -234,17 +234,17 @@ which reads only the positional kind.
 
 ## Laws
 
-| Law | Statement |
-|-----|-----------|
-| E1 | `entity e` matches iff `__identity` is a record with `.id_hash == e.id_hash`. Equal-identity entries share a match set; any identity-field difference never cross-matches. |
-| E2 | `kind K` matches iff `__identity` is a record with non-null `.kind == K.kind`; `.kind == null` throws (kind-blind projection is loud). |
-| E3 | `entity`/`kind` throw at construction on strings and non-conforming values; no selector is ever produced from a string. |
-| E4 | Matching `entity`/`kind` against a context whose `data id` lacks the `__identity` key throws (identity-blind contexts are loud). |
-| E5 | `__identity = null` yields `false` (non-entity nodes are quiet — structural recursion over mixed graphs needs no guards). |
-| E6 | Through the enriched adapters `__identity` is present for every node; `null` iff no entry; `id_hash`/`kind` coherent by construction; `__identity` overrides same-named projection keys; a malformed entry errors at `id_hash` access, `kind` matching unaffected. |
-| E7 | `entity`/`kind`/`coord` selectors are function-free (Nix `==` total); `selectorEq` compares identity fields only (display `name` excluded). |
-| E8 | Backward compatible: existing selectors, the five-accessor contract, and the graph adapter are byte-compatible; enrichment is additive (`data` output is a superset). Sole break: `sel.entityKind` is removed. |
-| P1 | `coord dim e` matches iff `__coords` is projected, the cell has `dim`, and `__coords.${dim}.id_hash == e.id_hash`. |
-| P2 | `inSlice coords` matches iff every fixed coordinate matches; `inSlice { }` is vacuously true; equal to the hand-written conjunction. |
-| P3 | `__coords` absent → throw; dim absent from a cell → `false`; malformed coordinate value → throw. |
-| P4 | Selectors are static: they read only structural context attributes, never resolved values, and force only the node data a match inspects (`entity`/`kind` never force children). |
+| Law | Statement                                                                                                                                                                                                                                                          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| E1  | `entity e` matches iff `__identity` is a record with `.id_hash == e.id_hash`. Equal-identity entries share a match set; any identity-field difference never cross-matches.                                                                                         |
+| E2  | `kind K` matches iff `__identity` is a record with non-null `.kind == K.kind`; `.kind == null` throws (kind-blind projection is loud).                                                                                                                             |
+| E3  | `entity`/`kind` throw at construction on strings and non-conforming values; no selector is ever produced from a string.                                                                                                                                            |
+| E4  | Matching `entity`/`kind` against a context whose `data id` lacks the `__identity` key throws (identity-blind contexts are loud).                                                                                                                                   |
+| E5  | `__identity = null` yields `false` (non-entity nodes are quiet — structural recursion over mixed graphs needs no guards).                                                                                                                                          |
+| E6  | Through the enriched adapters `__identity` is present for every node; `null` iff no entry; `id_hash`/`kind` coherent by construction; `__identity` overrides same-named projection keys; a malformed entry errors at `id_hash` access, `kind` matching unaffected. |
+| E7  | `entity`/`kind`/`coord` selectors are function-free (Nix `==` total); `selectorEq` compares identity fields only (display `name` excluded).                                                                                                                        |
+| E8  | Backward compatible: existing selectors, the five-accessor contract, and the graph adapter are byte-compatible; enrichment is additive (`data` output is a superset). Sole break: `sel.entityKind` is removed.                                                     |
+| P1  | `coord dim e` matches iff `__coords` is projected, the cell has `dim`, and `__coords.${dim}.id_hash == e.id_hash`.                                                                                                                                                 |
+| P2  | `inSlice coords` matches iff every fixed coordinate matches; `inSlice { }` is vacuously true; equal to the hand-written conjunction.                                                                                                                               |
+| P3  | `__coords` absent → throw; dim absent from a cell → `false`; malformed coordinate value → throw.                                                                                                                                                                   |
+| P4  | Selectors are static: they read only structural context attributes, never resolved values, and force only the node data a match inspects (`entity`/`kind` never force children).                                                                                   |

@@ -29,21 +29,21 @@ Selectors are plain attrsets tagged with `__sel`. No special types, no evaluatio
 
 ## Gen Ecosystem
 
-| Library | Role |
-|---------|------|
-| [gen-prelude](https://github.com/sini/gen-prelude) | Pure nixpkgs-lib-free utility base (builtins re-exports + vendored lib utils) |
-| [gen-algebra](https://github.com/sini/gen-algebra) | Pure primitives (record, search monad, either, intensional identity) |
-| [gen-types](https://github.com/sini/gen-types) | Clean-room MIT structural type checker (leaf/poly checkers; `verify: v → null\|err`) |
-| [gen-merge](https://github.com/sini/gen-merge) | Byte-mode module merge engine (`evalModuleTree`, byte-identical to nixpkgs `lib.evalModules` over the priority subset) |
-| [gen-schema](https://github.com/sini/gen-schema) | Typed registries (kinds, instances, collections, refs); re-hosted on gen-merge |
-| [gen-aspects](https://github.com/sini/gen-aspects) | Aspect type system (traits, classification, dispatch); re-hosted on gen-merge |
-| [gen-scope](https://github.com/sini/gen-scope) | HOAG scope-graph evaluator (demand-driven, \_eval memoization, circular attributes) |
-| [gen-graph](https://github.com/sini/gen-graph) | Accessor-based graph query combinators (traversal, condensation, phaseOrder) |
-| [gen-select](https://github.com/sini/gen-select) | **This lib** — Selector algebra (pattern matching over graph positions) |
-| [gen-bind](https://github.com/sini/gen-bind) | Module binding (inject external args into NixOS modules) |
-| [gen-dispatch](https://github.com/sini/gen-dispatch) | Relational rule dispatch STEP (stratified phases, conflict resolution) |
-| [gen-memo](https://github.com/sini/gen-memo) | The incremental plane — decides reuse, never evaluates (change propagation, AFFECTED set) |
-| [gen-vars](https://github.com/sini/gen-vars) | Pure-Nix vars/secrets (den-agnostic) |
+| Library                                              | Role                                                                                                                   |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| [gen-prelude](https://github.com/sini/gen-prelude)   | Pure nixpkgs-lib-free utility base (builtins re-exports + vendored lib utils)                                          |
+| [gen-algebra](https://github.com/sini/gen-algebra)   | Pure primitives (record, search monad, either, intensional identity)                                                   |
+| [gen-types](https://github.com/sini/gen-types)       | Clean-room MIT structural type checker (leaf/poly checkers; `verify: v → null\|err`)                                   |
+| [gen-merge](https://github.com/sini/gen-merge)       | Byte-mode module merge engine (`evalModuleTree`, byte-identical to nixpkgs `lib.evalModules` over the priority subset) |
+| [gen-schema](https://github.com/sini/gen-schema)     | Typed registries (kinds, instances, collections, refs); re-hosted on gen-merge                                         |
+| [gen-aspects](https://github.com/sini/gen-aspects)   | Aspect type system (traits, classification, dispatch); re-hosted on gen-merge                                          |
+| [gen-scope](https://github.com/sini/gen-scope)       | HOAG scope-graph evaluator (demand-driven, \_eval memoization, circular attributes)                                    |
+| [gen-graph](https://github.com/sini/gen-graph)       | Accessor-based graph query combinators (traversal, condensation, phaseOrder)                                           |
+| [gen-select](https://github.com/sini/gen-select)     | **This lib** — Selector algebra (pattern matching over graph positions)                                                |
+| [gen-bind](https://github.com/sini/gen-bind)         | Module binding (inject external args into NixOS modules)                                                               |
+| [gen-dispatch](https://github.com/sini/gen-dispatch) | Relational rule dispatch STEP (stratified phases, conflict resolution)                                                 |
+| [gen-memo](https://github.com/sini/gen-memo)         | The incremental plane — decides reuse, never evaluates (change propagation, AFFECTED set)                              |
+| [gen-vars](https://github.com/sini/gen-vars)         | Pure-Nix vars/secrets (den-agnostic)                                                                                   |
 
 ## Quick Start
 
@@ -79,13 +79,13 @@ sel.matches (sel.attrs { role = "backend"; }) "api" myContext
 
 `matches` takes a context record with five accessor functions:
 
-| Field | Type | Purpose |
-|-------|------|---------|
-| `data` | `id -> attrset` | attribute data for a node |
-| `parent` | `id -> id \| null` | immediate parent |
-| `children` | `id -> [id]` | direct children |
-| `ancestors` | `id -> [id]` | ancestor chain (parent to root) |
-| `siblings` | `id -> [id]` | sibling nodes (same parent, excluding self) |
+| Field       | Type               | Purpose                                     |
+| ----------- | ------------------ | ------------------------------------------- |
+| `data`      | `id -> attrset`    | attribute data for a node                   |
+| `parent`    | `id -> id \| null` | immediate parent                            |
+| `children`  | `id -> [id]`       | direct children                             |
+| `ancestors` | `id -> [id]`       | ancestor chain (parent to root)             |
+| `siblings`  | `id -> [id]`       | sibling nodes (same parent, excluding self) |
 
 The `id` is not stored in the context — it is the second argument to `matches`.
 
@@ -104,21 +104,21 @@ sel.matches (sel.attrs { type = "service"; }) "web" ctx
 
 ### Constructors
 
-| Constructor | Signature | Matches when |
-|-------------|-----------|--------------|
-| `sel.star` | `-> selector` | always |
-| `sel.attrs a` | `attrset -> selector` | all k:v in `a` equal in `data id`; missing key = no match |
-| `sel.entity e` | `registry-entry -> selector` | the node's projected identity (`__identity.id_hash`) equals the entry's `id_hash` |
-| `sel.kind K` | `kind-value -> selector` | the node's projected kind (`__identity.kind`) equals `K.kind` |
-| `sel.and ss` | `[selector] -> selector` | all match; `sel.and [] = true` |
-| `sel.any ss` | `[selector] -> selector` | any matches; `sel.any [] = false` |
-| `sel.not s` | `selector -> selector` | does not match |
-| `sel.has s` | `selector -> selector` | any child matches |
-| `sel.within s` | `selector -> selector` | any ancestor matches |
-| `sel.parentMatches s` | `selector -> selector` | immediate parent matches |
-| `sel.child p c` | `sel -> sel -> selector` | sugar: `and [ c (parentMatches p) ]` |
-| `sel.descendant a d` | `sel -> sel -> selector` | sugar: `and [ d (within a) ]` |
-| `sel.when fn` | `fn -> selector` | `fn id ctx` returns true |
+| Constructor           | Signature                    | Matches when                                                                      |
+| --------------------- | ---------------------------- | --------------------------------------------------------------------------------- |
+| `sel.star`            | `-> selector`                | always                                                                            |
+| `sel.attrs a`         | `attrset -> selector`        | all k:v in `a` equal in `data id`; missing key = no match                         |
+| `sel.entity e`        | `registry-entry -> selector` | the node's projected identity (`__identity.id_hash`) equals the entry's `id_hash` |
+| `sel.kind K`          | `kind-value -> selector`     | the node's projected kind (`__identity.kind`) equals `K.kind`                     |
+| `sel.and ss`          | `[selector] -> selector`     | all match; `sel.and [] = true`                                                    |
+| `sel.any ss`          | `[selector] -> selector`     | any matches; `sel.any [] = false`                                                 |
+| `sel.not s`           | `selector -> selector`       | does not match                                                                    |
+| `sel.has s`           | `selector -> selector`       | any child matches                                                                 |
+| `sel.within s`        | `selector -> selector`       | any ancestor matches                                                              |
+| `sel.parentMatches s` | `selector -> selector`       | immediate parent matches                                                          |
+| `sel.child p c`       | `sel -> sel -> selector`     | sugar: `and [ c (parentMatches p) ]`                                              |
+| `sel.descendant a d`  | `sel -> sel -> selector`     | sugar: `and [ d (within a) ]`                                                     |
+| `sel.when fn`         | `fn -> selector`             | `fn id ctx` returns true                                                          |
 
 The distinct `__sel` tags are: `"star"`, `"attrs"`, `"entity"`, `"kind"`, `"and"`, `"any"`, `"not"`, `"has"`, `"within"`, `"parentMatches"`, `"when"` (and `"coord"` from the product adapter).
 
@@ -138,12 +138,12 @@ sel.kind   schema.user         # => { __sel = "kind";   kind = "user"; }
 
 Both match against a reserved `__identity` record the enriched adapters project alongside node data (shape below). The dispatch is loud where silence would hide a bug:
 
-| `__identity` state | `sel.entity` | `sel.kind` |
-|---|---|---|
-| key **absent** from `data id` | **throw** (identity-blind context) | **throw** (identity-blind context) |
-| `null` (node is not entity-backed) | `false` | `false` |
-| record with `kind == null` | matches on `id_hash` | **throw** (kind-blind projection) |
-| record | `id_hash` equality | `kind` equality |
+| `__identity` state                 | `sel.entity`                       | `sel.kind`                         |
+| ---------------------------------- | ---------------------------------- | ---------------------------------- |
+| key **absent** from `data id`      | **throw** (identity-blind context) | **throw** (identity-blind context) |
+| `null` (node is not entity-backed) | `false`                            | `false`                            |
+| record with `kind == null`         | matches on `id_hash`               | **throw** (kind-blind projection)  |
+| record                             | `id_hash` equality                 | `kind` equality                    |
 
 The throws convert a projection gap (the historical silent-never-match failure) into a named configuration error. A node carrying a positional `type` but no entry does **not** match `sel.kind` — positional-type matching remains `sel.attrs { type = "…"; }`.
 
@@ -188,11 +188,11 @@ selectorEq   : selector -> selector -> bool
 
 The three regimes are read off the wrapped value's `__mint` field, which is a **tagged sum** and is total — a reader that branched on field presence and then read `.minted` raw would abort uncatchably on a value that has no mintable identity:
 
-| regime | the value carries | the relation |
-|--------|-------------------|--------------|
-| minted | `__mint.minted` | digest equality — the identity is total in the distinguishing content |
-| unmintable | `__mint`, no `minted` | Nix `==` on the reified value **minus `__id`** |
-| unmigrated | no `__mint` | `name` equality — the shipped relation, live until a producer stamps the value |
+| regime     | the value carries     | the relation                                                                   |
+| ---------- | --------------------- | ------------------------------------------------------------------------------ |
+| minted     | `__mint.minted`       | digest equality — the identity is total in the distinguishing content          |
+| unmintable | `__mint`, no `minted` | Nix `==` on the reified value **minus `__id`**                                 |
+| unmigrated | no `__mint`           | `name` equality — the shipped relation, live until a producer stamps the value |
 
 Palmer's Fig. 5 is a **conjunction** over identity *and* closure, and comparing `name` alone ships its first conjunct only: a program point is constant across a constructor's instances, so a name-only relation calls behaviourally distinct values equal — the coarsening direction §2.3 forbids. What replaces it is the regime dispatch rather than a second conjunct, because a minted identity is already total over the distinguishing content and needs none.
 
@@ -217,13 +217,13 @@ adapters.scope.mkContext : {
 
 Builds a selector context from gen-scope's accessor pair. Maps scope accessors to the five context fields:
 
-| Context field | Implementation |
-|---------------|---------------|
-| `data` | `id: (project (node id)) // { __identity = …; }` |
-| `parent` | `id: (node id).parent` |
-| `children` | `id: attrNames (get id "children")` |
-| `ancestors` | walks `parent` chain, cycle-safe |
-| `siblings` | children of parent, excluding self |
+| Context field | Implementation                                   |
+| ------------- | ------------------------------------------------ |
+| `data`        | `id: (project (node id)) // { __identity = …; }` |
+| `parent`      | `id: (node id).parent`                           |
+| `children`    | `id: attrNames (get id "children")`              |
+| `ancestors`   | walks `parent` chain, cycle-safe                 |
+| `siblings`    | children of parent, excluding self               |
 
 The enriched adapter composes a reserved `__identity` record (record or `null`) **outside** the projection and merges it last, so identity/kind selectors work through it and a user decl named `__identity` can never shadow it. `__identity.kind` is copied from the positional node `type` (coherence by construction); `entryFor` defaults to the `decls.__entry` registration convention. `__identity` is always present through this adapter, so entity/kind selectors are never silently inert.
 
@@ -315,20 +315,20 @@ gen-select draws on both academic research and industrial standards. Each source
 
 ### Implements
 
-| Source | Relationship |
-|--------|-------------|
-| **Palmer, Filardo & Wu (2024)** — *Intensional Functions* | `sel.when` wraps lambdas as selectors; `isIdentified` is the shape guard and `selectorEq` applies **conservative equality** (§2.3, §5.3), dispatching on the wrapped value's identity regime. Program-point (name) comparison survives only on the unmigrated regime, and nowhere that it keys or mints: Fig. 5 is a conjunction, so a name-only relation ships one conjunct and coarsens. Neither regime realizes Theorem 1, which is a preservation theorem about 𝜆ITS reduction — gen is not 𝜆ITS and the theorem's soundness does not transfer |
-| **CSS Selectors Level 4** — W3C | Structural selector vocabulary: `sel.has` as `:has()`, `sel.not` as `:not()`, `sel.child` and `sel.descendant` as CSS combinators; §5.1 type (element-name) selector `E` lifted from element names to schema kinds as `sel.kind` |
-| **Neron, Tolmach, Visser & Wachsmuth (2015)** — *A Theory of Name Resolution* | `sel.entity` is a declaration-identity predicate: `id_hash` plays the declaration-position role, so shadowing/homonym nodes (equal names, distinct declarations) never cross-match |
-| **gen-schema** — `mkIdentityModule` content-addressed identity | `sel.entity` delegates identity to gen-schema: it performs no hashing, comparing the `id_hash` gen-schema defines. Equality is exactly gen-schema's instance-identity relation |
-| **Imrich & Klavžar** — *Handbook of Product Graphs* | `coord`/`inSlice` are the vertex-membership predicate of the sub-product obtained by fixing the given coordinates; product graph vertices are coordinate tuples |
+| Source                                                                        | Relationship                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Palmer, Filardo & Wu (2024)** — *Intensional Functions*                     | `sel.when` wraps lambdas as selectors; `isIdentified` is the shape guard and `selectorEq` applies **conservative equality** (§2.3, §5.3), dispatching on the wrapped value's identity regime. Program-point (name) comparison survives only on the unmigrated regime, and nowhere that it keys or mints: Fig. 5 is a conjunction, so a name-only relation ships one conjunct and coarsens. Neither regime realizes Theorem 1, which is a preservation theorem about 𝜆ITS reduction — gen is not 𝜆ITS and the theorem's soundness does not transfer |
+| **CSS Selectors Level 4** — W3C                                               | Structural selector vocabulary: `sel.has` as `:has()`, `sel.not` as `:not()`, `sel.child` and `sel.descendant` as CSS combinators; §5.1 type (element-name) selector `E` lifted from element names to schema kinds as `sel.kind`                                                                                                                                                                                                                                                                                                                   |
+| **Neron, Tolmach, Visser & Wachsmuth (2015)** — *A Theory of Name Resolution* | `sel.entity` is a declaration-identity predicate: `id_hash` plays the declaration-position role, so shadowing/homonym nodes (equal names, distinct declarations) never cross-match                                                                                                                                                                                                                                                                                                                                                                 |
+| **gen-schema** — `mkIdentityModule` content-addressed identity                | `sel.entity` delegates identity to gen-schema: it performs no hashing, comparing the `id_hash` gen-schema defines. Equality is exactly gen-schema's instance-identity relation                                                                                                                                                                                                                                                                                                                                                                     |
+| **Imrich & Klavžar** — *Handbook of Product Graphs*                           | `coord`/`inSlice` are the vertex-membership predicate of the sub-product obtained by fixing the given coordinates; product graph vertices are coordinate tuples                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ### Informed by
 
-| Source | Relationship |
-|--------|-------------|
+| Source                                                                        | Relationship                                                                                                                                                                                                                                                                |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Neron, Tolmach, Visser & Wachsmuth (2015)** — *A Theory of Name Resolution* | The five-field accessor context (`data`, `parent`, `children`, `ancestors`, `siblings`) models the P-edge (parent/child/ancestor) traversal axes of a scope graph; does NOT implement the resolution calculus (no well-formedness, specificity, shadowing, or import edges) |
-| **Arntzenius & Krishnaswami (2016)** — *Datafun: A Functional Datalog* | Monotone pattern matching over lattice-structured data informed the design of composable selector predicates that respect structural ordering |
-| **Reynolds (1983)** — *Types, Abstraction, and Parametric Polymorphism* | Parametricity constraints on selector generality: selectors operate uniformly over any context satisfying the accessor interface, not over concrete representations |
-| **Mokhov (2017)** — *Algebraic Graphs with Class* | Algebraic composition of graph predicates (overlay/connect as selector combinators) informed how `sel.and`/`sel.any` compose without coupling to graph representation |
-| **XPath 3.1** — W3C | Axis-based navigation model (ancestor, child, descendant, sibling) informed the context accessor vocabulary and structural combinator naming |
+| **Arntzenius & Krishnaswami (2016)** — *Datafun: A Functional Datalog*        | Monotone pattern matching over lattice-structured data informed the design of composable selector predicates that respect structural ordering                                                                                                                               |
+| **Reynolds (1983)** — *Types, Abstraction, and Parametric Polymorphism*       | Parametricity constraints on selector generality: selectors operate uniformly over any context satisfying the accessor interface, not over concrete representations                                                                                                         |
+| **Mokhov (2017)** — *Algebraic Graphs with Class*                             | Algebraic composition of graph predicates (overlay/connect as selector combinators) informed how `sel.and`/`sel.any` compose without coupling to graph representation                                                                                                       |
+| **XPath 3.1** — W3C                                                           | Axis-based navigation model (ancestor, child, descendant, sibling) informed the context accessor vocabulary and structural combinator naming                                                                                                                                |
