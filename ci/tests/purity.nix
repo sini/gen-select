@@ -130,11 +130,12 @@ let
     "mkOption" # module-system tier
   ];
 
-  # The root flake's OWN declared inputs, read from the lock rather than from the flake
-  # expression: the lock is what a consumer actually resolves, so a dependency that reached
-  # a consumer could not hide from this arm.
-  declaredInputs = builtins.attrNames (builtins.fromJSON (builtins.readFile ../../flake.lock))
-    .nodes.root.inputs;
+  # The root flake's OWN declared inputs, read from the DECLARATION. A lock records what
+  # resolution PRODUCED; what this repository DECLARES is a different fact and the two can
+  # differ. The earlier reading took the population of a declaration test from `flake.lock`,
+  # which let a CI artefact set the extent of a check on the library — the inverted direction.
+  # ci exists in service of the libraries, so the library's own `flake.nix` is the source.
+  declaredInputs = builtins.attrNames (import ../../flake.nix).inputs;
 
   # scan : [ { name; code; } ] -> [ "file: 'tok'" ]. Factored out of `violations` so the detector
   # cell below runs THE SAME call over the same source list with one entry appended, rather than a
