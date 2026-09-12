@@ -1,5 +1,7 @@
 # gen-select — agent capability sheet
 
+> **Library class: reference-grade.** Deletion requires a domain argument — wrong abstraction, subsumption by another construct, or theory-unsoundness; a usage count is inadmissible as a deletion ground (P7, 2026-08-17).
+
 ## Scope
 
 Selector algebra for attributed graph positions: builds `{ __sel = tag; … }` predicate values and evaluates them against a caller-supplied five-accessor context (`matches selector id ctx`).
