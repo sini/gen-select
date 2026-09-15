@@ -27,6 +27,14 @@ Quoted text is the owner's own `flake.nix` `description` field, verbatim.
 
 Entry: `inputs.gen-select.lib` (flake), which IS a bare value — the flake supplies the dependency argument, so consumers see no signature change. Root `default.nix` and `import ./lib` are FUNCTIONS of `{ algebra }`: `import ./. { algebra = <gen-algebra.lib>; }`. The bare-value claim this replaces held while gen-select vendored the identity-regime discipline; the edge on gen-algebra was taken deliberately when that copy stopped being worth its price (see the checked invariant below).
 
+Root `default.nix`'s `wire ? { deps, resolve }: import ./lib deps` formal is the seam that hands
+this exact substrate attrset to `./lib` as `deps`, and it is also the only channel by which the shim
+publishes anything outward — a formal is an INPUT channel and cannot carry a value out, so the
+lock-parameterised `follows` resolver rides out on the same record. Overriding `wire` is how a cell
+reads the shim's own formal-to-path map AND its own resolver, instead of restating either by hand;
+the `follows` rule is therefore declared once in this repository, in `default.nix`. The unresolved
+default resolves `algebra` from `ci/flake.lock`, never the root `flake.lock`.
+
 **Leaf selectors** — `lib/constructors.nix`
 
 | Export   | Signature                                                                                  |

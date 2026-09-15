@@ -27,7 +27,8 @@
       ...
     }:
     let
-      genSelect = import ../lib { algebra = gen-algebra.lib; };
+      algebra = gen-algebra.lib;
+      genSelect = import ../lib { inherit algebra; };
       genScope = gen-scope.lib;
       genSchema = gen-schema.lib;
       genMerge = gen-merge.lib;
@@ -42,6 +43,7 @@
           genScope
           genSchema
           genMerge
+          algebra
           ;
       };
     };

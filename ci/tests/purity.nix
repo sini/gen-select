@@ -207,6 +207,7 @@ in
       "lib/constructors.nix"
       "lib/default.nix"
       "flake.nix"
+      "default.nix"
     ];
   };
 

@@ -21,7 +21,7 @@
       # by design (gen-scope's `buildNodes`), so a deep force is red on a healthy tree.
       lib =
         let
-          surface = import ./lib { algebra = gen-algebra.lib; };
+          surface = import ./. { algebra = gen-algebra.lib; };
         in
         builtins.deepSeq (builtins.mapAttrs (_: builtins.typeOf) surface) surface;
     };
