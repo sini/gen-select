@@ -27,23 +27,76 @@
 # rather than transcribed, so the control over a hermetic fixture lock is the whole oracle for that
 # rule — and channel 2 of the shim's three, the `inputs` override bag.
 #
+# ★★★ AND THREE ARMED PAIRS AT THE HEAD OF THE FILE, OVER THE SHIM'S TEXT AND ITS SIGNATURE — the
+# two things no cell above can reach, because every one of them either closes the dependency channel
+# or stops its force at WHNF.
+#   · `…-no-dependency-is-built-past-its-own-entry` — a direct reach into a dependency's own `lib/`,
+#     bypassing `dep`. A lazy, unforced one is a pure TEXT defect, which is exactly the class a
+#     forcing cell cannot see.
+#   · `…-the-entry-application-is-total` — the shim's DECLARED formal set against `entryArgs`. A
+#     formal declared and never threaded into `deps` is in `functionArgs` and in no `paths` key, so
+#     this is the one cell in the file that sees it.
+#   · `…-the-entry-is-never-applied-to-a-literal` — the STRUCTURAL half, read off this file's own
+#     text, so the property survives tomorrow's edit rather than describing today's.
+# Each carries its own control, exercising the SAME operand at an input the main arm does not use.
+#
 # ★★ THE DOMAIN IS THE WIRED SET, NOT THE DECLARED SET — AND IT IS THE `deps` HALF OF THE RECORD
 # THE SHIM'S BODY HANDS TO `wire`, NOT THE ATTRSET `./lib` RECEIVES. The two coincide only while
 # `wire`'s own default is `{ deps, resolve }: import ./lib deps`, which is a property of ONE LINE OF
 # TEXT and is held by `…-the-wire-default-is-the-librarys-own-application` below and by nothing
 # else. `paths` reads the `deps` handed to `wire`, so a formal that is declared and never threaded
 # into it is invisible to every cell over it. That is a domain statement rather than a gap — the
-# shim's declared formals are read by the DENOMINATOR cell against `../../lib`'s own, which is where
-# a stray formal surfaces.
+# shim's DECLARED formals are read by `…-the-entry-application-is-total` against `entryArgs`, which
+# is where a stray formal surfaces. The DENOMINATOR cell is a different pair for a different reason:
+# it compares the WIRED set against `../../lib`'s own formals and never sees one.
 #
 # ★★★ THE THIRD CELL IS NOT HERMETIC, AND THAT IS ITS WHOLE POINT. Forcing the default IS
 # `builtins.fetchTree`, so it reaches the network — the accepted price of measuring the thing at
 # all, and the reason it sits apart from the suites that must not. It remains PURE: `fetchTree` on a
 # locked node is narHash-addressed, with no channel and no `<…>`.
-{ genSelect, ... }:
+{
+  genSelect,
+  algebra,
+  lib,
+  ...
+}:
 let
   entry = import ../..;
   dispatched = if builtins.isFunction entry then entry { } else entry;
+
+  # ★ ONE binding, read by BOTH cells. Duplicating the literal makes the control guard its own copy
+  # and nothing else — measured: main copy broken ⇒ 2/2 exit 0 on a tree carrying a real member.
+  needle = ''}/lib"[[:space:]]*\{'';
+
+  # The same construction `ci/tests/purity.nix` uses, over the same file, for the same stated reason.
+  stripComments =
+    text:
+    lib.concatStringsSep "\n" (
+      map (line: lib.head (lib.splitString "#" line)) (lib.splitString "\n" text)
+    );
+
+  # ★★ THE SHIM'S DECLARED ARGUMENT SET, BOUND ONCE AND TOTAL BY CONSTRUCTION — the `expected` half
+  # of `…-the-entry-application-is-total`, and the only thing in this file that names the shim's
+  # DECLARED formals rather than its WIRED ones. The dependency member comes from the SAME binding
+  # `ci/flake.nix` builds its `lib` output from, so this set is what an offline application of the
+  # root would actually take; the seam members are closed the way that application would close them.
+  #
+  # ★ STATED CEILING, because it is the difference between this library and the siblings that carry
+  # a standalone-application cell: nothing in this file APPLIES this set, so its VALUES are read by
+  # no cell and only its key set is oracled. That is enough for the class it exists to catch — a
+  # formal the shim declares and never threads into `deps` appears in `functionArgs` and not here,
+  # and reds — and it is less than a sibling holding the same set through a live application.
+  #
+  # ★ THE `throw`s ARE NOT THE GUARD, they are what would make non-hermeticity IMPOSSIBLE rather
+  # than merely detected for such an application: a shim carrying `...` would swallow these keys
+  # unread and unreported. The guard is the cell pair below.
+  entryArgs = {
+    inherit algebra;
+    inputs = { };
+    src = segs: throw "the entry cell must not fetch: ${builtins.concatStringsSep "." segs}";
+    dep = segs: throw "the entry cell must not build: ${builtins.concatStringsSep "." segs}";
+    wire = { deps, resolve }: import ../../lib deps;
+  };
 
   # ★★ THE SEAM-CLOSING ARGUMENT SET, BOUND RATHER THAN WRITTEN AT THE APPLICATION. `dep` stops the
   # resolver at the path instead of fetching it, and replacing `wire` publishes the whole record the
@@ -124,8 +177,139 @@ let
         )
       )
     );
+
+  # ★★ THE READER IS BOUND, NOT ITS READING, AND THAT IS THE FIRST CONJUNCT OF THE ARMING RULE
+  # RATHER THAN THE WHOLE OF IT. A bound READING (`shimFormals = builtins.attrNames
+  # (builtins.functionArgs (import ../..))`) has no free parameter, so its control has nowhere else
+  # to exercise it and can only re-assert the main arm's own value: MEASURED, that shape reads
+  # `10/10 successful, exit 0` under the very tamper it exists to catch. Binding the READER is what
+  # makes the control's DIFFERENT INPUT expressible at all.
+  formalsOf = f: builtins.attrNames (builtins.functionArgs f);
+
+  # ★ THE SECOND NEEDLE, bound once and read by both arms below for the same reason `needle` is.
+  # `[[:space:]]*` spans the newline a formatter may put between `../..` and `{`. It does not match
+  # `formalsOf (import ../..)` (a `)` follows, not a `{`) nor a path one segment longer (a `/`
+  # follows), so the one thing it counts is an entry application to a literal.
+  entryNeedle = ''\.\./\.\.[[:space:]]*\{'';
+  countEntry =
+    text: builtins.length (builtins.filter builtins.isList (builtins.split entryNeedle text));
 in
 {
+  # ★ THE CELLS BELOW CANNOT SEE THIS CLASS, and the reason is the property that makes them
+  # hermetic: they supply or close the dependency channel, so the shim's `fetch`-backed DEFAULT —
+  # which is where the divergence lives — is never forced, and the FORCING cell stops at WHNF. This
+  # cell reads the CONSTRUCTION instead of the outcome, which is strictly wider: a direct reach into
+  # a dependency's own `lib/` that is lazy and never forced is a pure TEXT defect, and no forcing
+  # cell can see one.
+  #
+  # ★★ COMMENTS ARE STRIPPED FIRST, AND THAT IS LOAD-BEARING RATHER THAN TIDY. `ci/tests/purity.nix`
+  # states the same property for the same reason and over this same file: the house convention for a
+  # FIXED member is a comment explaining why not `/lib`, and a raw scan reds on that comment while
+  # the file is correct. The strip is PROPHYLACTIC — it stops the next correctly-written comment from
+  # reddening a correct file.
+  #
+  # ★ `[[:space:]]*` spans the newline a formatter may put between `/lib"` and `{` — measured: a
+  # line-anchored form misses exactly that.
+  #
+  # ★★ THE NEEDLE IS BOUND ONCE AND BOTH CELLS READ THAT BINDING. Two literals spelled the same are
+  # TWO PREDICATES, and the control would then guard only its own copy.
+  flake.tests.entry.test-no-dependency-is-built-past-its-own-entry =
+    let
+      parts = builtins.split needle (stripComments (builtins.readFile ../../default.nix));
+    in
+    {
+      expr = {
+        count = builtins.length (builtins.filter builtins.isList parts);
+        reaches = map builtins.head (
+          builtins.filter (m: m != null) (
+            map (p: builtins.match ''.*"(gen-[a-z-]+)"[[:space:]]*]$'' p) (
+              builtins.filter builtins.isString parts
+            )
+          )
+        );
+      };
+      expected = {
+        count = 0;
+        reaches = [ ];
+      };
+    };
+
+  # ★★ THE DETECTOR IS SHOWN ABLE TO FIRE, IN THE SAME RUN, ON THE SAME PREDICATE. Without it,
+  # `count = 0` is equally consistent with a needle that cannot match.
+  flake.tests.entry.test-control-the-entry-shape-check-discriminates = {
+    expr = builtins.length (
+      builtins.filter builtins.isList (
+        builtins.split needle (stripComments ''
+          {
+            graph ? import "''${fetch "gen-graph"}/lib"
+              { inherit prelude; },
+          }: null
+        '')
+      )
+    );
+    expected = 1;
+  };
+
+  # ★★★ THE SHIM'S DECLARED FORMAL SET, AND IT IS THE ONE CELL IN THIS FILE OVER THE DECLARED SET
+  # RATHER THAN THE WIRED ONE. Every cell built on `paths` reads the `deps` half of the record the
+  # body hands `wire`, so a formal that is DECLARED and never threaded into `deps` is invisible to
+  # all of them — it is in `functionArgs` and in no `paths` key. This is where it surfaces.
+  #
+  # ★★ THE OBLIGATION IS TOTAL — every formal the shim DECLARES. "Harmless" is not a property of a
+  # formal but of its DEFAULT EXPRESSION, which changes without notice.
+  #
+  # ★ IT IS HERMETIC, MEASURED: `builtins.functionArgs` does not force defaults. Reading a signature
+  # never reaches the network.
+  #
+  # ★ EQUALITY, NOT CONTAINMENT: a key the shim does not declare would be accepted, unread and
+  # unreported under `...`, so containment would pass a stale key forever. Equality reds on it,
+  # loudly, naming it.
+  flake.tests.entry.test-the-entry-application-is-total = {
+    expr = formalsOf (import ../..);
+    expected = builtins.attrNames entryArgs;
+  };
+
+  # ★★★ AN ARMED PAIR IS A CONJUNCTION: the two arms SHARE the operand (`formalsOf`), AND the control
+  # exercises that operand AT AN INPUT THE MAIN ARM DOES NOT USE. Either half alone detects nothing.
+  #
+  # ★ THE FIXTURE NAMES `a` AND `b`, which are the formals of a lambda THIS CELL WRITES and no shim
+  # supplies. That is the different input, not an exception to "no formal OF THE SHIM is hardcoded":
+  # a control written to avoid every literal name would have to reach for the shim's own formals,
+  # which puts it at the main arm's input and makes it blind.
+  flake.tests.entry.test-control-the-formals-reader-discriminates = {
+    expr = formalsOf (
+      {
+        a,
+        b ? null,
+      }:
+      null
+    );
+    expected = [
+      "a"
+      "b"
+    ];
+  };
+
+  # ★★ THE STRUCTURAL CELL — the one the semantic instrument above cannot replace, because the edit
+  # that reintroduces the defect is the same edit that removes the semantic instrument. It reads THIS
+  # file's own text and refuses the bare application outright, so the property survives tomorrow's
+  # edit instead of describing today's. It is also what makes `pathArgs` and `entryArgs` BINDINGS
+  # rather than literals written at the application.
+  #
+  # ★★ COMMENTS ARE STRIPPED FIRST, AND ACROSS THIS DOMAIN THAT IS LIVE RATHER THAN PROPHYLACTIC.
+  flake.tests.entry.test-the-entry-is-never-applied-to-a-literal = {
+    expr = countEntry (stripComments (builtins.readFile ./entry.nix));
+    expected = 0;
+  };
+
+  # ★★ THE FIXTURE IS ASSEMBLED, AND THAT IS THE MECHANISM RATHER THAN A FLOURISH. The cell above
+  # reads THIS FILE, unlike `needle`'s cell which reads the shim — so a fixture written as a plain
+  # literal would appear in the very text the main arm scans and red it.
+  flake.tests.entry.test-control-the-literal-application-check-discriminates = {
+    expr = countEntry ("  entry = import ../" + ".. { };");
+    expected = 1;
+  };
+
   # The two entry paths are ONE library. `genSelect` is built from ci's flake inputs, `dispatched`
   # from the same `ci/flake.lock` read as data — so this compares the two suppliers of one
   # construction rather than an expression with itself, and NOT the root against `flake.lib`: under
