@@ -25,6 +25,12 @@
       # explicit per-id accessor. Accepts a kind value (preferred, identity law) or a
       # bare name (internal convenience); normalized to name below.
       kindFor ? (_: kind),
+      # Accessor names (drawn from data/parent/children/ancestors/siblings) that
+      # read a graph still under construction. Passed straight through to the
+      # returned context for gen-select's discrete/monotone separation
+      # (match.nix's discreteCtx) to clear at a non-monotone read. Conservative
+      # default: a context that declares nothing in flight is unchanged.
+      inFlight ? [ ],
     }:
     let
       validatedKind =
@@ -46,7 +52,7 @@
     # Force the kind-value guard when the caller relies on it (seq to WHNF): a
     # malformed `kind` argument throws as soon as the context is used.
     builtins.seq validatedKind {
-      inherit parent;
+      inherit parent inFlight;
       # Same __identity record (or null) as the scope adapter, merged last over the
       # passed-through datum. `kind` is the normalized kindFor result (default: the
       # constant registry kind); a malformed entryFor result surfaces at first id_hash

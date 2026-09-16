@@ -13,8 +13,15 @@
       # (gen-scope reserves the `__` namespace inside decls, e.g. decls.__edges);
       # den-hoag writes each entity's registry entry at decls.<id>.__entry.
       entryFor ? (id: (node id).decls.__entry or null),
+      # Accessor names (drawn from data/parent/children/ancestors/siblings) that
+      # read a graph still under construction. Passed straight through to the
+      # returned context for gen-select's discrete/monotone separation
+      # (match.nix's discreteCtx) to clear at a non-monotone read. Conservative
+      # default: a context that declares nothing in flight is unchanged.
+      inFlight ? [ ],
     }:
     {
+      inherit inFlight;
       # __identity is composed OUTSIDE the projection and merged last, so it is
       # always present (record or null) and a user decl named __identity can never
       # shadow it (reserved-namespace discipline). `kind` is copied from the

@@ -1,4 +1,57 @@
 let
+  # Datafun (Arntzenius & Krishnaswami 2016) splits the typing context into a
+  # discrete ∆ and a monotone Γ and types every non-monotone operation (¬, =,
+  # a caller-supplied function — Fig. 4, lines 349-354) under a CLEARED Γ.
+  # gen has no type-level ∆/Γ split, so this clears the *value* instead: a
+  # context declares which of its accessors read a graph still under
+  # construction (`ctx.inFlight`), and a non-monotone position evaluates
+  # under a context in which exactly those accessors refuse by name. A
+  # context that declares nothing in flight is unchanged (`discreteCtx` is
+  # the identity when `inFlight` is absent or `[ ]`).
+  #
+  # Two guards ahead of the clearing itself, both closing a way the
+  # declaration could fail without saying so: a non-list `inFlight` (e.g. a
+  # bare string) would otherwise reach `builtins.listToAttrs` and abort with
+  # an uncatchable interpreter error rather than a named, `tryEval`-catchable
+  # refusal (ADR-0025 item 1; the house rule this file already states at
+  # adapters/scope.nix's `entryFor` throw); an accessor name outside the
+  # closed five-name set (e.g. a typo) would otherwise add a dead key and
+  # clear nothing — byte-identical to declaring no mechanism at all. Both
+  # are named refusals, checked in that order (type first, membership
+  # second), before any accessor is cleared.
+  discreteCtx =
+    ctx: tag:
+    let
+      inFlight = ctx.inFlight or [ ];
+      accessors = [
+        "data"
+        "parent"
+        "children"
+        "ancestors"
+        "siblings"
+      ];
+      unknown = builtins.filter (acc: !(builtins.elem acc accessors)) inFlight;
+    in
+    if !(builtins.isList inFlight) then
+      throw "gen-select: sel.${tag}'s context declares `inFlight` as a ${builtins.typeOf inFlight}, not a list of accessor names. `inFlight` must be a list drawn from ${toString accessors}."
+    else if unknown != [ ] then
+      throw "gen-select: sel.${tag}'s context declares `inFlight` naming an accessor gen-select does not have (${toString unknown}); the accessor set is ${toString accessors}."
+    else if inFlight == [ ] then
+      ctx
+    else
+      ctx
+      // builtins.listToAttrs (
+        map (acc: {
+          name = acc;
+          value =
+            _:
+            throw "gen-select: sel.${tag} observes the in-flight accessor `${acc}` at a NON-MONOTONE position. A selector may not observe a graph under construction negatively (ADR-0019/0020; Datafun's discrete/monotone separation). Either evaluate this selector against the materialized projection, or drop `${acc}` from the context's `inFlight` list once it is frozen.";
+        }) inFlight
+      )
+      // {
+        inFlight = [ ];
+      };
+
   matchOne =
     selector: id: ctx:
     let
@@ -10,7 +63,7 @@ let
     else if tag == "attrs" then
       let
         a = selector.a;
-        data = ctx.data id;
+        data = (discreteCtx ctx "attrs").data id;
       in
       builtins.all (k: data ? ${k} && data.${k} == a.${k}) (builtins.attrNames a)
 
@@ -21,7 +74,7 @@ let
       builtins.any (s: matchOne s id ctx) selector.selectors
 
     else if tag == "not" then
-      !(matchOne selector.selector id ctx)
+      !(matchOne selector.selector id (discreteCtx ctx "not"))
 
     else if tag == "has" then
       builtins.any (childId: matchOne selector.selector childId ctx) (ctx.children id)
@@ -31,7 +84,7 @@ let
 
     else if tag == "parentMatches" then
       let
-        p = ctx.parent id;
+        p = (discreteCtx ctx "parentMatches").parent id;
       in
       if p == null then false else matchOne selector.selector p ctx
 
@@ -41,7 +94,7 @@ let
       # 2026-06-09 readiness audit's A1 silent-never-match failure class). `null` is a
       # well-formed "not entity-backed" node and matches nothing without throwing.
       let
-        data = ctx.data id;
+        data = (discreteCtx ctx "entity").data id;
       in
       if !(data ? __identity) then
         throw "gen-select: sel.entity matched against an identity-blind context (its `data ${id}` has no __identity key). Use adapters.scope.mkContext / adapters.registry.mkContext, or project __identity."
@@ -57,7 +110,7 @@ let
       # projection would otherwise make every sel.kind silently inert (A1 with the
       # __identity key present, which the identity-blind branch cannot catch).
       let
-        data = ctx.data id;
+        data = (discreteCtx ctx "kind").data id;
       in
       if !(data ? __identity) then
         throw "gen-select: sel.kind matched against an identity-blind context (its `data ${id}` has no __identity key). Use adapters.scope.mkContext / adapters.registry.mkContext, or project __identity."
@@ -75,7 +128,7 @@ let
       # cell lacking the dimension is a legitimate heterogeneous union → false; a
       # coordinate value without id_hash throws on the `.id_hash` access (malformed).
       let
-        data = ctx.data id;
+        data = (discreteCtx ctx "coord").data id;
       in
       if !(data ? __coords) then
         throw "gen-select: coord matched against a coordinate-blind context (its `data ${id}` has no __coords key). Use adapters.product.mkContext, or project __coords."
@@ -92,7 +145,7 @@ let
           throw "gen-select: coord matched a malformed coordinate value for dimension '${selector.dim}' on node ${id} (no id_hash). Coordinates must be registry entries."
 
     else if tag == "when" then
-      selector.fn id ctx
+      selector.fn id (discreteCtx ctx "when")
 
     else
       throw "gen-select: unknown selector tag '${tag}'";

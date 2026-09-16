@@ -38,6 +38,12 @@ in
       coordsFor, # cellId -> { <dim> = registry-entry; … } — gen-product's product.coordsOf
       dataFor ? (_: { }), # cellId -> attrset (extra matchable cell data)
       parent ? (_: null), # product lattices are flat by default; overridable
+      # Accessor names (drawn from data/parent/children/ancestors/siblings) that
+      # read a graph still under construction. Passed straight through to the
+      # returned context for gen-select's discrete/monotone separation
+      # (match.nix's discreteCtx) to clear at a non-monotone read. Conservative
+      # default: a context that declares nothing in flight is unchanged.
+      inFlight ? [ ],
     }:
     {
       # Cells are not entities: __identity is null (an entity-backed-cell variant can
@@ -49,7 +55,7 @@ in
           __coords = coordsFor id;
           __identity = null;
         };
-      inherit parent;
+      inherit parent inFlight;
       # With the default flat `parent` these all yield [ ]; when `parent` is supplied
       # the registry adapter's derivations apply (structural selectors over the
       # containment lattice are gen-product's business, not the matcher's).
