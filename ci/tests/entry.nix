@@ -126,7 +126,7 @@ let
   # is a PATH resolved segment by segment from this lock's own root. Never `lock.nodes.<label>` — a
   # last-segment shortcut reads a DIFFERENT node, and a ci lock routinely carries several same-named
   # ones. Reading the lock is pure data; nothing here fetches.
-  lock = builtins.fromJSON (builtins.readFile ../flake.lock);
+  lock = builtins.fromJSON (builtins.readFile ../../flake.lock);
 
   # ★★ THE RESOLVER IS BOUND OVER ITS LOCK, AND THAT IS WHAT MAKES ITS CONTROL EXPRESSIBLE AT ALL. A
   # `repoOf` closed over THIS lock has no free parameter, so a control could only re-assert the main
