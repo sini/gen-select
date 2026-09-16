@@ -31,6 +31,10 @@ let
   base = {
     node = id: nodeMap.${id};
     get = _: _: throw "get unused in these tests";
+    # Explicit: these fixtures simulate a den-hoag-shaped consumer (identity
+    # stashed under decls.__entry, not the node's own top-level id_hash), so
+    # entryFor's framework-agnostic default (scope.nix) would not find it.
+    entryFor = id: nodeMap.${id}.decls.__entry or null;
   };
   ctx = sel.adapters.scope.mkContext base;
 

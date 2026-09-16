@@ -46,5 +46,10 @@
           algebra
           ;
       };
+      # den-hoag-g8lo's mode-D falsifier cells (a closed-pattern coordsFor/entryFor formal
+      # calling this library's own `id` string, "expected a set but found a string") genuinely
+      # abort: the batch asserter behind checks.default forces every `flake.tests` expr
+      # unconditionally and would crash on them rather than fail a cell. Second output instead.
+      extraModules = [ ./tests-error.nix ];
     };
 }
