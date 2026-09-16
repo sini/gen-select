@@ -11,23 +11,28 @@
 }:
 let
   sel = genSelect;
-  inherit (genSchema) mkSchemaOption mkInstanceRegistry;
+  inherit (genSchema) mkInstanceRegistry;
+
+  schema = genSchema.evalSchema {
+    modules = [
+      {
+        config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
+        config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
+      }
+    ];
+  };
 
   eval = genMerge.evalModuleTree {
     modules = [
       {
-        options.schema = mkSchemaOption { };
-        config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
-        config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
-        options.users = mkInstanceRegistry eval.config.schema.user { };
-        options.hosts = mkInstanceRegistry eval.config.schema.host { };
+        options.users = mkInstanceRegistry schema.user { };
+        options.hosts = mkInstanceRegistry schema.host { };
         config.users.sini.uid = 1000;
         config.users.vic.uid = 1001;
         config.hosts.axon.addr = "10.0.0.1";
       }
     ];
   };
-  schema = eval.config.schema;
   users = eval.config.users;
   hosts = eval.config.hosts;
 

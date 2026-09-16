@@ -13,32 +13,34 @@
 }:
 let
   sel = genSelect;
-  inherit (genSchema) mkSchemaOption mkInstanceRegistry;
+  inherit (genSchema) mkInstanceRegistry;
+
+  schema = genSchema.evalSchema {
+    modules = [
+      {
+        config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
+        config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
+      }
+    ];
+  };
 
   mkEval =
     siniUid:
     genMerge.evalModuleTree {
       modules = [
-        (
-          { config, ... }:
-          {
-            options.schema = mkSchemaOption { };
-            config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
-            config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
-            options.users = mkInstanceRegistry config.schema.user { };
-            options.hosts = mkInstanceRegistry config.schema.host { };
-            config.users.sini.uid = siniUid;
-            config.users.vic.uid = 1001;
-            config.users.ghost.uid = 4242; # registered but never placed in the graph
-            config.hosts.axon.addr = "10.0.0.1";
-            config.hosts.sini.addr = "10.0.0.9"; # host homonym of a user — id_hash embeds kind
-          }
-        )
+        {
+          options.users = mkInstanceRegistry schema.user { };
+          options.hosts = mkInstanceRegistry schema.host { };
+          config.users.sini.uid = siniUid;
+          config.users.vic.uid = 1001;
+          config.users.ghost.uid = 4242; # registered but never placed in the graph
+          config.hosts.axon.addr = "10.0.0.1";
+          config.hosts.sini.addr = "10.0.0.9"; # host homonym of a user — id_hash embeds kind
+        }
       ];
     };
 
   eval = mkEval 1000;
-  schema = eval.config.schema;
   users = eval.config.users;
   hosts = eval.config.hosts;
 
