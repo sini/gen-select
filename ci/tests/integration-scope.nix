@@ -84,7 +84,13 @@ let
   };
 
   result = genScope.eval {
-    inherit roots;
+    # A hand-built scope states its own order at the site: `eval` takes the whole
+    # `{ nodes, nodeOrder }` record, because a bare node map no longer carries the
+    # declared vertex order (gen-scope `lib/require-scope.nix`).
+    scope = {
+      nodes = roots;
+      nodeOrder = builtins.attrNames roots;
+    };
     attributes = {
       children = _self: id: lib.filterAttrs (_: n: n.parent == id) roots;
     };
