@@ -2,9 +2,28 @@
 # E5 (non-entity quiet), P4 (staticity/laziness), plus the entry-free dangling cases.
 # Hand-built __identity contexts (the enriched-adapter paths live in adapter-*-identity
 # and integration-scope).
-{ genSelect, ... }:
+#
+# ★ THE CONTEXTS STAY HAND-BUILT; THE KIND VALUES CANNOT. `sel.kind` reads the mint-backed mark
+# gen-schema stamps at construction (ADR-0034), so a bare `{ kind = …; options = { }; }` is the
+# value the mark exists to refuse rather than a stand-in for one. The two kinds come out of a real
+# schema; nothing else in this file changes, and what it measures is still the MATCHER.
+{
+  genSelect,
+  genSchema,
+  genMerge,
+  ...
+}:
 let
   sel = genSelect;
+
+  schema = genSchema.evalSchema {
+    modules = [
+      {
+        config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
+        config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
+      }
+    ];
+  };
   m = sel.matches;
 
   entryU = {
@@ -15,14 +34,8 @@ let
     id_hash = "h-user-vic";
     name = "vic";
   };
-  kindUser = {
-    kind = "user";
-    options = { };
-  };
-  kindHost = {
-    kind = "host";
-    options = { };
-  };
+  kindUser = schema.user;
+  kindHost = schema.host;
 
   idMap = {
     u1.__identity = {

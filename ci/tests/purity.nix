@@ -145,10 +145,11 @@ let
   # for nixpkgs lib. gen-algebra is gen-select's ONE declared input — the cell below pins that it is
   # exactly one — and it is the dependency taken so the vendored copy could be dropped without
   # acquiring `nixpkgs.lib`, so `algebra` is the positive dual of the ban above rather than a token
-  # that happens to be present. The six sources outside the list are outside it BY CONSTRUCTION: the
-  # four `lib/adapters/*` modules take the already-built combinators (`{ matches }`, `{ and }`) and
-  # never the algebra itself, `lib/match.nix` is the matcher over those, and `default.nix` is the
-  # bare `import ./lib` entry. That exclusion is what gives the assertion its teeth — the expected
+  # that happens to be present. The seven sources outside the list are outside it BY CONSTRUCTION:
+  # the four `lib/adapters/*` modules take the already-built combinators (`{ matches }`, `{ and }`)
+  # and never the algebra itself, `lib/match.nix` is the matcher over those, `lib/kind-mark.nix` is
+  # four `builtins` reads over a tagged sum gen-algebra authors but does not hand it, and
+  # `default.nix` is the bare `import ./lib` entry. That exclusion is what gives the assertion its teeth — the expected
   # list is a PROPER SUBSET of the manifest, so a read returning one fixed text for every file lands
   # outside it either way: without the token the list collapses toward empty, with it the list swells
   # to every source.
@@ -188,6 +189,9 @@ in
       "lib/adapters/scope.nix"
       "lib/constructors.nix"
       "lib/default.nix"
+      # The mark reader (ADR-0034). It arrived HERE as a red before it was noticed anywhere else,
+      # which is this cell doing exactly the job its comment claims for it.
+      "lib/kind-mark.nix"
       "lib/match.nix"
       "flake.nix"
       "default.nix"

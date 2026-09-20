@@ -1,9 +1,28 @@
 # E6 (scope-adapter projection coherence, by construction) + E8 (backward-compatible,
 # additive enrichment). Mock { node, get } — the real gen-scope.eval path is
 # integration-scope.
-{ genSelect, ... }:
+#
+# ★ THE `{ node, get }` MOCK STAYS; THE KIND VALUES CANNOT. `sel.kind` reads the mint-backed mark
+# gen-schema stamps at construction (ADR-0034), so a bare `{ kind = …; options = { }; }` is the
+# value the mark exists to refuse. The two kinds come out of a real schema; what this file measures
+# — the scope adapter's projection — is untouched.
+{
+  genSelect,
+  genSchema,
+  genMerge,
+  ...
+}:
 let
   sel = genSelect;
+
+  schema = genSchema.evalSchema {
+    modules = [
+      {
+        config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
+        config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
+      }
+    ];
+  };
 
   entryU = {
     id_hash = "h-sini";
@@ -127,17 +146,11 @@ in
       expected = true;
     };
     test-match-kind-through-adapter = {
-      expr = sel.matches (sel.kind {
-        kind = "user";
-        options = { };
-      }) "user:sini" ctx;
+      expr = sel.matches (sel.kind schema.user) "user:sini" ctx;
       expected = true;
     };
     test-kind-nonentity-false = {
-      expr = sel.matches (sel.kind {
-        kind = "host";
-        options = { };
-      }) "host:axon" ctx;
+      expr = sel.matches (sel.kind schema.host) "host:axon" ctx;
       expected = false;
     };
 
@@ -165,10 +178,7 @@ in
             }
           );
         in
-        sel.matches (sel.kind {
-          kind = "host";
-          options = { };
-        }) "host:axon" c;
+        sel.matches (sel.kind schema.host) "host:axon" c;
       expected = true;
     };
   };

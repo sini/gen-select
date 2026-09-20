@@ -16,7 +16,10 @@
 # `gen-algebra/lib/intensional.nix` for why each arm exists, why no reader may branch on
 # field presence and read `.minted` raw, and why the sealed arm's comparison subject
 # excludes `__id`.
-{ algebra }:
+{
+  algebra,
+  isSchemaKind,
+}:
 rec {
   star = {
     __sel = "star";
@@ -51,16 +54,29 @@ rec {
 
   # Kind selector — matches all entities of a kind. W3C CSS Selectors Level 4 §5.1:
   # the type (element-name) selector `E`, lifted from element names to schema kinds.
-  # Takes a gen-schema kind VALUE (e.g. schema.user) and validates it with the same
-  # structural guard mkInstanceRegistry uses (`? kind && ? options`). Stores the kind
-  # NAME as the internal key — permitted by the identity law, the input was the kind
-  # value; within one context universe the kind name is the kind's identity.
+  # Takes a gen-schema kind VALUE and validates its PROVENANCE: the value must carry
+  # the mint-backed mark gen-schema stamps at construction (`__mint.minted`, ADR-0034),
+  # which is the same read `mkInstanceRegistry` and its three siblings now take. Stores
+  # the kind NAME as the internal key — permitted by the identity law, the input was the
+  # kind value; within one context universe the kind name is the kind's identity.
+  #
+  # ★ THE GUARD USED TO BE `? kind && ? options`, AND IT CHECKED NOTHING IT NAMED. Any
+  # hand-written attrset of that shape was admitted, matched, and was indistinguishable
+  # from a real kind under `selectorEq`. See ./kind-mark.nix for the read and for why it
+  # is not `algebra.identityOf`.
+  #
+  # ★ THE PAYLOAD IS UNCHANGED, deliberately: the mark is checked at CONSTRUCTION and not
+  # carried. Carrying it is only useful to a matcher that COMPARES marks, and what the
+  # matcher should compare is a separate question with a separate landing — `selectorEq`,
+  # `match.nix` and every adapter projection are untouched here.
   kind =
     kindValue:
     if builtins.isString kindValue then
       throw "gen-select: sel.kind expects a kind value (e.g. schema.user), got the string \"${kindValue}\". Pass the kind value; strings are internal keys only."
-    else if !(builtins.isAttrs kindValue && kindValue ? kind && kindValue ? options) then
-      throw "gen-select: sel.kind expects a kind value (an attrset with `kind` and `options`, e.g. schema.user); got ${builtins.typeOf kindValue}."
+    else if !(builtins.isAttrs kindValue) then
+      throw "gen-select: sel.kind expects a gen-schema kind value; got ${builtins.typeOf kindValue}."
+    else if !(isSchemaKind kindValue) then
+      throw "gen-select: sel.kind expects a gen-schema kind value carrying a mint-backed mark (`__mint.minted`, ADR-0034); got an attrset with no mark. A hand-written `{ kind = ...; options = ...; }` is not a kind value — take the kind from a schema (e.g. `schema.widget`)."
     else
       {
         __sel = "kind";

@@ -79,8 +79,12 @@ kind   : kind-value        -> selector
 
 **`kind K`** — matches every node whose `__identity.kind` equals `K.kind`.
 
-- Construction validates the gen-schema kind value (`K ? kind && K ? options`). A string
-  throws. Payload `{ __sel = "kind"; kind = K.kind; }` (the kind name is the internal key).
+- Construction validates the gen-schema kind value's PROVENANCE: `K` must carry the
+  mint-backed mark gen-schema stamps at construction (`K ? kind && K.__mint ? minted`,
+  ADR-0034). A string throws; so does an attrset with no mark, which the retired
+  `K ? options` shape test admitted. The read never forces the digest. Payload
+  `{ __sel = "kind"; kind = K.kind; }` (the kind name is the internal key) — the mark is
+  checked at construction and NOT carried.
 - Matching: `__identity` key absent → **throw**; `null` → `false`; record with
   `kind == null` → **throw** (kind-blind projection); record → `kind` equality.
 - A node carrying a positional `type` but no entry does not match `kind` — use

@@ -2,9 +2,29 @@
 # Uses plain mock entries — sel.entity reads only id_hash + name, so a bare attrset is a
 # faithful stand-in here; the real-gen-schema-instance paths live in
 # adapter-registry-identity / integration-scope.
-{ genSelect, ... }:
+#
+# ★ KIND VALUES ARE THE EXCEPTION, AND ADR-0034 IS WHY. `sel.kind` reads the mint-backed mark
+# gen-schema stamps at construction, so a bare attrset is no longer a faithful stand-in for a kind
+# — it is precisely the value the mark exists to refuse. The kinds below come out of a real schema.
+{
+  genSelect,
+  genSchema,
+  genMerge,
+  ...
+}:
 let
   sel = genSelect;
+
+  # Two real kinds, minted by gen-schema. Their NAMES are what every assertion below turns on, so
+  # the schema declares exactly the two this file names and nothing else.
+  schema = genSchema.evalSchema {
+    modules = [
+      {
+        config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
+        config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
+      }
+    ];
+  };
 
   entryA = {
     id_hash = "hash-A";
@@ -23,14 +43,8 @@ let
     name = "blade-01";
   };
 
-  kindUser = {
-    kind = "user";
-    options = { };
-  };
-  kindHost = {
-    kind = "host";
-    options = { };
-  };
+  kindUser = schema.user;
+  kindHost = schema.host;
 
   # A value throws iff forcing it fails.
   throws = x: !(builtins.tryEval (builtins.deepSeq x x)).success;
@@ -76,7 +90,11 @@ in
       expr = throws (sel.kind "user");
       expected = true;
     };
-    test-kind-missing-options-throws = {
+    # Named for what it now checks. It used to be `test-kind-missing-options-throws`, and the
+    # value it throws on has not changed — but the REASON has: `? options` is retired, and what
+    # refuses this attrset is the absent mark (ADR-0034). A cell whose name claims a property the
+    # guard no longer tests is the defect this whole landing is about, one level up.
+    test-kind-unmarked-throws = {
       expr = throws (sel.kind { kind = "user"; });
       expected = true;
     };

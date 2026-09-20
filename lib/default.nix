@@ -12,11 +12,15 @@
 # Takes its dependency as a named argument: `import ./lib { algebra = <gen-algebra.lib>; }`.
 { algebra }:
 let
-  constructors = import ./constructors.nix { inherit algebra; };
+  # ONE reader of gen-schema's provenance mark, shared by the two kind-admission sites this library
+  # has. It is not published: the seam's test is this library's own business, and a second copy in
+  # the adapter is how two readers of one tagged sum stop agreeing.
+  isSchemaKind = import ./kind-mark.nix;
+  constructors = import ./constructors.nix { inherit algebra isSchemaKind; };
   match = import ./match.nix;
   scopeAdapter = import ./adapters/scope.nix;
   graphAdapter = import ./adapters/graph.nix { inherit (match) matches; };
-  registryAdapter = import ./adapters/registry.nix;
+  registryAdapter = import ./adapters/registry.nix { inherit isSchemaKind; };
   productAdapter = import ./adapters/product.nix { inherit (constructors) and; };
 in
 constructors

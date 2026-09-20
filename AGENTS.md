@@ -37,12 +37,12 @@ default resolves `algebra` from `ci/flake.lock`, never the root `flake.lock`.
 
 **Leaf selectors** — `lib/constructors.nix`
 
-| Export   | Signature                                                                                  |
-| -------- | ------------------------------------------------------------------------------------------ |
-| `star`   | `selector` (a value, not a function)                                                       |
-| `attrs`  | `attrset -> selector`                                                                      |
-| `entity` | `registryEntry -> selector` (requires `? id_hash`; stores `id_hash` + display `name` only) |
-| `kind`   | `kindValue -> selector` (requires `? kind && ? options`; stores the kind *name*)           |
+| Export   | Signature                                                                                                                       |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `star`   | `selector` (a value, not a function)                                                                                            |
+| `attrs`  | `attrset -> selector`                                                                                                           |
+| `entity` | `registryEntry -> selector` (requires `? id_hash`; stores `id_hash` + display `name` only)                                      |
+| `kind`   | `kindValue -> selector` (requires `? kind` and gen-schema's mint-backed mark `__mint.minted`, ADR-0034; stores the kind *name*) |
 
 **Combinators** — `lib/constructors.nix`
 

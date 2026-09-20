@@ -134,7 +134,7 @@ sel.kind   schema.user         # => { __sel = "kind";   kind = "user"; }
 ```
 
 - **`sel.entity <registry-entry>`** validates its argument structurally at construction (`entry ? id_hash`); a string, or any value lacking `id_hash`, throws immediately with an identity-law message. Only `id_hash` (identity) and `name` (display/errors) are stored — never the entry itself, whose methods would make Nix `==` on selectors throw. Because `id_hash` is content-addressed over the kind plus identity fields, storing it loses no identity information.
-- **`sel.kind <kind-value>`** takes a gen-schema kind value and validates it with the same structural guard registries use (`? kind && ? options`); a string throws. It stores the kind **name** as its internal key.
+- **`sel.kind <kind-value>`** takes a gen-schema kind value and validates its **provenance** with the same guard registries use: the value must carry the mint-backed mark gen-schema stamps at construction (`__mint.minted`, ADR-0034). A string throws, and so does a hand-written `{ kind = …; options = …; }` — that shape used to be admitted, because the retired `? kind && ? options` test checked none of the provenance its own message named. It stores the kind **name** as its internal key.
 
 Both match against a reserved `__identity` record the enriched adapters project alongside node data (shape below). The dispatch is loud where silence would hide a bug:
 

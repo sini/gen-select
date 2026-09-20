@@ -1,3 +1,4 @@
+{ isSchemaKind }:
 {
   mkContext =
     {
@@ -9,7 +10,9 @@
       # caller's hand. Real gen-schema instances carry no type/kind field of their
       # own, so kind projection CANNOT default from the datum — omitting `kind` and
       # `kindFor` projects kind = null and any sel.kind match throws (loud, not the
-      # A1 silent-never-match). Validated with the same structural guard as sel.kind.
+      # A1 silent-never-match). Validated with the same PROVENANCE guard as sel.kind —
+      # the mint-backed mark gen-schema stamps at construction (ADR-0034), not the
+      # `? kind && ? options` shape test that admitted any hand-written attrset.
       kind ? null,
       # id -> entry | null. Default suits the common case where `data id` IS the
       # entry (gen-schema instances carry id_hash, so identity is the datum itself).
@@ -36,10 +39,12 @@
       validatedKind =
         if kind == null then
           null
-        else if builtins.isAttrs kind && kind ? kind && kind ? options then
+        else if isSchemaKind kind then
           kind
+        else if !(builtins.isAttrs kind) then
+          throw "gen-select: adapters.registry.mkContext `kind` expects a gen-schema kind value or null; got ${builtins.typeOf kind}."
         else
-          throw "gen-select: adapters.registry.mkContext `kind` expects a kind value (an attrset with `kind` and `options`, e.g. schema.user) or null; got ${builtins.typeOf kind}.";
+          throw "gen-select: adapters.registry.mkContext `kind` expects a gen-schema kind value carrying a mint-backed mark (`__mint.minted`, ADR-0034); got an attrset with no mark. A hand-written `{ kind = ...; options = ...; }` is not a kind value — take the kind from a schema (e.g. `schema.widget`).";
       normalizeKind =
         k:
         if k == null then
