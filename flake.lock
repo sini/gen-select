@@ -2,11 +2,11 @@
   "nodes": {
     "gen-algebra": {
       "locked": {
-        "lastModified": 1789944518,
-        "narHash": "sha256-qKqxcTsKmCXjBuoufYO7E6KzF0UMpjGVC8OJmTg6oNU=",
+        "lastModified": 1790022528,
+        "narHash": "sha256-GzqA7pDiS16fN3gYQ2oPST8l2UrVKxLUXIMUr37xUUU=",
         "owner": "sini",
         "repo": "gen-algebra",
-        "rev": "800904b16cf342241c421576157164b3a5ff850f",
+        "rev": "09d65cad62bc9a9041ce4d9a5ce3260ffcc5a870",
         "type": "github"
       },
       "original": {
