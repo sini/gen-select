@@ -21,6 +21,7 @@
   isSchemaKind,
   kindKey,
   kindEq,
+  entityEq,
 }:
 rec {
   star = {
@@ -39,20 +40,49 @@ rec {
   # construction (identity law: entries carry identity, strings do not). The entry
   # itself is NOT stored — gen-schema instances carry functions, and embedding them
   # would make Nix `==` on selectors throw, destroying the structural-equality/dedup
-  # property every other constructor has; `id_hash` is content-addressed, so storing
-  # it alone loses no identity information.
+  # property every other constructor has.
+  #
+  # ★ THE ENTRY'S KIND COMES FIRST (den-hoag-l0y (β)): `sel.entity kindValue entry`. gen-schema
+  # mints `id_hash` over the kind's MARK, and a mark is minted with a sealed marker at every
+  # sealed component, so two kinds differing only there share a mark and their instances share a
+  # stamp. The stamp alone therefore cannot decide; the payload stores the kind's KEY
+  # (./default.nix `kindKey`) beside it, and `entityEq` refuses such a collision by name as
+  # `sel.kind` does. `kindKey`'s fields are shared references, so no mark is forced here.
   entity =
-    entry:
-    if builtins.isString entry then
-      throw "gen-select: sel.entity expects a registry entry (an attrset carrying id_hash); got a string. Pass the entry value (e.g. den.hosts.axon-01), never a name string."
-    else if !(builtins.isAttrs entry && entry ? id_hash) then
-      throw "gen-select: sel.entity expects a registry entry (an attrset carrying id_hash); got ${builtins.typeOf entry}."
-    else
-      {
-        __sel = "entity";
-        inherit (entry) id_hash;
-        name = entry.name or null; # display/errors only (identity law); excluded from selectorEq
-      };
+    kindValue:
+    let
+      # Judged at the FIRST application, as gen-schema's `mkIdentityModule` judges its operand: a
+      # stale one-argument call `sel.entity entry` must refuse by name when the selector is used,
+      # not hand back a function that aborts uncatchably at `selector.__sel`.
+      kind =
+        if builtins.isString kindValue then
+          throw "gen-select: sel.entity expects the entry's kind value first (sel.entity schema.host hosts.axon), got the string \"${kindValue}\". A kind name is a reference; pass the kind value."
+        else if !(isSchemaKind kindValue) then
+          throw "gen-select: sel.entity expects the entry's kind value first (sel.entity schema.host hosts.axon): a gen-schema kind value carrying a mint-backed mark (`__mint.minted`, ADR-0034); got ${
+            if builtins.isAttrs kindValue && kindValue ? id_hash then
+              "an entry (the one-argument form is retired: the entry's kind decides a sealed collision)"
+            else if builtins.isAttrs kindValue then
+              "an attrset with no mark"
+            else
+              builtins.typeOf kindValue
+          }."
+        else
+          kindKey kindValue;
+    in
+    builtins.seq kind (
+      entry:
+      if builtins.isString entry then
+        throw "gen-select: sel.entity expects a registry entry (an attrset carrying id_hash); got a string. Pass the entry value (e.g. den.hosts.axon-01), never a name string."
+      else if !(builtins.isAttrs entry && entry ? id_hash) then
+        throw "gen-select: sel.entity expects a registry entry (an attrset carrying id_hash); got ${builtins.typeOf entry}."
+      else
+        {
+          __sel = "entity";
+          inherit (entry) id_hash;
+          inherit kind;
+          name = entry.name or null; # display/errors only (identity law); excluded from selectorEq
+        }
+    );
 
   # Kind selector — matches all entities of a kind. W3C CSS Selectors Level 4 §5.1:
   # the type (element-name) selector `E`, lifted from element names to schema kinds.
@@ -149,7 +179,8 @@ rec {
   # dedup as equal in neededBy sets and dispatch rule-sets — raw `==` would wrongly
   # distinguish them. `==` is therefore finer than selectorEq exactly on `name`.
   # `kind` payloads compare through gen-schema's `kindEq` relation (./default.nix's `kindEq`):
-  # their `name` is display-only too, and a sealed collision is refused by name.
+  # their `name` is display-only too, and a sealed collision is refused by name. `entity`
+  # payloads compare through ./default.nix's `entityEq`: the stamp, then the kind by `kindEq`.
   selectorEq =
     a: b:
     if a.__sel == "when" && b.__sel == "when" then
@@ -167,7 +198,7 @@ rec {
       in
       if isIntensional a.fn && isIntensional b.fn then algebra.conservativeEq a.fn b.fn else false
     else if a.__sel == "entity" && b.__sel == "entity" then
-      a.id_hash == b.id_hash
+      entityEq "gen-select: selectorEq" a b
     else if a.__sel == "kind" && b.__sel == "kind" then
       kindEq "gen-select: selectorEq" a b
     else if a.__sel == "coord" && b.__sel == "coord" then
@@ -196,6 +227,6 @@ rec {
       # cyclic or self-referential value overflows uncatchably. That is a design
       # decision rather than a local fix, so this arm stays structural and the boundary
       # is written here. `entity` and `coord` above are unaffected: they compare
-      # `id_hash` and never reach the payload.
+      # `id_hash` (and `entity` its kind key) and never reach the entry's payload.
       a == b;
 }

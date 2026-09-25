@@ -1,9 +1,17 @@
 {
   genSelect,
+  genSchema,
+  genMerge,
   ...
 }:
 let
   sel = genSelect;
+  # `sel.entity` takes the entry's kind first (den-hoag-l0y (β)); the one control below that builds
+  # entity selectors needs a real kind, and a migrated one, so equal stamps decide without a node.
+  kindUnit =
+    (genSchema.evalSchema {
+      modules = [ { config.schema.unit.options.n = genMerge.mkOption { type = genMerge.types.int; }; } ];
+    }).unit;
   # A record of the INTENSIONAL SHAPE (Palmer §2.2) — the four fields `isIdentified`'s
   # `when`-limb reads. It is NOT gen-algebra's constructor and no longer bears its name:
   # that constructor is an ENCODER — `mkIntensional : hashIdentity -> registry -> ctor ->
@@ -226,13 +234,13 @@ in
           # CONTROL: the entity branch never reaches the payload, so it is unaffected.
           entityBranchUnaffected = decides (
             sel.selectorEq
-              (sel.entity {
+              (sel.entity kindUnit {
                 id_hash = "h";
                 name = "n";
                 __id = throw "identity: no mintable identity";
               })
               (
-                sel.entity {
+                sel.entity kindUnit {
                   id_hash = "h";
                   name = "n";
                   __id = throw "identity: no mintable identity";

@@ -1,6 +1,7 @@
-# `kindEq` is ./default.nix's one kind relation (gen-schema's `kindEq` subject through
-# `algebra.sealedCollisionEq`), handed in so that the matcher and `selectorEq` cannot disagree.
-{ kindEq }:
+# `kindEq` and `entityEq` are ./default.nix's one kind relation (gen-schema's `kindEq` subject
+# through `algebra.sealedCollisionEq`) and one entity relation, handed in so that the matcher and
+# `selectorEq` cannot disagree.
+{ kindEq, entityEq }:
 let
   # Datafun (Arntzenius & Krishnaswami 2016) splits the typing context into a
   # discrete ∆ and a monotone Γ and types every non-monotone operation (¬, =,
@@ -55,6 +56,28 @@ let
         inFlight = [ ];
       };
 
+  # The node's projected kind KEY for `sel.entity` at a sealed stamp, or a refusal by name. The guards
+  # are the `sel.kind` arm's; that arm keeps its inline copy because routing it through this call
+  # measured +46 to +80 bytes per node on kindMatch (den-hoag-l0y (β)). A record that omits `kind`
+  # is kind-blind exactly as `kind = null` is: before (β) `sel.entity` never read the field, so an
+  # entity-only hand projection had no reason to carry it, and a bare `.kind` would abort
+  # uncatchably on it rather than refuse by name.
+  nodeKindKey =
+    tag: id: data:
+    let
+      k = data.__identity.kind or null;
+    in
+    if k == null then
+      throw "gen-select: sel.${tag} matched against a kind-blind projection (node ${id} is entity-backed but __identity.kind is null or absent). Pass the registry adapter's `kind` argument, supply a `kindFor`, or use a kind-bearing projection."
+    else if builtins.isString k then
+      # A name compared against a minted identity never matches: the A1 silent never-match.
+      throw
+        "gen-select: sel.${tag} matched against a projection whose __identity.kind for node ${id} is the kind name \"${k}\"; a kind name is a reference, not a kind declaration. Project the kind's key (the registry adapter's `kind`/`kindFor` take the kind value)."
+    else if !(builtins.isAttrs k && k ? identity && k ? name && k ? sealed) then
+      throw "gen-select: sel.${tag} matched against a projection whose __identity.kind for node ${id} is not a kind key ({ identity; name; sealed; }, what the registry adapter projects from a kind value); got ${builtins.typeOf k}."
+    else
+      k;
+
   matchOne =
     selector: id: ctx:
     let
@@ -103,8 +126,17 @@ let
         throw "gen-select: sel.entity matched against an identity-blind context (its `data ${id}` has no __identity key). Use adapters.scope.mkContext / adapters.registry.mkContext, or project __identity."
       else if data.__identity == null then
         false
+      else if data.__identity.id_hash != selector.id_hash then
+        false
+      # Equal stamps share one sealed key set (./default.nix `entityEq`); empty, the stamp is the whole
+      # identity and the node's kind is not read, so a kind-blind context still answers.
+      else if selector.kind.sealed == { } then
+        true
       else
-        data.__identity.id_hash == selector.id_hash
+        entityEq "gen-select: sel.entity" {
+          inherit (data.__identity) id_hash;
+          kind = nodeKindKey "entity" id data;
+        } selector
 
     else if tag == "kind" then
       # Kind match — like entity, plus a kind-blind guard: an entity-backed node whose
@@ -119,8 +151,11 @@ let
         throw "gen-select: sel.kind matched against an identity-blind context (its `data ${id}` has no __identity key). Use adapters.scope.mkContext / adapters.registry.mkContext, or project __identity."
       else if data.__identity == null then
         false
-      else if data.__identity.kind == null then
-        throw "gen-select: sel.kind matched against a kind-blind projection (node ${id} is entity-backed but __identity.kind is null). Pass the registry adapter's `kind` argument, supply a `kindFor`, or use a kind-bearing projection."
+      else if (data.__identity.kind or null) == null then
+        # `or null`: a hand projection whose record omits `kind` is kind-blind, and must refuse by
+        # name here rather than abort uncatchably on the attribute access.
+        throw
+          "gen-select: sel.kind matched against a kind-blind projection (node ${id} is entity-backed but __identity.kind is null or absent). Pass the registry adapter's `kind` argument, supply a `kindFor`, or use a kind-bearing projection."
       else if builtins.isString data.__identity.kind then
         # A name compared against a minted identity never matches: the A1 silent never-match.
         # Keeping a name comparison beside the identity one is the silent site-local fallback

@@ -155,7 +155,7 @@ in
 
     # ---- E1/E2 flow through the enriched adapter ----
     test-match-entity-through-adapter = {
-      expr = sel.matches (sel.entity entryU) "user:sini" ctx;
+      expr = sel.matches (sel.entity schema.user entryU) "user:sini" ctx;
       expected = true;
     };
     test-match-kind-through-adapter-refused = {
@@ -173,21 +173,9 @@ in
       expected = false;
     };
 
-    # ---- E6: malformed entryFor result — entity forces id_hash → throw; kind refuses by its own
-    # name, not by the entry (the kind refusal never reads the entry) ----
-    test-malformed-entryfor-entity-throws = {
-      expr =
-        let
-          c = sel.adapters.scope.mkContext (
-            base
-            // {
-              entryFor = id: if id == "host:axon" then { name = "axon"; } else null;
-            }
-          );
-        in
-        throws (sel.matches (sel.entity { id_hash = "x"; }) "host:axon" c);
-      expected = true;
-    };
+    # ---- E6: malformed entryFor result — entity forces id_hash → throw (a MESSAGE cell in
+    # ../tests-error.nix, `entity-admission`); kind refuses by its own name, not by the entry
+    # (the kind refusal never reads the entry) ----
     test-malformed-entryfor-kind-refused = {
       expr =
         let

@@ -68,7 +68,10 @@ entity : registry-entry    -> selector
 kind   : kind-value        -> selector
 ```
 
-**`entity e`** — matches the node whose `__identity.id_hash` equals `e.id_hash`.
+**`entity K e`** — matches the node whose `__identity.id_hash` equals `e.id_hash`; when
+`K` has sealed components, an equal stamp also compares the node's projected kind with `K`
+by `kindEq`, and a sealed collision (or a kind-blind projection) is refused by name. `K` is
+judged at the first application, so the retired one-argument `entity e` refuses by name.
 
 - Construction validates `e ? id_hash`. A string throws with an identity-law message; any
   other value lacking `id_hash` throws naming its `builtins.typeOf`.
@@ -130,7 +133,7 @@ selectorEq   : selector -> selector -> bool
   §2.3/§5.3), dispatched on the wrapped value's `__mint` tag — digest equality when
   minted, otherwise (unmintable or unmigrated) Nix `==` on the reified value MINUS
   `__id` — the name never decides;
-- `entity`: `id_hash` only (display-only `name` excluded);
+- `entity`: `id_hash`, then (equal stamps) the kind key by `entityEq`: different marks refuse, equal marks decide by `kindEq` (display-only `name` excluded);
 - `coord`: `(dim, id_hash)` (display-only `name` excluded);
 - everything else (including `kind`, whose payload has no display field): structural `==`
   on the selector, which forces whatever the payload holds — see the caveat below.
@@ -244,17 +247,17 @@ which reads only the positional kind.
 
 ## Laws
 
-| Law | Statement                                                                                                                                                                                                                                                          |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| E1  | `entity e` matches iff `__identity` is a record with `.id_hash == e.id_hash`. Equal-identity entries share a match set; any identity-field difference never cross-matches.                                                                                         |
-| E2  | `kind K` matches iff `__identity` is a record whose non-null `.kind` is `K`'s kind key by `kindEq`; `.kind == null` throws (kind-blind projection is loud); a name string throws.                                                                                  |
-| E3  | `entity`/`kind` throw at construction on strings and non-conforming values; no selector is ever produced from a string.                                                                                                                                            |
-| E4  | Matching `entity`/`kind` against a context whose `data id` lacks the `__identity` key throws (identity-blind contexts are loud).                                                                                                                                   |
-| E5  | `__identity = null` yields `false` (non-entity nodes are quiet — structural recursion over mixed graphs needs no guards).                                                                                                                                          |
-| E6  | Through the enriched adapters `__identity` is present for every node; `null` iff no entry; `id_hash`/`kind` coherent by construction; `__identity` overrides same-named projection keys; a malformed entry errors at `id_hash` access, `kind` matching unaffected. |
-| E7  | `entity`/`kind`/`coord` selectors are function-free (Nix `==` total); `selectorEq` compares identity fields only (display `name` excluded).                                                                                                                        |
-| E8  | Backward compatible: existing selectors, the five-accessor contract, and the graph adapter are byte-compatible; enrichment is additive (`data` output is a superset). Sole break: `sel.entityKind` is removed.                                                     |
-| P1  | `coord dim e` matches iff `__coords` is projected, the cell has `dim`, and `__coords.${dim}.id_hash == e.id_hash`.                                                                                                                                                 |
-| P2  | `inSlice coords` matches iff every fixed coordinate matches; `inSlice { }` is vacuously true; equal to the hand-written conjunction.                                                                                                                               |
-| P3  | `__coords` absent → throw; dim absent from a cell → `false`; malformed coordinate value → throw.                                                                                                                                                                   |
-| P4  | Selectors are static: they read only structural context attributes, never resolved values, and force only the node data a match inspects (`entity`/`kind` never force children).                                                                                   |
+| Law | Statement                                                                                                                                                                                                                                                                         |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| E1  | `entity K e` matches iff `__identity` is a record with `.id_hash == e.id_hash` (and, when `K` has sealed components, a kind `kindEq` to `K`, refused by name at a sealed collision). Equal-identity entries share a match set; any identity-field difference never cross-matches. |
+| E2  | `kind K` matches iff `__identity` is a record whose non-null `.kind` is `K`'s kind key by `kindEq`; `.kind == null` throws (kind-blind projection is loud); a name string throws.                                                                                                 |
+| E3  | `entity`/`kind` throw at construction on strings and non-conforming values; no selector is ever produced from a string.                                                                                                                                                           |
+| E4  | Matching `entity`/`kind` against a context whose `data id` lacks the `__identity` key throws (identity-blind contexts are loud).                                                                                                                                                  |
+| E5  | `__identity = null` yields `false` (non-entity nodes are quiet — structural recursion over mixed graphs needs no guards).                                                                                                                                                         |
+| E6  | Through the enriched adapters `__identity` is present for every node; `null` iff no entry; `id_hash`/`kind` coherent by construction; `__identity` overrides same-named projection keys; a malformed entry errors at `id_hash` access, `kind` matching unaffected.                |
+| E7  | `entity`/`kind`/`coord` selectors are function-free (Nix `==` total); `selectorEq` compares identity fields only (display `name` excluded).                                                                                                                                       |
+| E8  | Backward compatible: existing selectors, the five-accessor contract, and the graph adapter are byte-compatible; enrichment is additive (`data` output is a superset). Sole break: `sel.entityKind` is removed.                                                                    |
+| P1  | `coord dim e` matches iff `__coords` is projected, the cell has `dim`, and `__coords.${dim}.id_hash == e.id_hash`.                                                                                                                                                                |
+| P2  | `inSlice coords` matches iff every fixed coordinate matches; `inSlice { }` is vacuously true; equal to the hand-written conjunction.                                                                                                                                              |
+| P3  | `__coords` absent → throw; dim absent from a cell → `false`; malformed coordinate value → throw.                                                                                                                                                                                  |
+| P4  | Selectors are static: they read only structural context attributes, never resolved values, and force only the node data a match inspects (`entity`/`kind` never force children).                                                                                                  |

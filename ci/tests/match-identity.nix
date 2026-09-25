@@ -125,11 +125,11 @@ in
   flake.tests.match-identity = {
     # ---- E1 ----
     test-entity-hit = {
-      expr = m (sel.entity entryU) "u1" ctx;
+      expr = m (sel.entity kindUser entryU) "u1" ctx;
       expected = true;
     };
     test-entity-miss = {
-      expr = m (sel.entity entryU) "u2" ctx;
+      expr = m (sel.entity kindUser entryU) "u2" ctx;
       expected = false;
     };
 
@@ -145,7 +145,7 @@ in
 
     # ---- E5: non-entity nodes are quiet ----
     test-entity-null-quiet = {
-      expr = m (sel.entity entryU) "plain" ctx;
+      expr = m (sel.entity kindUser entryU) "plain" ctx;
       expected = false;
     };
     test-kind-null-quiet = {
@@ -159,7 +159,7 @@ in
       expected = true;
     };
     test-entity-through-kindblind = {
-      expr = m (sel.entity { id_hash = "h-x"; }) "kindblind" ctx;
+      expr = m (sel.entity kindUser { id_hash = "h-x"; }) "kindblind" ctx;
       expected = true;
     };
 
@@ -182,7 +182,7 @@ in
       expected = false;
     };
     test-not-over-null = {
-      expr = m (sel.not (sel.entity entryU)) "plain" ctx;
+      expr = m (sel.not (sel.entity kindUser entryU)) "plain" ctx;
       expected = true;
     };
     test-has-mixed = {
@@ -191,10 +191,8 @@ in
     };
 
     # ---- E4: identity-blind contexts are loud ----
-    test-entity-legacy-throws = {
-      expr = throws (m (sel.entity entryU) "anything" legacyCtx);
-      expected = true;
-    };
+    # `sel.entity`'s identity-blind refusal is a MESSAGE cell in ../tests-error.nix
+    # (`entity-admission`), so that it is told apart from the kind-first refusal.
     test-kind-legacy-throws = {
       expr = throws (m (sel.kind kindUser) "anything" legacyCtx);
       expected = true;
@@ -208,13 +206,13 @@ in
             children = _: throw "sel.entity must not force children";
           };
         in
-        m (sel.entity entryU) "u1" lazyCtx;
+        m (sel.entity kindUser entryU) "u1" lazyCtx;
       expected = true;
     };
 
     # ---- dangling entries: predicate semantics, absence = no match ----
     test-dangling-entry-no-match = {
-      expr = builtins.any (id: m (sel.entity { id_hash = "not-in-graph"; }) id ctx) [
+      expr = builtins.any (id: m (sel.entity kindUser { id_hash = "not-in-graph"; }) id ctx) [
         "u1"
         "u2"
         "h1"
@@ -223,18 +221,15 @@ in
     };
     test-stale-generation-no-match = {
       # Same display name, different id_hash (identity field changed) → no rescue by name.
-      expr = m (sel.entity {
+      expr = m (sel.entity kindUser {
         id_hash = "h-user-sini-v2";
         name = "sini";
       }) "u1" ctx;
       expected = false;
     };
 
-    # ---- E6 asymmetry (malformed entry): entity forces id_hash → throw; kind still matches ----
-    test-malformed-entry-entity-throws = {
-      expr = throws (m (sel.entity { id_hash = "whatever"; }) "bad" badCtx);
-      expected = true;
-    };
+    # ---- E6 asymmetry (malformed entry): entity forces id_hash → throw (a MESSAGE cell in
+    # ../tests-error.nix, `entity-admission`); kind still matches ----
     test-malformed-entry-kind-matches = {
       expr = m (sel.kind kindUser) "bad" badCtx;
       expected = true;

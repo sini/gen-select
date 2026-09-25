@@ -7,8 +7,10 @@
 # `pgraph.product.coordsOf` — no gen-product import (pure structural translator).
 { and }:
 let
-  # coord dim entry — validates the entry exactly like sel.entity (structural
-  # `? id_hash`, strings throw) and stores only plain, `==`-comparable data.
+  # coord dim entry — validates the entry as sel.entity validates its second argument
+  # (structural `? id_hash`, strings throw) and stores only plain, `==`-comparable data.
+  # Unlike sel.entity it takes no kind, so a sealed collision between two coordinates is
+  # NOT refused here: the coord context yields entries and no kinds (den-hoag-8hqx0).
   coord =
     dim: entry:
     if builtins.isString entry then

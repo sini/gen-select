@@ -55,15 +55,33 @@ let
           mark = b.identity;
         };
 
+  # THE ONE ENTITY RELATION (den-hoag-l0y (β)). An entity key is `{ id_hash; kind = kindKey; }`.
+  # Distinct stamps decide `false` without reading either kind. Equal stamps: gen-schema mints
+  # `id_hash` over the kind's MARK (U2), so equal stamps carry equal marks, and a mark is minted over
+  # the kind's component tags, which put the sealed marker at every sealed path. So equal stamps have
+  # the same SEALED KEY SET, and the entity's identity is total exactly when that set is empty. When
+  # it is not, the decision is `kindEq`'s: true, or a refusal by name at a sealed collision. Different
+  # marks at an equal stamp is not a collision; it is a kind that is not its entry's kind (or a
+  # gen-schema whose stamp omits the mark), refused by name.
+  entityEq =
+    site: a: b:
+    if a.id_hash != b.id_hash then
+      false
+    else if a.kind.identity != b.kind.identity then
+      throw "${site}: two entries share the id_hash '${a.id_hash}' but carry kinds with different marks ('${a.kind.name}', '${b.kind.name}'); gen-schema mints an entry's id_hash over its kind's mark, so one of these kinds is not its entry's kind. Pass each entry's own kind value."
+    else
+      kindEq site a.kind b.kind;
+
   constructors = import ./constructors.nix {
     inherit
       isSchemaKind
       kindKey
       kindEq
+      entityEq
       algebra
       ;
   };
-  match = import ./match.nix { inherit kindEq; };
+  match = import ./match.nix { inherit kindEq entityEq; };
   scopeAdapter = import ./adapters/scope.nix;
   graphAdapter = import ./adapters/graph.nix { inherit (match) matches; };
   registryAdapter = import ./adapters/registry.nix { inherit isSchemaKind kindKey; };

@@ -86,7 +86,8 @@ let
   # Two kinds sharing the name `host` that are different DECLARATIONS: B adds a non-key option,
   # so the key sets are equal and only the declaration separates them. Their instances `pewter`
   # carry equal key values. gen-schema's stamp carries the kind's minted identity, so the two are
-  # two entities, and `sel.entity` — which compares stamps and holds no kind — must say so.
+  # two entities, and `sel.entity` must say so AT THE STAMP: it reads the kinds it holds only when
+  # two stamps are equal (den-hoag-l0y (β)), and these two stamps differ.
   twinSchema =
     extra:
     (genSchema.evalSchema {
@@ -140,7 +141,7 @@ in
       expected = true;
     };
     test-entity-matches-one-node = {
-      expr = builtins.filter (id: sel.matches (sel.entity users.sini) id ctxK) userNodes;
+      expr = builtins.filter (id: sel.matches (sel.entity schema.user users.sini) id ctxK) userNodes;
       expected = [ "sini" ];
     };
 
@@ -150,7 +151,7 @@ in
       expected = true;
     };
     test-entity-works-without-kind = {
-      expr = sel.matches (sel.entity users.sini) "sini" ctxNoK;
+      expr = sel.matches (sel.entity schema.user users.sini) "sini" ctxNoK;
       expected = true;
     };
 
@@ -171,10 +172,10 @@ in
     # ---- same name, different declarations: two entities ----
     test-entity-separates-same-name-kinds = {
       expr = {
-        selectorEq = sel.selectorEq (sel.entity pewterA) (sel.entity pewterB);
-        matchesOtherKind = sel.matches (sel.entity pewterA) "pewter" (ctxOf pewterB);
+        selectorEq = sel.selectorEq (sel.entity kindA pewterA) (sel.entity kindB pewterB);
+        matchesOtherKind = sel.matches (sel.entity kindA pewterA) "pewter" (ctxOf pewterB);
         # the live arm: the entity matches its own node
-        matchesOwnKind = sel.matches (sel.entity pewterA) "pewter" (ctxOf pewterA);
+        matchesOwnKind = sel.matches (sel.entity kindA pewterA) "pewter" (ctxOf pewterA);
       };
       expected = {
         selectorEq = false;

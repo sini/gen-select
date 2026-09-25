@@ -1,6 +1,7 @@
 # E3 (construction-time identity law) + E7 (structural equality & dedup, identity only).
-# Uses plain mock entries — sel.entity reads only id_hash + name, so a bare attrset is a
-# faithful stand-in here; the real-gen-schema-instance paths live in
+# Uses plain mock entries — sel.entity reads only the entry's id_hash + name (its kind is the
+# first argument, a real kind), so a bare attrset is a faithful stand-in here; the
+# real-gen-schema-instance paths live in
 # adapter-registry-identity / integration-scope.
 #
 # ★ KIND VALUES ARE THE EXCEPTION, AND ADR-0034 IS WHY. `sel.kind` reads the mint-backed mark
@@ -53,28 +54,29 @@ in
   flake.tests.constructors-identity = {
     # ---- E3: entity construction ----
     test-entity-payload-shape = {
-      expr = sel.entity entryA;
+      expr = sel.entity kindUser entryA;
       expected = {
         __sel = "entity";
         id_hash = "hash-A";
+        # The entry's kind KEY (den-hoag-l0y (β)), the same record a kind selector carries.
+        kind = {
+          identity = kindUser.__mint.minted;
+          name = "user";
+          sealed = { };
+        };
         name = "axon-01";
       };
     };
     test-entity-stores-no-entry-field = {
       # The entry (with its methods) is deliberately NOT embedded — keeps == total.
-      expr = (sel.entity entryA) ? entry;
+      expr = (sel.entity kindUser entryA) ? entry;
       expected = false;
     };
-    test-entity-string-throws = {
-      expr = throws (sel.entity "axon-01");
-      expected = true;
-    };
-    test-entity-no-idhash-throws = {
-      expr = throws (sel.entity { name = "x"; });
-      expected = true;
-    };
+    # The entry-admission refusals (a string, an attrset without id_hash) and the kind-first
+    # refusals are MESSAGE cells in ../tests-error.nix (`entity-admission`): with the kind taken
+    # first, a `throws` cell here passes on whichever argument refuses, so it cannot tell them apart.
     test-entity-name-defaults-null = {
-      expr = (sel.entity { id_hash = "h"; }).name;
+      expr = (sel.entity kindUser { id_hash = "h"; }).name;
       expected = null;
     };
 
@@ -105,26 +107,26 @@ in
 
     # ---- E7: selectorEq compares identity fields only ----
     test-selectorEq-equal-identity = {
-      expr = sel.selectorEq (sel.entity entryA) (sel.entity entryA);
+      expr = sel.selectorEq (sel.entity kindUser entryA) (sel.entity kindUser entryA);
       expected = true;
     };
     test-selectorEq-cross-entry-neq = {
-      expr = sel.selectorEq (sel.entity entryA) (sel.entity entryB);
+      expr = sel.selectorEq (sel.entity kindUser entryA) (sel.entity kindUser entryB);
       expected = false;
     };
     test-selectorEq-name-divergence-dedup = {
       # Equal id_hash, differing display name → dedup as equal (identity only).
-      expr = sel.selectorEq (sel.entity entryA) (sel.entity entryAName2);
+      expr = sel.selectorEq (sel.entity kindUser entryA) (sel.entity kindUser entryAName2);
       expected = true;
     };
     test-raw-eq-finer-than-selectorEq = {
       # Raw == wrongly distinguishes on the display-only name; selectorEq does not.
-      expr = (sel.entity entryA) == (sel.entity entryAName2);
+      expr = (sel.entity kindUser entryA) == (sel.entity kindUser entryAName2);
       expected = false;
     };
     test-entity-selector-is-function-free = {
       # Payload carries no functions — deepSeq never throws, so == stays total.
-      expr = builtins.deepSeq (sel.entity entryA) true;
+      expr = builtins.deepSeq (sel.entity kindUser entryA) true;
       expected = true;
     };
     test-kind-selectorEq-eq = {

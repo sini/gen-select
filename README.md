@@ -104,21 +104,21 @@ sel.matches (sel.attrs { type = "service"; }) "web" ctx
 
 ### Constructors
 
-| Constructor           | Signature                    | Matches when                                                                      |
-| --------------------- | ---------------------------- | --------------------------------------------------------------------------------- |
-| `sel.star`            | `-> selector`                | always                                                                            |
-| `sel.attrs a`         | `attrset -> selector`        | all k:v in `a` equal in `data id`; missing key = no match                         |
-| `sel.entity e`        | `registry-entry -> selector` | the node's projected identity (`__identity.id_hash`) equals the entry's `id_hash` |
-| `sel.kind K`          | `kind-value -> selector`     | the node's projected kind (`__identity.kind`) is `K` by minted identity           |
-| `sel.and ss`          | `[selector] -> selector`     | all match; `sel.and [] = true`                                                    |
-| `sel.any ss`          | `[selector] -> selector`     | any matches; `sel.any [] = false`                                                 |
-| `sel.not s`           | `selector -> selector`       | does not match                                                                    |
-| `sel.has s`           | `selector -> selector`       | any child matches                                                                 |
-| `sel.within s`        | `selector -> selector`       | any ancestor matches                                                              |
-| `sel.parentMatches s` | `selector -> selector`       | immediate parent matches                                                          |
-| `sel.child p c`       | `sel -> sel -> selector`     | sugar: `and [ c (parentMatches p) ]`                                              |
-| `sel.descendant a d`  | `sel -> sel -> selector`     | sugar: `and [ d (within a) ]`                                                     |
-| `sel.when fn`         | `fn -> selector`             | `fn id ctx` returns true                                                          |
+| Constructor           | Signature                                  | Matches when                                                                                                                                                         |
+| --------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sel.star`            | `-> selector`                              | always                                                                                                                                                               |
+| `sel.attrs a`         | `attrset -> selector`                      | all k:v in `a` equal in `data id`; missing key = no match                                                                                                            |
+| `sel.entity K e`      | `kind-value -> registry-entry -> selector` | the node's projected identity (`__identity.id_hash`) equals the entry's `id_hash`; at a sealed kind, the kinds are compared too (a sealed collision refuses by name) |
+| `sel.kind K`          | `kind-value -> selector`                   | the node's projected kind (`__identity.kind`) is `K` by minted identity                                                                                              |
+| `sel.and ss`          | `[selector] -> selector`                   | all match; `sel.and [] = true`                                                                                                                                       |
+| `sel.any ss`          | `[selector] -> selector`                   | any matches; `sel.any [] = false`                                                                                                                                    |
+| `sel.not s`           | `selector -> selector`                     | does not match                                                                                                                                                       |
+| `sel.has s`           | `selector -> selector`                     | any child matches                                                                                                                                                    |
+| `sel.within s`        | `selector -> selector`                     | any ancestor matches                                                                                                                                                 |
+| `sel.parentMatches s` | `selector -> selector`                     | immediate parent matches                                                                                                                                             |
+| `sel.child p c`       | `sel -> sel -> selector`                   | sugar: `and [ c (parentMatches p) ]`                                                                                                                                 |
+| `sel.descendant a d`  | `sel -> sel -> selector`                   | sugar: `and [ d (within a) ]`                                                                                                                                        |
+| `sel.when fn`         | `fn -> selector`                           | `fn id ctx` returns true                                                                                                                                             |
 
 The distinct `__sel` tags are: `"star"`, `"attrs"`, `"entity"`, `"kind"`, `"and"`, `"any"`, `"not"`, `"has"`, `"within"`, `"parentMatches"`, `"when"` (and `"coord"` from the product adapter).
 
@@ -129,21 +129,21 @@ Note: `child` and `descendant` are sugar — they expand at construction time to
 `sel.entity` and `sel.kind` match by **entity identity** and **entity kind** rather than by attribute values or structural position. They take values carrying identity — a registry entry, a gen-schema kind value — never `"kind:name"` strings (the identity law: strings are internal keys and display rendering only).
 
 ```nix
-sel.entity den.hosts.axon-01   # => { __sel = "entity"; id_hash = "<sha256>"; name = "axon-01"; }
-sel.kind   schema.user         # => { __sel = "kind";   kind = "user"; }
+sel.entity schema.host den.hosts.axon-01   # => { __sel = "entity"; id_hash = "<sha256>"; kind = { identity; name = "host"; sealed; }; name = "axon-01"; }
+sel.kind   schema.user                     # => { __sel = "kind"; identity = <mark>; name = "user"; sealed = { }; }
 ```
 
-- **`sel.entity <registry-entry>`** validates its argument structurally at construction (`entry ? id_hash`); a string, or any value lacking `id_hash`, throws immediately with an identity-law message. Only `id_hash` (identity) and `name` (display/errors) are stored — never the entry itself, whose methods would make Nix `==` on selectors throw. Because `id_hash` is content-addressed over the kind plus identity fields, storing it loses no identity information.
+- **`sel.entity <kind-value> <registry-entry>`** takes the entry's kind first and judges it at the first application, by the same provenance guard as `sel.kind`; the retired one-argument form `sel.entity entry` therefore refuses by name, catchably, when the selector is used. It then validates the entry structurally (`entry ? id_hash`); a string, or any value lacking `id_hash`, throws with an identity-law message. It stores `id_hash`, the kind's key (`{ identity; name; sealed; }`) and `name` (display/errors) — never the entry itself, whose methods would make Nix `==` on selectors throw. gen-schema mints `id_hash` over the kind's mark, and a mark is minted with a sealed marker at each sealed component, so two kinds that differ only at a sealed component (an unmigrated `lib.types` option, a refinement lambda) share a stamp. At an equal stamp whose kind has sealed components, the match and `selectorEq` therefore compare the two kinds as `sel.kind` does, and a sealed collision is **refused by name**. With no sealed components the stamp is the whole identity and no node kind is read. That shortcut trusts the caller's kind: an entry whose stamp gen-schema did not mint over that same kind (a hand-built mock, a fixture registry entry) is decided by the caller's kind alone.
 - **`sel.kind <kind-value>`** takes a gen-schema kind value and validates its **provenance** with the same guard registries use: the value must carry the mint-backed mark gen-schema stamps at construction (`__mint.minted`). A string throws, and so does a hand-written `{ kind = …; options = …; }` — that shape used to be admitted, because the retired `? kind && ? options` test checked none of the provenance its own message named. It stores the kind's **minted identity** as its key (`{ identity; name; sealed; }`; `name` is display-only), and compares through `algebra.sealedCollisionEq`, the helper gen-schema's `kindEq` calls, so a sealed collision is refused by name.
 
 Both match against a reserved `__identity` record the enriched adapters project alongside node data (shape below). The dispatch is loud where silence would hide a bug:
 
-| `__identity` state                 | `sel.entity`                       | `sel.kind`                         |
-| ---------------------------------- | ---------------------------------- | ---------------------------------- |
-| key **absent** from `data id`      | **throw** (identity-blind context) | **throw** (identity-blind context) |
-| `null` (node is not entity-backed) | `false`                            | `false`                            |
-| record with `kind == null`         | matches on `id_hash`               | **throw** (kind-blind projection)  |
-| record                             | `id_hash` equality                 | `kind` equality                    |
+| `__identity` state                 | `sel.entity`                                                                                                                     | `sel.kind`                         |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| key **absent** from `data id`      | **throw** (identity-blind context)                                                                                               | **throw** (identity-blind context) |
+| `null` (node is not entity-backed) | `false`                                                                                                                          | `false`                            |
+| record with `kind` null or absent  | matches on `id_hash` for a kind with no sealed components; at an equal stamp of a sealed kind, **throw** (kind-blind projection) | **throw** (kind-blind projection)  |
+| record                             | `id_hash` equality, then (sealed kinds only) `kind` by `kindEq`                                                                  | `kind` equality by `kindEq`        |
 
 The throws convert a projection gap (the historical silent-never-match failure) into a named configuration error. A node carrying a positional `type` but no entry does **not** match `sel.kind` — positional-type matching remains `sel.attrs { type = "…"; }`.
 
@@ -312,7 +312,7 @@ cd examples/sql-where && just ci
 and `nix flake check ./ci` are unguarded: they read a git-filtered copy of the tree, so an untracked
 cell is silently absent and the run stays green.
 
-The core suite is **217 tests across 16 suites** (`nix-unit --flake ./ci#tests` ⇒ `217/217 successful`, `5cd3312`), driven by [nix-unit](https://github.com/nix-community/nix-unit). Alongside the original structural suites (`constructors`, `match-basic`, `match-structural`, `composition`, `sugar`, `when`, `adapters`, `adapter-registry`, `purity`) the identity-selector work adds `constructors-identity`, `match-identity`, `adapter-scope-identity`, `adapter-registry-identity`, `adapter-product`, and `integration-scope`. The last is the acceptance test for the identity/kind routing surface: it drives `sel.kind`/`sel.entity` through a **real `gen-scope.eval` graph seeded from real gen-schema instances**, including the neededBy predicate shape. The `purity` suite is the Class-A invariant, and it now has two arms. It scans every `lib/**.nix` (plus the root `flake.nix`/`default.nix`) for forbidden tokens (`nixpkgs`, `lib.`, `evalModules`, `mkOption`) and fails CI if a nixpkgs or module-system tether creeps back in; and it pins the library's dependency budget at exactly one by asserting the root flake's declared inputs are `[ "gen-algebra" ]`, read from the lock. `gen-algebra` left the forbidden list when the edge was taken deliberately, and the budget arm is what keeps the narrowed invariant as strong as the one it replaced — dropping the token alone would have let a second dependency in unnoticed. Identity validation itself is still structural (`entry ? id_hash`, not a gen-schema import). A sixteenth suite, `entry`, holds the non-flake contract instead: `import ./. { }` must resolve its one dependency from `./ci/flake.lock` and match what the flake path builds.
+The core suite is **239 tests across 20 suites** (`nix-unit --flake ./ci#tests` ⇒ `239/239 successful`; the refusal-message plane `./ci#testsError` ⇒ `25/25`), driven by [nix-unit](https://github.com/nix-community/nix-unit). Alongside the original structural suites (`constructors`, `match-basic`, `match-structural`, `composition`, `sugar`, `when`, `adapters`, `adapter-registry`, `purity`) the identity-selector work adds `constructors-identity`, `match-identity`, `adapter-scope-identity`, `adapter-registry-identity`, `adapter-product`, and `integration-scope`. The last is the acceptance test for the identity/kind routing surface: it drives `sel.kind`/`sel.entity` through a **real `gen-scope.eval` graph seeded from real gen-schema instances**, including the neededBy predicate shape. The `purity` suite is the Class-A invariant, and it now has two arms. It scans every `lib/**.nix` (plus the root `flake.nix`/`default.nix`) for forbidden tokens (`nixpkgs`, `lib.`, `evalModules`, `mkOption`) and fails CI if a nixpkgs or module-system tether creeps back in; and it pins the library's dependency budget at exactly one by asserting the root flake's declared inputs are `[ "gen-algebra" ]`, read from the lock. `gen-algebra` left the forbidden list when the edge was taken deliberately, and the budget arm is what keeps the narrowed invariant as strong as the one it replaced — dropping the token alone would have let a second dependency in unnoticed. Identity validation itself is still structural (`entry ? id_hash`, not a gen-schema import). A sixteenth suite, `entry`, holds the non-flake contract instead: `import ./. { }` must resolve its one dependency from `./ci/flake.lock` and match what the flake path builds.
 
 ## Theoretical Foundations
 

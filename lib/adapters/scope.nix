@@ -69,8 +69,11 @@
                   # NAME, not a kind declaration, and `sel.kind` compares minted identities. What
                   # a gen-scope node's kind declaration IS is an open ruling; until it lands this
                   # projection refuses by name rather than compare a name. Lazy, so `attrs`
-                  # matching on the projected `type` and `sel.entity` are unaffected.
-                  kind = throw "gen-select: adapters.scope.mkContext: node ${id} has the positional type ${builtins.toJSON n.type}, which is a name and not a kind declaration; sel.kind compares minted kind identities and cannot match it (den-hoag-l0y).";
+                  # matching on the projected `type` is unaffected, and so is `sel.entity` for a
+                  # kind with no sealed components (the stamp decides alone). At an equal stamp
+                  # whose kind HAS sealed components, `sel.entity` demands the node's kind too and
+                  # reaches this refusal (den-hoag-l0y (β)).
+                  kind = throw "gen-select: adapters.scope.mkContext: node ${id} has the positional type ${builtins.toJSON n.type}, which is a name and not a kind declaration; sel.kind, and sel.entity at a stamp whose kind has sealed components, compare minted kind identities and cannot match it (den-hoag-l0y).";
                   entry = e;
                 };
         };

@@ -147,7 +147,7 @@ in
 
     # (b) sel.entity matches exactly one node.
     test-entity-matches-one = {
-      expr = matchIds (sel.entity users.sini);
+      expr = matchIds (sel.entity schema.user users.sini);
       expected = [ "user:sini" ];
     };
 
@@ -175,7 +175,7 @@ in
 
     # (d) equal names in different kinds do not cross-match (id_hash embeds kind).
     test-cross-kind-no-collision = {
-      expr = matchIds (sel.entity users.sini);
+      expr = matchIds (sel.entity schema.user users.sini);
       expected = [ "user:sini" ]; # NOT host:sini, despite the shared name
     };
 
@@ -185,19 +185,19 @@ in
       expected = false;
     };
     test-nonentity-quiet-entity = {
-      expr = sel.matches (sel.entity users.sini) "svc:plain" ctx;
+      expr = sel.matches (sel.entity schema.user users.sini) "svc:plain" ctx;
       expected = false;
     };
 
     # ---- dangling-entry behaviour ----
     # (a) entry registered but never placed in the graph → no match, no throw.
     test-dangling-entry-empty = {
-      expr = matchIds (sel.entity users.ghost);
+      expr = matchIds (sel.entity schema.user users.ghost);
       expected = [ ];
     };
     # (b) stale registry generation (changed identity field, same name) → no match.
     test-stale-generation-empty = {
-      expr = matchIds (sel.entity staleSini);
+      expr = matchIds (sel.entity schema.user staleSini);
       expected = [ ];
     };
   };
