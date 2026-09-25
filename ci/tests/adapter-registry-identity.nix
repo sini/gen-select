@@ -82,6 +82,49 @@ let
   };
 
   throws = x: !(builtins.tryEval (builtins.deepSeq x x)).success;
+
+  # Two kinds sharing the name `host` that are different DECLARATIONS: B adds a non-key option,
+  # so the key sets are equal and only the declaration separates them. Their instances `pewter`
+  # carry equal key values. gen-schema's stamp carries the kind's minted identity, so the two are
+  # two entities, and `sel.entity` — which compares stamps and holds no kind — must say so.
+  twinSchema =
+    extra:
+    (genSchema.evalSchema {
+      modules = [
+        {
+          config.schema.host.options = {
+            addr = genMerge.mkOption { type = genMerge.types.str; };
+          }
+          // extra;
+        }
+      ];
+    }).host;
+  kindA = twinSchema { };
+  kindB = twinSchema {
+    tags = genMerge.mkOption {
+      type = genMerge.types.listOf genMerge.types.str;
+      default = [ ];
+    };
+  };
+  pewterOf =
+    kindValue:
+    (genMerge.evalModuleTree {
+      modules = [
+        {
+          options.hosts = mkInstanceRegistry kindValue { };
+          config.hosts.pewter.addr = "10.0.0.9";
+        }
+      ];
+    }).config.hosts.pewter;
+  pewterA = pewterOf kindA;
+  pewterB = pewterOf kindB;
+  ctxOf =
+    inst:
+    sel.adapters.registry.mkContext {
+      nodes = [ "pewter" ];
+      data = _: inst;
+      parent = _: null;
+    };
 in
 {
   flake.tests.adapter-registry-identity = {
@@ -123,6 +166,21 @@ in
     test-union-no-crossmatch = {
       expr = sel.matches (sel.kind schema.host) "u:sini" ctxUnion;
       expected = false;
+    };
+
+    # ---- same name, different declarations: two entities ----
+    test-entity-separates-same-name-kinds = {
+      expr = {
+        selectorEq = sel.selectorEq (sel.entity pewterA) (sel.entity pewterB);
+        matchesOtherKind = sel.matches (sel.entity pewterA) "pewter" (ctxOf pewterB);
+        # the live arm: the entity matches its own node
+        matchesOwnKind = sel.matches (sel.entity pewterA) "pewter" (ctxOf pewterA);
+      };
+      expected = {
+        selectorEq = false;
+        matchesOtherKind = false;
+        matchesOwnKind = true;
+      };
     };
 
     # ---- bare-name kindFor refused; the kind-value context above answers ----
