@@ -1,4 +1,4 @@
-{ isSchemaKind }:
+{ isSchemaKind, kindKey }:
 {
   mkContext =
     {
@@ -23,10 +23,11 @@
         in
         if d ? id_hash then d else null
       ),
-      # id -> kindValue | kindName | null. Default = the constant registry kind (every
-      # node in a per-kind registry projects that kind); heterogeneous unions pass an
-      # explicit per-id accessor. Accepts a kind value (preferred, identity law) or a
-      # bare name (internal convenience); normalized to name below.
+      # id -> kindValue | null. Default = the constant registry kind (every node in a
+      # per-kind registry projects that kind); heterogeneous unions pass an explicit per-id
+      # accessor. Projected as the kind's KEY (minted identity; ./default.nix `kindKey`). A
+      # bare name is REFUSED by name: it is a reference, and resolving it needs the shared
+      # resolver (den-hoag-7gp66 P1).
       kindFor ? (_: kind),
       # Accessor names (drawn from data/parent/children/ancestors/siblings) that
       # read a graph still under construction. Passed straight through to the
@@ -49,10 +50,14 @@
         k:
         if k == null then
           null
-        else if builtins.isAttrs k then
-          k.kind
+        else if isSchemaKind k then
+          kindKey k
+        else if builtins.isString k then
+          throw "gen-select: adapters.registry.mkContext `kindFor` returned the kind name \"${k}\"; a kind name is a reference, and resolving it to its declaration needs the shared resolver (den-hoag-7gp66 P1). Return the kind value."
         else
-          k;
+          throw "gen-select: adapters.registry.mkContext `kindFor` expects a gen-schema kind value carrying a mint-backed mark (`__mint.minted`, ADR-0034); got ${
+            if builtins.isAttrs k then "an attrset with no mark" else builtins.typeOf k
+          }.";
     in
     # Force the kind-value guard when the caller relies on it (seq to WHNF): a
     # malformed `kind` argument throws as soon as the context is used.

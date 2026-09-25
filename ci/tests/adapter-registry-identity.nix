@@ -72,7 +72,8 @@ let
     kindFor = id: if id == "u:sini" then schema.user else schema.host;
   };
 
-  # Bare-name kindFor result — normalized to the same behaviour as the kind-value form.
+  # Bare-name kindFor result — a kind name is a REFERENCE, and resolving it needs the shared
+  # resolver (den-hoag-7gp66 P1), so the adapter refuses it by name (den-hoag-l0y).
   ctxBare = sel.adapters.registry.mkContext {
     nodes = userNodes;
     data = userData;
@@ -124,10 +125,16 @@ in
       expected = false;
     };
 
-    # ---- bare-name kindFor normalized to the kind-value behaviour ----
-    test-bare-name-kindfor = {
-      expr = sel.matches (sel.kind schema.user) "sini" ctxBare;
-      expected = true;
+    # ---- bare-name kindFor refused; the kind-value context above answers ----
+    test-bare-name-kindfor-refused = {
+      expr = {
+        bare = throws (sel.matches (sel.kind schema.user) "sini" ctxBare);
+        value = sel.matches (sel.kind schema.user) "sini" ctxK;
+      };
+      expected = {
+        bare = true;
+        value = true;
+      };
     };
 
     # ---- malformed kind argument (no `options`) → throws when the context is used ----

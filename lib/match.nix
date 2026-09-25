@@ -1,3 +1,6 @@
+# `kindEq` is ./default.nix's one kind relation (gen-schema's `kindEq` subject through
+# `algebra.sealedCollisionEq`), handed in so that the matcher and `selectorEq` cannot disagree.
+{ kindEq }:
 let
   # Datafun (Arntzenius & Krishnaswami 2016) splits the typing context into a
   # discrete ∆ and a monotone Γ and types every non-monotone operation (¬, =,
@@ -118,8 +121,23 @@ let
         false
       else if data.__identity.kind == null then
         throw "gen-select: sel.kind matched against a kind-blind projection (node ${id} is entity-backed but __identity.kind is null). Pass the registry adapter's `kind` argument, supply a `kindFor`, or use a kind-bearing projection."
+      else if builtins.isString data.__identity.kind then
+        # A name compared against a minted identity never matches: the A1 silent never-match.
+        # Keeping a name comparison beside the identity one is the silent site-local fallback
+        # ADR-0034's rider forbids, so a projection that still carries a name is refused by name.
+        throw
+          "gen-select: sel.kind matched against a projection whose __identity.kind for node ${id} is the kind name \"${data.__identity.kind}\"; a kind name is a reference, not a kind declaration. Project the kind's key (the registry adapter's `kind`/`kindFor` take the kind value)."
+      else if
+        !(
+          builtins.isAttrs data.__identity.kind
+          && data.__identity.kind ? identity
+          && data.__identity.kind ? name
+          && data.__identity.kind ? sealed
+        )
+      then
+        throw "gen-select: sel.kind matched against a projection whose __identity.kind for node ${id} is not a kind key ({ identity; name; sealed; }, what the registry adapter projects from a kind value); got ${builtins.typeOf data.__identity.kind}."
       else
-        data.__identity.kind == selector.kind
+        kindEq "gen-select: sel.kind" data.__identity.kind selector
 
     else if tag == "coord" then
       # Product-coordinate match (Imrich & Klavžar, Handbook of Product Graphs): a cell

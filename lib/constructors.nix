@@ -19,6 +19,8 @@
 {
   algebra,
   isSchemaKind,
+  kindKey,
+  kindEq,
 }:
 rec {
   star = {
@@ -56,23 +58,24 @@ rec {
   # the type (element-name) selector `E`, lifted from element names to schema kinds.
   # Takes a gen-schema kind VALUE and validates its PROVENANCE: the value must carry
   # the mint-backed mark gen-schema stamps at construction (`__mint.minted`, ADR-0034),
-  # which is the same read `mkInstanceRegistry` and its three siblings now take. Stores
-  # the kind NAME as the internal key — permitted by the identity law, the input was the
-  # kind value; within one context universe the kind name is the kind's identity.
+  # which is the same read `mkInstanceRegistry` and its three siblings now take.
+  #
+  # ★ THE KEY IS THE MINTED IDENTITY, NEVER THE NAME (owner-ruled 2026-09-25, den-hoag-l0y
+  # (a)). Two kinds sharing a name are two declarations whenever gen-schema's own `kindEq`
+  # says so, and a name key conflated them. The payload is ./default.nix's `kindKey`:
+  # `identity` (the mark, a shared thunk, so constructing a selector forces nothing),
+  # `name` (display and errors only) and `sealed` (the sealed subjects `kindEq` reads).
+  # The `sel.entity` precedent, one constructor up, has the same shape: the identity is
+  # stored and the name rides along excluded from `selectorEq`.
   #
   # ★ THE GUARD USED TO BE `? kind && ? options`, AND IT CHECKED NOTHING IT NAMED. Any
   # hand-written attrset of that shape was admitted, matched, and was indistinguishable
   # from a real kind under `selectorEq`. See ./kind-mark.nix for the read and for why it
   # is not `algebra.identityOf`.
-  #
-  # ★ THE PAYLOAD IS UNCHANGED, deliberately: the mark is checked at CONSTRUCTION and not
-  # carried. Carrying it is only useful to a matcher that COMPARES marks, and what the
-  # matcher should compare is a separate question with a separate landing — `selectorEq`,
-  # `match.nix` and every adapter projection are untouched here.
   kind =
     kindValue:
     if builtins.isString kindValue then
-      throw "gen-select: sel.kind expects a kind value (e.g. schema.user), got the string \"${kindValue}\". Pass the kind value; strings are internal keys only."
+      throw "gen-select: sel.kind expects a kind value (e.g. schema.user), got the string \"${kindValue}\". A kind name is a reference, and resolving it to its declaration needs the shared resolver (den-hoag-7gp66 P1); pass the kind value."
     else if !(builtins.isAttrs kindValue) then
       throw "gen-select: sel.kind expects a gen-schema kind value; got ${builtins.typeOf kindValue}."
     else if !(isSchemaKind kindValue) then
@@ -80,8 +83,8 @@ rec {
     else
       {
         __sel = "kind";
-        inherit (kindValue) kind;
-      };
+      }
+      // kindKey kindValue;
 
   and = selectors: {
     __sel = "and";
@@ -145,7 +148,8 @@ rec {
   # differing display names (e.g. a kind pinning `_identity.keys` to exclude name)
   # dedup as equal in neededBy sets and dispatch rule-sets — raw `==` would wrongly
   # distinguish them. `==` is therefore finer than selectorEq exactly on `name`.
-  # `kind` payloads carry no display field, so the `==` fall-through is exact for them.
+  # `kind` payloads compare through gen-schema's `kindEq` relation (./default.nix's `kindEq`):
+  # their `name` is display-only too, and a sealed collision is refused by name.
   selectorEq =
     a: b:
     if a.__sel == "when" && b.__sel == "when" then
@@ -164,6 +168,8 @@ rec {
       if isIntensional a.fn && isIntensional b.fn then algebra.conservativeEq a.fn b.fn else false
     else if a.__sel == "entity" && b.__sel == "entity" then
       a.id_hash == b.id_hash
+    else if a.__sel == "kind" && b.__sel == "kind" then
+      kindEq "gen-select: selectorEq" a b
     else if a.__sel == "coord" && b.__sel == "coord" then
       a.dim == b.dim && a.id_hash == b.id_hash
     else

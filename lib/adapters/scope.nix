@@ -34,11 +34,10 @@
       inherit inFlight;
       # __identity is composed OUTSIDE the projection and merged last, so it is
       # always present (record or null) and a user decl named __identity can never
-      # shadow it (reserved-namespace discipline). `kind` is copied from the
-      # positional node type — making __identity.kind == node.type a by-construction
-      # invariant rather than a cross-source coherence obligation; a malformed
+      # shadow it (reserved-namespace discipline). `kind` is a named refusal (see
+      # below): a positional node type is a name, not a kind declaration. A malformed
       # `entryFor` result surfaces at the first `id_hash` access (missing attribute),
-      # never a silent null, and never blocks kind matching (kind never reads the entry).
+      # never a silent null.
       data =
         id:
         let
@@ -57,8 +56,7 @@
                 null
               else
                 {
-                  # Surfaces at the first id_hash access (never a silent null); does not
-                  # block kind matching, which reads only node.type. Raised as an explicit
+                  # Surfaces at the first id_hash access (never a silent null). Raised as an explicit
                   # named throw rather than a bare missing-attribute so the loud-failure
                   # law stays observable under builtins.tryEval (Nix does not catch native
                   # missing-attribute errors).
@@ -67,7 +65,12 @@
                       e.id_hash
                     else
                       throw "gen-select: entryFor returned a value without id_hash for node ${id}; a registry entry must carry id_hash.";
-                  kind = n.type;
+                  # REFUSED, lazily (den-hoag-l0y): a gen-scope node's `type` is a positional
+                  # NAME, not a kind declaration, and `sel.kind` compares minted identities. What
+                  # a gen-scope node's kind declaration IS is an open ruling; until it lands this
+                  # projection refuses by name rather than compare a name. Lazy, so `attrs`
+                  # matching on the projected `type` and `sel.entity` are unaffected.
+                  kind = throw "gen-select: adapters.scope.mkContext: node ${id} has the positional type ${builtins.toJSON n.type}, which is a name and not a kind declaration; sel.kind compares minted kind identities and cannot match it (den-hoag-l0y).";
                   entry = e;
                 };
         };

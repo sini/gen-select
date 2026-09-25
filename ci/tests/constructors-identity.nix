@@ -79,11 +79,15 @@ in
     };
 
     # ---- E3: kind construction ----
+    # The key is the minted identity (den-hoag-l0y (a)); `name` is display-only; `sealed` is the
+    # kind's sealed subjects, empty for a kind whose every component is migrated.
     test-kind-payload-shape = {
       expr = sel.kind kindUser;
       expected = {
         __sel = "kind";
-        kind = "user";
+        identity = kindUser.__mint.minted;
+        name = "user";
+        sealed = { };
       };
     };
     test-kind-string-throws = {
@@ -124,7 +128,6 @@ in
       expected = true;
     };
     test-kind-selectorEq-eq = {
-      # kind payload carries no display field — the == fall-through is exact.
       expr = sel.selectorEq (sel.kind kindUser) (sel.kind kindUser);
       expected = true;
     };

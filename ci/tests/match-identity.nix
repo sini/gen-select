@@ -37,20 +37,25 @@ let
   kindUser = schema.user;
   kindHost = schema.host;
 
+  # What an adapter projects as `__identity.kind`: the kind's KEY (minted identity, display name,
+  # sealed subjects), the same record a kind selector carries. Read off the library's own selector
+  # rather than written out here, so the fixture cannot drift from the shape it stands in for.
+  keyOf = k: removeAttrs (sel.kind k) [ "__sel" ];
+
   idMap = {
     u1.__identity = {
       id_hash = "h-user-sini";
-      kind = "user";
+      kind = keyOf kindUser;
       entry = entryU;
     };
     u2.__identity = {
       id_hash = "h-user-vic";
-      kind = "user";
+      kind = keyOf kindUser;
       entry = entryU2;
     };
     h1.__identity = {
       id_hash = "h-host-axon";
-      kind = "host";
+      kind = keyOf kindHost;
       entry = {
         id_hash = "h-host-axon";
         name = "axon";
@@ -104,7 +109,7 @@ let
     data = _: {
       __identity = {
         id_hash = throw "malformed entry: no id_hash";
-        kind = "user";
+        kind = keyOf kindUser;
         entry = { };
       };
     };

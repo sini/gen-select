@@ -53,18 +53,17 @@ in
       markNamespace = "schemakind:";
       selector = {
         __sel = "kind";
-        kind = "user";
+        identity = schema.user.__mint.minted;
+        name = "user";
+        sealed = { };
       };
     };
   };
 
-  # ★ THE PAYLOAD IS UNCHANGED, AND THAT IS AN ASSERTION RATHER THAN AN OMISSION. This landing
-  # checks the mark at construction and does NOT carry it: `selectorEq`, `match.nix` and every
-  # adapter projection are untouched, because what a kind selector should COMPARE is a separate
-  # question with its own landing.
-  #
-  # So the property owed here is that the payload stays a plain, structurally comparable record —
-  # and the arms are driven ACROSS TWO SCHEMA EVALUATIONS, which is what gives them teeth.
+  # ★ THE PAYLOAD STAYS STRUCTURALLY COMPARABLE. It carries the minted identity, the display name
+  # and the sealed subjects (den-hoag-l0y (a)) — never the kind value itself — so a kind selector
+  # nested under a combinator still dedups through `selectorEq`'s structural `==` fall-through.
+  # The arms are driven ACROSS TWO SCHEMA EVALUATIONS, which is what gives them teeth.
   #
   # A builder who stored the kind VALUE instead of its name — the obvious way to make the mark
   # available to a future matcher — breaks `sameKindEq`: a kind value carries lambdas (`__functor`,

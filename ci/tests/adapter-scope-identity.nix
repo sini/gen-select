@@ -2,6 +2,13 @@
 # additive enrichment). Mock { node, get } — the real gen-scope.eval path is
 # integration-scope.
 #
+# ★ `sel.kind` OVER THIS ADAPTER IS REFUSED (den-hoag-l0y). A gen-scope node's `type` is a positional
+# NAME, not a kind declaration, and kinds are keyed by minted identity; what a gen-scope node's kind
+# declaration IS is an open ruling, so until it lands the projection's `kind` refuses by name. The
+# three cells that asserted a positive kind match here are refusal cells, each with the live arm that
+# still answers (`attrs` on the projected `type`, `sel.entity`). Positive `sel.kind`-over-scope
+# coverage is a deferred guarantee against that ruling.
+#
 # ★ THE `{ node, get }` MOCK STAYS; THE KIND VALUES CANNOT. `sel.kind` reads the mint-backed mark
 # gen-schema stamps at construction (ADR-0034), so a bare `{ kind = …; options = { }; }` is the
 # value the mark exists to refuse. The two kinds come out of a real schema; what this file measures
@@ -66,10 +73,16 @@ in
       expr = (ctx.data "user:sini").__identity.id_hash;
       expected = "h-sini";
     };
-    test-identity-kind-from-node-type = {
-      # kind is copied from node.type (positional kind authoritative), not from the entry.
-      expr = (ctx.data "user:sini").__identity.kind;
-      expected = "user";
+    test-identity-kind-refused = {
+      # The positional type is a name: the projection's `kind` refuses; `type` still carries it.
+      expr = {
+        refused = throws (ctx.data "user:sini").__identity.kind;
+        type = (ctx.data "user:sini").type;
+      };
+      expected = {
+        refused = true;
+        type = "user";
+      };
     };
     test-identity-entry-carried = {
       expr = (ctx.data "user:sini").__identity.entry.name;
@@ -145,16 +158,23 @@ in
       expr = sel.matches (sel.entity entryU) "user:sini" ctx;
       expected = true;
     };
-    test-match-kind-through-adapter = {
-      expr = sel.matches (sel.kind schema.user) "user:sini" ctx;
-      expected = true;
+    test-match-kind-through-adapter-refused = {
+      expr = {
+        refused = throws (sel.matches (sel.kind schema.user) "user:sini" ctx);
+        attrs = sel.matches (sel.attrs { type = "user"; }) "user:sini" ctx;
+      };
+      expected = {
+        refused = true;
+        attrs = true;
+      };
     };
     test-kind-nonentity-false = {
       expr = sel.matches (sel.kind schema.host) "host:axon" ctx;
       expected = false;
     };
 
-    # ---- E6: malformed entryFor result — entity forces id_hash → throw; kind still matches ----
+    # ---- E6: malformed entryFor result — entity forces id_hash → throw; kind refuses by its own
+    # name, not by the entry (the kind refusal never reads the entry) ----
     test-malformed-entryfor-entity-throws = {
       expr =
         let
@@ -168,7 +188,7 @@ in
         throws (sel.matches (sel.entity { id_hash = "x"; }) "host:axon" c);
       expected = true;
     };
-    test-malformed-entryfor-kind-matches = {
+    test-malformed-entryfor-kind-refused = {
       expr =
         let
           c = sel.adapters.scope.mkContext (
@@ -178,8 +198,14 @@ in
             }
           );
         in
-        sel.matches (sel.kind schema.host) "host:axon" c;
-      expected = true;
+        {
+          refused = throws (sel.matches (sel.kind schema.host) "host:axon" c);
+          attrs = sel.matches (sel.attrs { type = "host"; }) "host:axon" c;
+        };
+      expected = {
+        refused = true;
+        attrs = true;
+      };
     };
   };
 }

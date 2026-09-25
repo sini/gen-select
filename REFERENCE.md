@@ -77,16 +77,19 @@ kind   : kind-value        -> selector
 - Matching: `__identity` key absent → **throw** (identity-blind context); `null` →
   `false`; record → `id_hash` equality.
 
-**`kind K`** — matches every node whose `__identity.kind` equals `K.kind`.
+**`kind K`** — matches every node whose projected kind (`__identity.kind`) is `K` by gen-schema's
+`kindEq` relation: equal minted identity, and a sealed collision refused by name.
 
 - Construction validates the gen-schema kind value's PROVENANCE: `K` must carry the
   mint-backed mark gen-schema stamps at construction (`K ? kind && K.__mint ? minted`,
   ADR-0034). A string throws; so does an attrset with no mark, which the retired
   `K ? options` shape test admitted. The read never forces the digest. Payload
-  `{ __sel = "kind"; kind = K.kind; }` (the kind name is the internal key) — the mark is
-  checked at construction and NOT carried.
+  `{ __sel = "kind"; identity = K.__mint.minted; name = K.kind; sealed = K.__sealed; }`:
+  the MINTED IDENTITY is the key (den-hoag-l0y, owner ruling (a)); `name` is display-only.
 - Matching: `__identity` key absent → **throw**; `null` → `false`; record with
-  `kind == null` → **throw** (kind-blind projection); record → `kind` equality.
+  `kind == null` → **throw** (kind-blind projection); `kind` a name string → **throw** (a
+  name is a reference, not a declaration); record → `algebra.sealedCollisionEq` over the
+  kind keys, the helper gen-schema's `kindEq` calls.
 - A node carrying a positional `type` but no entry does not match `kind` — use
   `attrs { type = "…"; }` for positional-type matching.
 
@@ -174,8 +177,10 @@ an adapter directly.
 
 Bridges gen-scope's accessor pair. `data id = (project (node id)) // { __identity = …; }`
 — the `__identity` record (or `null`) is composed outside the projection and merged last
-(a decl named `__identity` cannot shadow it). `__identity.kind` is copied from the
-positional node `type`; `entryFor` defaults to the `decls.__entry` registration
+(a decl named `__identity` cannot shadow it). `__identity.kind` is a named REFUSAL: a
+positional node `type` is a name, not a kind declaration, so `sel.kind` over this adapter
+throws (lazily; `attrs` on the projected `type` is unaffected) until a gen-scope node's kind
+declaration is ruled; `entryFor` defaults to the `decls.__entry` registration
 convention. `__identity` is always present, so identity/kind selectors are never silently
 inert through this adapter.
 
@@ -185,14 +190,15 @@ inert through this adapter.
 { nodes, data, parent,
   kind     ? null,                                                      # registry kind VALUE
   entryFor ? (id: let d = data id; in if d ? id_hash then d else null),
-  kindFor  ? (_: kind),                                                 # id -> kindValue | kindName | null
+  kindFor  ? (_: kind),                                                 # id -> kindValue | null
 } -> context
 ```
 
 Flat node-list bridge. Derives `children`/`siblings`/`ancestors` from `nodes` + `parent`.
 Kind projection cannot default from the datum (gen-schema instances carry no kind field):
-pass the registry's `kind` value (validated + normalized to its name) or an explicit
-`kindFor` for heterogeneous unions. Omitting both makes `sel.kind` throw kind-blind while
+pass the registry's `kind` value (validated, projected as its kind key) or an explicit
+`kindFor` for heterogeneous unions. A `kindFor` returning a kind NAME is refused by name:
+resolving a name needs the shared resolver. Omitting both makes `sel.kind` throw kind-blind while
 `sel.entity` still works. Default `entryFor` treats `data id` as the entry.
 
 ### `adapters.product.mkContext`
@@ -221,12 +227,12 @@ enriched.
 ```nix
 # selector payloads (identity-bearing tags)
 { __sel = "entity"; id_hash = <sha256>; name = <string|null>; }   # name: display/errors only
-{ __sel = "kind";   kind    = <name>; }                           # internal key
+{ __sel = "kind";   identity = <mark>; name = <string>; sealed = <attrs>; }  # key: identity
 { __sel = "coord";  dim = <string>; id_hash = <sha256>; name = <string|null>; }
 
 # __identity — reserved projection into `data id` (enriched adapters)
 __identity = null;                                 # not entity-backed
-__identity = { id_hash = <sha256>; kind = <name|null>; entry = <registry-entry>; };
+__identity = { id_hash = <sha256>; kind = <kind-key|null>; entry = <registry-entry>; };  # kind-key = { identity; name; sealed; }
 
 # __coords — reserved projection into `data id` (product adapter)
 __coords = { <dim-name> = <registry-entry>; … };
@@ -241,7 +247,7 @@ which reads only the positional kind.
 | Law | Statement                                                                                                                                                                                                                                                          |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | E1  | `entity e` matches iff `__identity` is a record with `.id_hash == e.id_hash`. Equal-identity entries share a match set; any identity-field difference never cross-matches.                                                                                         |
-| E2  | `kind K` matches iff `__identity` is a record with non-null `.kind == K.kind`; `.kind == null` throws (kind-blind projection is loud).                                                                                                                             |
+| E2  | `kind K` matches iff `__identity` is a record whose non-null `.kind` is `K`'s kind key by `kindEq`; `.kind == null` throws (kind-blind projection is loud); a name string throws.                                                                                  |
 | E3  | `entity`/`kind` throw at construction on strings and non-conforming values; no selector is ever produced from a string.                                                                                                                                            |
 | E4  | Matching `entity`/`kind` against a context whose `data id` lacks the `__identity` key throws (identity-blind contexts are loud).                                                                                                                                   |
 | E5  | `__identity = null` yields `false` (non-entity nodes are quiet — structural recursion over mixed graphs needs no guards).                                                                                                                                          |

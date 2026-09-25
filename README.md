@@ -109,7 +109,7 @@ sel.matches (sel.attrs { type = "service"; }) "web" ctx
 | `sel.star`            | `-> selector`                | always                                                                            |
 | `sel.attrs a`         | `attrset -> selector`        | all k:v in `a` equal in `data id`; missing key = no match                         |
 | `sel.entity e`        | `registry-entry -> selector` | the node's projected identity (`__identity.id_hash`) equals the entry's `id_hash` |
-| `sel.kind K`          | `kind-value -> selector`     | the node's projected kind (`__identity.kind`) equals `K.kind`                     |
+| `sel.kind K`          | `kind-value -> selector`     | the node's projected kind (`__identity.kind`) is `K` by minted identity           |
 | `sel.and ss`          | `[selector] -> selector`     | all match; `sel.and [] = true`                                                    |
 | `sel.any ss`          | `[selector] -> selector`     | any matches; `sel.any [] = false`                                                 |
 | `sel.not s`           | `selector -> selector`       | does not match                                                                    |
@@ -134,7 +134,7 @@ sel.kind   schema.user         # => { __sel = "kind";   kind = "user"; }
 ```
 
 - **`sel.entity <registry-entry>`** validates its argument structurally at construction (`entry ? id_hash`); a string, or any value lacking `id_hash`, throws immediately with an identity-law message. Only `id_hash` (identity) and `name` (display/errors) are stored — never the entry itself, whose methods would make Nix `==` on selectors throw. Because `id_hash` is content-addressed over the kind plus identity fields, storing it loses no identity information.
-- **`sel.kind <kind-value>`** takes a gen-schema kind value and validates its **provenance** with the same guard registries use: the value must carry the mint-backed mark gen-schema stamps at construction (`__mint.minted`). A string throws, and so does a hand-written `{ kind = …; options = …; }` — that shape used to be admitted, because the retired `? kind && ? options` test checked none of the provenance its own message named. It stores the kind **name** as its internal key.
+- **`sel.kind <kind-value>`** takes a gen-schema kind value and validates its **provenance** with the same guard registries use: the value must carry the mint-backed mark gen-schema stamps at construction (`__mint.minted`). A string throws, and so does a hand-written `{ kind = …; options = …; }` — that shape used to be admitted, because the retired `? kind && ? options` test checked none of the provenance its own message named. It stores the kind's **minted identity** as its key (`{ identity; name; sealed; }`; `name` is display-only), and compares through `algebra.sealedCollisionEq`, the helper gen-schema's `kindEq` calls, so a sealed collision is refused by name.
 
 Both match against a reserved `__identity` record the enriched adapters project alongside node data (shape below). The dispatch is loud where silence would hide a bug:
 
@@ -155,7 +155,7 @@ The `__identity` record projected into `data id` by the enriched adapters:
 __identity = null;                    # node is not entity-backed
 __identity = {
   id_hash = "<sha256>";               # gen-schema content-addressed identity
-  kind    = "<name>" or null;         # positional kind (scope: node.type; registry: normalized kindFor)
+  kind    = <kind-key> or null;       # { identity; name; sealed; } from the registry's kind/kindFor; the scope adapter refuses by name
   entry   = <registry-entry>;         # the full entry, for sel.when predicates & consumer interrogation
 };
 ```
@@ -184,7 +184,7 @@ selectorEq   : selector -> selector -> bool
 
 `isIdentified` returns true when a `when` selector wraps an intensional function (has `name`, `__functor`, and `closure` fields).
 
-`selectorEq` compares two selectors. For `when` selectors, when both wrap intensional functions it applies **conservative equality** (Palmer's own term, §2.3/§5.3), which dispatches on the wrapped value's identity REGIME rather than reading one field; otherwise it returns false. For `entity` selectors it compares `id_hash`, and for `coord` selectors `(dim, id_hash)` — the display-only `name` field is excluded, so two entries with equal `id_hash` but differing display names dedup as equal (raw `==` would wrongly distinguish them). `kind` payloads carry no display field, so they fall through to structural equality (`==`), as do all remaining selector types.
+`selectorEq` compares two selectors. For `when` selectors, when both wrap intensional functions it applies **conservative equality** (Palmer's own term, §2.3/§5.3), which dispatches on the wrapped value's identity REGIME rather than reading one field; otherwise it returns false. For `entity` selectors it compares `id_hash`, and for `coord` selectors `(dim, id_hash)` — the display-only `name` field is excluded, so two entries with equal `id_hash` but differing display names dedup as equal (raw `==` would wrongly distinguish them). `kind` selectors compare through gen-schema's `kindEq` relation (`algebra.sealedCollisionEq` over the minted identity and the sealed subjects; `name` excluded). Remaining selector types fall through to structural equality (`==`).
 
 The three regimes are read off the wrapped value's `__mint` field, which is a **tagged sum** and is total — a reader that branched on field presence and then read `.minted` raw would abort uncatchably on a value that has no mintable identity:
 
@@ -225,7 +225,7 @@ Builds a selector context from gen-scope's accessor pair. Maps scope accessors t
 | `ancestors`   | walks `parent` chain, cycle-safe                 |
 | `siblings`    | children of parent, excluding self               |
 
-The enriched adapter composes a reserved `__identity` record (record or `null`) **outside** the projection and merges it last, so identity/kind selectors work through it and a user decl named `__identity` can never shadow it. `__identity.kind` is copied from the positional node `type` (coherence by construction); `entryFor` defaults to the `decls.__entry` registration convention. `__identity` is always present through this adapter, so entity/kind selectors are never silently inert.
+The enriched adapter composes a reserved `__identity` record (record or `null`) **outside** the projection and merges it last, so identity/kind selectors work through it and a user decl named `__identity` can never shadow it. `__identity.kind` is a named refusal (a positional node `type` is a name, not a kind declaration, so `sel.kind` over this adapter throws until a gen-scope node's kind declaration is ruled); `entryFor` defaults to the `decls.__entry` registration convention. `__identity` is always present through this adapter, so entity/kind selectors are never silently inert.
 
 #### adapters.graph — gen-graph bridge
 
@@ -245,13 +245,13 @@ adapters.registry.mkContext : {
   nodes, data, parent,
   kind     ? null,                                                      # the registry's kind VALUE
   entryFor ? (id: let d = data id; in if d ? id_hash then d else null), # id -> entry | null
-  kindFor  ? (_: kind),                                                 # id -> kindValue | kindName | null
+  kindFor  ? (_: kind),                                                 # id -> kindValue | null
 } -> context
 ```
 
 Builds a selector context from a flat registry: an explicit `nodes` list plus `data` and `parent` accessors. The adapter derives the remaining three fields from `nodes` and `parent` — `children` and `siblings` by filtering `nodes` on `parent`, and `ancestors` by walking the `parent` chain (cycle-safe). Use this when nodes are held as a plain list rather than behind a gen-scope evaluator.
 
-Identity enrichment is symmetric with the scope adapter, with one wrinkle: real gen-schema instances carry no kind field, so kind projection **cannot** default from the datum. Pass the registry's `kind` value (registries are per-kind by construction) — validated with the same guard as `sel.kind` and normalized to its name — or an explicit per-id `kindFor` for heterogeneous unions. Omitting both projects `__identity.kind = null`, and any `sel.kind` match then throws (loud kind-blind projection) while `sel.entity` continues to work. The default `entryFor` suits the common case where `data id` **is** the entry.
+Identity enrichment is symmetric with the scope adapter, with one wrinkle: real gen-schema instances carry no kind field, so kind projection **cannot** default from the datum. Pass the registry's `kind` value (registries are per-kind by construction) — validated with the same guard as `sel.kind` and projected as its kind key (a `kindFor` returning a kind name is refused by name) — or an explicit per-id `kindFor` for heterogeneous unions. Omitting both projects `__identity.kind = null`, and any `sel.kind` match then throws (loud kind-blind projection) while `sel.entity` continues to work. The default `entryFor` suits the common case where `data id` **is** the entry.
 
 #### adapters.product — gen-product bridge
 

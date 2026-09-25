@@ -3,6 +3,11 @@
 # shape (the predicate den-hoag's B4 fixpoint evaluates per entity scope). This is the
 # exact path the 2026-06-09 readiness audit found untested. Test-tier deps reach through
 # the gen hub; the library stays Class A.
+#
+# ★ `sel.kind` OVER A gen-scope GRAPH IS REFUSED (den-hoag-l0y): node `type`s are positional names,
+# kinds are keyed by minted identity, and what a gen-scope node's kind declaration IS awaits a
+# ruling. The four kind cells below are refusal cells, each carrying the live `attrs` arm over the
+# same graph and position; positive coverage is a deferred guarantee against that ruling.
 {
   lib,
   genSelect,
@@ -108,23 +113,36 @@ let
   allIds = builtins.attrNames roots;
   matchIds = selector: builtins.filter (sel.adapters.graph.mkPredicate selector ctx) allIds;
   sortStr = builtins.sort (a: b: a < b);
+  throws = x: !(builtins.tryEval (builtins.deepSeq x x)).success;
 in
 {
   flake.tests.integration-scope = {
     # (a) the neededBy shape: sel.kind through mkPredicate returns exactly the user nodes.
-    test-neededby-kind-user = {
-      expr = sortStr (matchIds (sel.kind schema.user));
-      expected = [
-        "user:sini"
-        "user:vic"
-      ];
+    test-neededby-kind-user-refused = {
+      expr = {
+        refused = throws (matchIds (sel.kind schema.user));
+        attrs = sortStr (matchIds (sel.attrs { type = "user"; }));
+      };
+      expected = {
+        refused = true;
+        attrs = [
+          "user:sini"
+          "user:vic"
+        ];
+      };
     };
-    test-neededby-kind-host = {
-      expr = sortStr (matchIds (sel.kind schema.host));
-      expected = [
-        "host:axon"
-        "host:sini"
-      ];
+    test-neededby-kind-host-refused = {
+      expr = {
+        refused = throws (matchIds (sel.kind schema.host));
+        attrs = sortStr (matchIds (sel.attrs { type = "host"; }));
+      };
+      expected = {
+        refused = true;
+        attrs = [
+          "host:axon"
+          "host:sini"
+        ];
+      };
     };
 
     # (b) sel.entity matches exactly one node.
@@ -134,13 +152,25 @@ in
     };
 
     # (c) same selectors through has (parent position) and within (child position).
-    test-has-user-from-host = {
-      expr = sel.matches (sel.has (sel.kind schema.user)) "host:axon" ctx;
-      expected = true;
+    test-has-user-from-host-refused = {
+      expr = {
+        refused = throws (sel.matches (sel.has (sel.kind schema.user)) "host:axon" ctx);
+        attrs = sel.matches (sel.has (sel.attrs { type = "user"; })) "host:axon" ctx;
+      };
+      expected = {
+        refused = true;
+        attrs = true;
+      };
     };
-    test-within-host-from-user = {
-      expr = sel.matches (sel.within (sel.kind schema.host)) "user:sini" ctx;
-      expected = true;
+    test-within-host-from-user-refused = {
+      expr = {
+        refused = throws (sel.matches (sel.within (sel.kind schema.host)) "user:sini" ctx);
+        attrs = sel.matches (sel.within (sel.attrs { type = "host"; })) "user:sini" ctx;
+      };
+      expected = {
+        refused = true;
+        attrs = true;
+      };
     };
 
     # (d) equal names in different kinds do not cross-match (id_hash embeds kind).
