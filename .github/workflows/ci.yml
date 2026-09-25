@@ -4,10 +4,12 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # A negative test runs on a scratch branch with no pull request: `gh workflow run ci.yml --ref <branch>`.
+  workflow_dispatch:
 
 jobs:
   # The three-evaluator matrix (upstream Nix, Determinate, Lix) from gen-harness. The ref is the
   # gen-harness rev locked in ci/flake.lock, so one harness identity governs the run; `relock`
   # rewrites it when that lock moves.
   evaluators:
-    uses: sini/gen-harness/.github/workflows/evaluators.yml@6cd63554b8bf5f6aaa012629f4e0afab117dd916
+    uses: sini/gen-harness/.github/workflows/evaluators.yml@7a1e718c4652bfedd707c9a261fa03ee7e002195
