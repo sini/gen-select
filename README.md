@@ -295,10 +295,10 @@ Memory consumption is proportional to what the selector inspects, not the total 
 ## Testing
 
 ```bash
-# CI test suite (core library)
+# CI test suite (core library), guarded
+nix develop ./ci --command ci
+# the gates too; unguarded, blind to an untracked cell
 nix flake check ./ci
-# or, from the ci/ dir with the devshell:
-cd ci && just ci
 
 # CSS selectors demo
 cd examples/css-selectors && just ci
@@ -306,6 +306,11 @@ cd examples/css-selectors && just ci
 # SQL WHERE demo
 cd examples/sql-where && just ci
 ```
+
+`ci` refuses when anything under a declared read root is unknown to git — any extension or name,
+`_`-prefixed included — and the remedy is `git add` or a move. The bare `nix-unit --flake ./ci#tests`
+and `nix flake check ./ci` are unguarded: they read a git-filtered copy of the tree, so an untracked
+cell is silently absent and the run stays green.
 
 The core suite is **217 tests across 16 suites** (`nix-unit --flake ./ci#tests` ⇒ `217/217 successful`, `5cd3312`), driven by [nix-unit](https://github.com/nix-community/nix-unit). Alongside the original structural suites (`constructors`, `match-basic`, `match-structural`, `composition`, `sugar`, `when`, `adapters`, `adapter-registry`, `purity`) the identity-selector work adds `constructors-identity`, `match-identity`, `adapter-scope-identity`, `adapter-registry-identity`, `adapter-product`, and `integration-scope`. The last is the acceptance test for the identity/kind routing surface: it drives `sel.kind`/`sel.entity` through a **real `gen-scope.eval` graph seeded from real gen-schema instances**, including the neededBy predicate shape. The `purity` suite is the Class-A invariant, and it now has two arms. It scans every `lib/**.nix` (plus the root `flake.nix`/`default.nix`) for forbidden tokens (`nixpkgs`, `lib.`, `evalModules`, `mkOption`) and fails CI if a nixpkgs or module-system tether creeps back in; and it pins the library's dependency budget at exactly one by asserting the root flake's declared inputs are `[ "gen-algebra" ]`, read from the lock. `gen-algebra` left the forbidden list when the edge was taken deliberately, and the budget arm is what keeps the narrowed invariant as strong as the one it replaced — dropping the token alone would have let a second dependency in unnoticed. Identity validation itself is still structural (`entry ? id_hash`, not a gen-schema import). A sixteenth suite, `entry`, holds the non-flake contract instead: `import ./. { }` must resolve its one dependency from `./ci/flake.lock` and match what the flake path builds.
 
