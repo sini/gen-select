@@ -52,7 +52,7 @@ let
 
   # Fixtures for the two regimes a producer stamps. The records above carry no
   # `__mint` and are therefore UNMIGRATED, which is where every shipped value sits
-  # until a producer lands — that arm is what keeps the cells above unchanged.
+  # until a producer lands. They are decided by the reified value, never by name.
   mintedFn = digest: fn: (intensionalLike "shared-point" { } fn) // { __mint.minted = digest; };
   unmintableFn =
     fn:
@@ -84,9 +84,13 @@ in
       expr = sel.isIdentified (sel.when identifiedFn);
       expected = true;
     };
+    # Two separately-built UNMIGRATED values sharing one program point. The name
+    # no longer decides (gen-algebra's `conservativeEq` has no name arm, ADR-0034):
+    # the pair falls through to the reified comparison, and their separately
+    # allocated lambdas compare unequal — merging strictly less than Fig. 5.
     test-same-name-eq = {
       expr = sel.selectorEq (sel.when identifiedFn) (sel.when identifiedFn2);
-      expected = true;
+      expected = false;
     };
     test-different-name-neq = {
       expr = sel.selectorEq (sel.when identifiedFn) (sel.when differentFn);
@@ -102,8 +106,9 @@ in
     };
 
     # ── conservative equality by identity REGIME ─────────────────────────────
-    # `test-same-name-eq` above is the UNMIGRATED arm and is unchanged. The cells
-    # below cover the two regimes a producer stamps.
+    # `test-same-name-eq` above is the UNMIGRATED regime, which shares the
+    # reified comparison below. The cells below cover the two regimes a producer
+    # stamps.
 
     # THE REPAIR: two values sharing one program point and behaving differently
     # are NOT equal. A program point is constant across a constructor's

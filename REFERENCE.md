@@ -125,8 +125,8 @@ selectorEq   : selector -> selector -> bool
 
 - `when` selectors wrapping intensional functions: **conservative equality** (Palmer
   §2.3/§5.3), dispatched on the wrapped value's `__mint` tag — digest equality when
-  minted, Nix `==` on the reified value MINUS `__id` when unmintable, `name` equality
-  while unmigrated;
+  minted, otherwise (unmintable or unmigrated) Nix `==` on the reified value MINUS
+  `__id` — the name never decides;
 - `entity`: `id_hash` only (display-only `name` excluded);
 - `coord`: `(dim, id_hash)` (display-only `name` excluded);
 - everything else (including `kind`, whose payload has no display field): structural `==`
