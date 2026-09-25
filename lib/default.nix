@@ -34,17 +34,26 @@ let
   # THE ONE KIND RELATION: gen-schema's `kindEq` subject handed to the same helper `kindEq` calls, so
   # `selectorEq` and the matcher decide what the producer's own door decides — true, false, or a
   # refusal by name at a sealed collision.
+  #
+  # Distinct marks decide `false` before either subject is built. That is the helper's own first
+  # arm, taken early because the matcher runs this once per NODE: measured on the hub bench's
+  # `kindMatch` at n=1600, building both subjects for every node cost 10,406 thunks more than
+  # deciding the non-matching half here. Equal marks always reach the helper, so the true/refused
+  # decision has one author.
   kindEq =
     site: a: b:
-    algebra.sealedCollisionEq site
-      {
-        inherit (a) name sealed;
-        mark = a.identity;
-      }
-      {
-        inherit (b) name sealed;
-        mark = b.identity;
-      };
+    if a.identity != b.identity then
+      false
+    else
+      algebra.sealedCollisionEq site
+        {
+          inherit (a) name sealed;
+          mark = a.identity;
+        }
+        {
+          inherit (b) name sealed;
+          mark = b.identity;
+        };
 
   constructors = import ./constructors.nix {
     inherit
