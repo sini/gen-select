@@ -89,6 +89,19 @@ default resolves `algebra` from `ci/flake.lock`, never the root `flake.lock`.
 
 **Runtime tags** dispatched by `matches`: `star`, `attrs`, `entity`, `kind`, `and`, `any`, `not`, `has`, `within`, `parentMatches`, `coord`, `when` (`lib/match.nix:7-98`). No tag for `child`/`descendant`/`inSlice`.
 
+**`__` keys crossing the boundary** (R12 stated contracts; the census that reads these lines takes the
+first line of each):
+
+- `__sel` — writer the selector constructors (`lib/constructors.nix`, `lib/adapters/product.nix`), reader `matches` (`lib/match.nix`); read by gen-dispatch (`lib/adapters/select.nix`):
+  the selector's runtime tag (the list above). gen-dispatch reads it off plain data, declaring no
+  input on this library.
+- `__identity` — writer the scope, registry and product adapters (`lib/adapters/`), reader the `entity` and `kind` arms of `matches` (`lib/match.nix`):
+  the projected identity record, or `null`, merged LAST into `data id` so no caller decl can shadow
+  it; always present through these adapters.
+- `__coords` — writer `adapters.product.mkContext` (`lib/adapters/product.nix`), reader the `coord` arm of `matches` (`lib/match.nix`):
+  the cell's coordinate tuple, merged last into `data id`; its absence is the named "coordinate-blind
+  context" refusal.
+
 ## Entry points by task
 
 | Task                                  | Reach for                                                                                                                           |

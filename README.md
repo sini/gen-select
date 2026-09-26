@@ -211,7 +211,7 @@ adapters.scope.mkContext : {
   node,
   get,
   project  ? (n: (n.decls or {}) // { inherit (n) type; }),   # projection surfacing node type
-  entryFor ? (id: (node id).decls.__entry or null),           # id -> entry | null
+  entryFor ? (id: let n = node id; in if n ? id_hash then n else null),  # id -> entry | null
 } -> context
 ```
 
@@ -225,7 +225,7 @@ Builds a selector context from gen-scope's accessor pair. Maps scope accessors t
 | `ancestors`   | walks `parent` chain, cycle-safe                 |
 | `siblings`    | children of parent, excluding self               |
 
-The enriched adapter composes a reserved `__identity` record (record or `null`) **outside** the projection and merges it last, so identity/kind selectors work through it and a user decl named `__identity` can never shadow it. `__identity.kind` is a named refusal (a positional node `type` is a name, not a kind declaration, so `sel.kind` over this adapter throws until a gen-scope node's kind declaration is ruled); `entryFor` defaults to the `decls.__entry` registration convention. `__identity` is always present through this adapter, so entity/kind selectors are never silently inert.
+The enriched adapter composes a reserved `__identity` record (record or `null`) **outside** the projection and merges it last, so identity/kind selectors work through it and a user decl named `__identity` can never shadow it. `__identity.kind` is a named refusal (a positional node `type` is a name, not a kind declaration, so `sel.kind` over this adapter throws until a gen-scope node's kind declaration is ruled); `entryFor` defaults to the node itself when it carries `id_hash` (else `null`); a framework whose identity lives under its own key supplies `entryFor`. `__identity` is always present through this adapter, so entity/kind selectors are never silently inert.
 
 #### adapters.graph — gen-graph bridge
 

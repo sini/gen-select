@@ -53,32 +53,32 @@ let
   staleSini = (mkEval 5000).config.users.sini;
 
   # Real gen-scope root descriptors; node types set to kind names; entries written to
-  # decls.<id>.__entry (a den-hoag-shaped registration convention; ctx below supplies
+  # decls.<id>.registration (a den-hoag-shaped registration convention; ctx below supplies
   # entryFor explicitly since scope.nix's default no longer reads it).
   roots = {
     "host:axon" = {
       id = "host:axon";
       type = "host";
       parent = null;
-      decls.__entry = hosts.axon;
+      decls.registration = hosts.axon;
     };
     "host:sini" = {
       id = "host:sini";
       type = "host";
       parent = null;
-      decls.__entry = hosts.sini;
+      decls.registration = hosts.sini;
     };
     "user:sini" = {
       id = "user:sini";
       type = "user";
       parent = "host:axon";
-      decls.__entry = users.sini;
+      decls.registration = users.sini;
     };
     "user:vic" = {
       id = "user:vic";
       type = "user";
       parent = "host:axon";
-      decls.__entry = users.vic;
+      decls.registration = users.vic;
     };
     "svc:plain" = {
       id = "svc:plain";
@@ -103,12 +103,12 @@ let
   };
 
   # Explicit entryFor: these roots simulate a den-hoag-shaped consumer (identity
-  # stashed under decls.__entry), so entryFor's framework-agnostic default
+  # stashed under decls.registration), so entryFor's framework-agnostic default
   # (scope.nix) would not find it — the default now reads only the node's own
   # top-level id_hash, mirroring the registry adapter's entryFor default.
   ctx = sel.adapters.scope.mkContext {
     inherit (result) node get;
-    entryFor = id: (result.node id).decls.__entry or null;
+    entryFor = id: (result.node id).decls.registration or null;
   };
   allIds = builtins.attrNames roots;
   matchIds = selector: builtins.filter (sel.adapters.graph.mkPredicate selector ctx) allIds;

@@ -174,7 +174,7 @@ an adapter directly.
 ```
 { node, get,
   project  ? (n: (n.decls or {}) // { inherit (n) type; }),
-  entryFor ? (id: (node id).decls.__entry or null),
+  entryFor ? (id: let n = node id; in if n ? id_hash then n else null),
 } -> context
 ```
 
@@ -183,8 +183,8 @@ Bridges gen-scope's accessor pair. `data id = (project (node id)) // { __identit
 (a decl named `__identity` cannot shadow it). `__identity.kind` is a named REFUSAL: a
 positional node `type` is a name, not a kind declaration, so `sel.kind` over this adapter
 throws (lazily; `attrs` on the projected `type` is unaffected) until a gen-scope node's kind
-declaration is ruled; `entryFor` defaults to the `decls.__entry` registration
-convention. `__identity` is always present, so identity/kind selectors are never silently
+declaration is ruled; `entryFor` defaults to the node itself when it carries `id_hash`
+(else `null`), and a framework whose identity lives under its own key supplies `entryFor`. `__identity` is always present, so identity/kind selectors are never silently
 inert through this adapter.
 
 ### `adapters.registry.mkContext`

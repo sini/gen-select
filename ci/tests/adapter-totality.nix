@@ -21,7 +21,7 @@ let
     id = "n1";
     type = "x";
     parent = null;
-    decls.__entry = {
+    decls.registration = {
       id_hash = "h-old";
     }; # den-hoag-shaped — the OLD default read this; the new one must not.
   };
@@ -60,7 +60,7 @@ in
       expected = true;
     };
 
-    # ---- O4: the default no longer reads decls.__entry; it reads the node's own id_hash ----
+    # ---- O4: the default reads no framework decls key; it reads the node's own id_hash ----
     test-default-entryfor-reads-node-id-hash = {
       expr =
         let
@@ -75,7 +75,7 @@ in
           ctx = sel.adapters.scope.mkContext {
             node = _: declsEntryOnlyNode;
             get = _: _: throw "get unused in these tests";
-          }; # no explicit entryFor: the default no longer finds decls.__entry
+          }; # no explicit entryFor: the default reads no decls key
         in
         (ctx.data "n1").__identity;
       expected = null;

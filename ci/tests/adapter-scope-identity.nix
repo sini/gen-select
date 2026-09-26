@@ -42,7 +42,7 @@ let
       parent = "host:axon";
       decls = {
         shell = "/bin/zsh";
-        __entry = entryU;
+        registration = entryU;
       };
     };
     "host:axon" = {
@@ -51,16 +51,16 @@ let
       parent = null;
       decls = {
         role = "server";
-      }; # no __entry
+      }; # no registration
     };
   };
   base = {
     node = id: nodeMap.${id};
     get = _: _: throw "get unused in these tests";
     # Explicit: these fixtures simulate a den-hoag-shaped consumer (identity
-    # stashed under decls.__entry, not the node's own top-level id_hash), so
+    # stashed under decls.registration, not the node's own top-level id_hash), so
     # entryFor's framework-agnostic default (scope.nix) would not find it.
-    entryFor = id: nodeMap.${id}.decls.__entry or null;
+    entryFor = id: nodeMap.${id}.decls.registration or null;
   };
   ctx = sel.adapters.scope.mkContext base;
 
@@ -89,7 +89,7 @@ in
       expected = "sini";
     };
 
-    # ---- E6: null iff no __entry; ---- E8: key always present ----
+    # ---- E6: null iff no registration; ---- E8: key always present ----
     test-identity-null-when-no-entry = {
       expr = (ctx.data "host:axon").__identity;
       expected = null;
