@@ -2,7 +2,7 @@
 #
 # THREE CHANNELS, ONE PRECEDENCE, AND NONE OF THEM IS A PROBE. A named formal per dependency wins;
 # the `inputs` bag is next, tested by attrset membership so a supplied-but-throwing value throws as
-# ITSELF rather than falling back; the default is resolved from `./ci/flake.lock`, read as local
+# ITSELF rather than falling back; the default is resolved from `./flake.lock`, read as local
 # data. There is NO `...`: an argument this root does not declare is a loud error, not a silent drop.
 #
 # THE PIN SOURCE IS THE ROOT `flake.lock`, NOT `ci/flake.lock` (ADR-0037 as amended 2026-09-15): a
