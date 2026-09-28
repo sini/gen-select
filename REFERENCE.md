@@ -102,20 +102,33 @@ positional typing.
 ### Product-coordinate selectors
 
 Namespaced under `adapters.product`. Match cells within a gen-product slice by
-coordinates given as registry entries; read the `__coords` projection.
+coordinates given as registry entries; read the `__coords` projection and the context's
+`coordKinds`.
 
 ```
-adapters.product.coord   : dim-name -> registry-entry -> selector
-adapters.product.inSlice : { <dim> = registry-entry; … } -> selector
+adapters.product.coord   : dim-name -> kind -> registry-entry -> selector
+adapters.product.inSlice : { <dim> = { kind; entry; }; … } -> selector
 ```
 
-**`coord dim e`** — validates `e` like `entity`; payload
-`{ __sel = "coord"; dim; id_hash; name; }`. Matching: `__coords` absent → **throw**
-(coordinate-blind); `dim` absent from the cell → `false`; else `__coords.${dim}.id_hash`
-equality (a coordinate value without `id_hash` throws).
+**`coord dim K e`** — a coordinate decides an entity identity at one position, so it takes
+the entry's kind as `entity` does: `K` is validated with `entity`'s guard (judged at the
+second application, so the retired two-argument `coord dim e` is refused by name when the
+selector is used) and `e` like `entity`'s entry; payload
+`{ __sel = "coord"; dim; kind; id_hash; name; }`. Matching: `__coords` absent → **throw**
+(coordinate-blind); `dim` absent from the cell → `false`; different `id_hash` → `false`
+(a coordinate value without `id_hash` throws); equal `id_hash` → `true` when `K` has no
+sealed components, else `entityEq` against the context's kind for `dim` (a sealed collision
+is refused by name; a kind-blind context is refused by name).
 
-**`inSlice coords`** — construction-time sugar for the conjunction of one `coord` per
-fixed dimension; `inSlice { }` is vacuously true.
+**`inSlice { <dim> = { kind; entry; }; … }`** — construction-time sugar for the conjunction
+of one `coord dim kind entry` per fixed dimension; `inSlice { }` is vacuously true. A
+dimension whose value is not `{ kind; entry; }` (the retired `{ <dim> = entry; }` form
+included) is refused by name where the conjunct is forced.
+
+**Argued impossibility** (ADR-0034, written at the declarations of `coord`, `inSlice` and
+`entity`): a kind that is not its entry's kind but mints the entry's mark is taken on the
+caller's word, because a gen-schema entry carries its stamp and not its kind. Detecting it
+needs the entry to carry its kind, a gen-schema change.
 
 ## Equality & identity
 
@@ -134,7 +147,7 @@ selectorEq   : selector -> selector -> bool
   minted, otherwise (unmintable or unmigrated) Nix `==` on the reified value MINUS
   `__id` — the name never decides;
 - `entity`: `id_hash`, then (equal stamps) the kind key by `entityEq`: different marks refuse, equal marks decide by `kindEq` (display-only `name` excluded);
-- `coord`: `(dim, id_hash)` (display-only `name` excluded);
+- `coord`: `dim`, then as `entity` (display-only `name` excluded);
 - everything else (including `kind`, whose payload has no display field): structural `==`
   on the selector, which forces whatever the payload holds — see the caveat below.
 
@@ -159,7 +172,8 @@ payload holds a throwing value — under any key name, `__id` included — abort
 deciding. This is a property of structural equality over caller-supplied match
 specifications, not of the identity regimes: an ordinary key carrying a throw aborts
 identically, measured. The `entity` and `coord` branches are unaffected, comparing
-`id_hash` and never the payload.
+`id_hash` and the kind key and never the entry's payload. Both admit each selector's `kind`
+by shape at an equal stamp, so a hand-built record without a kind key is refused by name.
 
 Raw `==` is finer than `selectorEq` exactly on the display-only `name`; dedup paths
 (neededBy sets, dispatch rule-sets) use `selectorEq`.
@@ -207,13 +221,18 @@ resolving a name needs the shared resolver. Omitting both makes `sel.kind` throw
 ### `adapters.product.mkContext`
 
 ```
-{ cellIds, coordsFor, dataFor ? (_: {}), parent ? (_: null) } -> context
+{ cellIds, coordsFor, dataFor ? (_: {}), parent ? (_: null), inFlight ? [ ], kinds ? { } } -> context
 ```
 
 `data id = (dataFor id) // { __coords = coordsFor id; __identity = null; }`. Flat by
 default; when `parent` is supplied the registry-adapter derivations apply. Consumes
 gen-product's `pgraph.nodes` (`cellIds`) + `pgraph.product.coordsOf` (`coordsFor`) without
-importing gen-product.
+importing gen-product. `kinds` maps a dimension to the kind value of that factor's
+coordinates (one registry, one kind); each is validated and published once per context as
+the context field `coordKinds = { <dim> = <kind-key>; }`, never per cell. **Required in
+effect for a factor whose kind has sealed components:** a dimension absent from `kinds` is
+kind-blind, and a sealed coordinate at an equal stamp refuses there, on its own cell too.
+A migrated kind never reads it.
 
 ### `adapters.graph`
 
@@ -229,9 +248,9 @@ enriched.
 
 ```nix
 # selector payloads (identity-bearing tags)
-{ __sel = "entity"; id_hash = <sha256>; name = <string|null>; }   # name: display/errors only
+{ __sel = "entity"; id_hash = <sha256>; kind = <kind-key>; name = <string|null>; }   # name: display/errors only
 { __sel = "kind";   identity = <mark>; name = <string>; sealed = <attrs>; }  # key: identity
-{ __sel = "coord";  dim = <string>; id_hash = <sha256>; name = <string|null>; }
+{ __sel = "coord";  dim = <string>; kind = <kind-key>; id_hash = <sha256>; name = <string|null>; }
 
 # __identity — reserved projection into `data id` (enriched adapters)
 __identity = null;                                 # not entity-backed
@@ -239,6 +258,9 @@ __identity = { id_hash = <sha256>; kind = <kind-key|null>; entry = <registry-ent
 
 # __coords — reserved projection into `data id` (product adapter)
 __coords = { <dim-name> = <registry-entry>; … };
+
+# coordKinds — a context field (product adapter), not a `data` key
+coordKinds = { <dim-name> = <kind-key>; … };
 ```
 
 A malformed `entryFor`/coordinate value (no `id_hash`) surfaces a named throw at the first
@@ -247,17 +269,17 @@ which reads only the positional kind.
 
 ## Laws
 
-| Law | Statement                                                                                                                                                                                                                                                                         |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| E1  | `entity K e` matches iff `__identity` is a record with `.id_hash == e.id_hash` (and, when `K` has sealed components, a kind `kindEq` to `K`, refused by name at a sealed collision). Equal-identity entries share a match set; any identity-field difference never cross-matches. |
-| E2  | `kind K` matches iff `__identity` is a record whose non-null `.kind` is `K`'s kind key by `kindEq`; `.kind == null` throws (kind-blind projection is loud); a name string throws.                                                                                                 |
-| E3  | `entity`/`kind` throw at construction on strings and non-conforming values; no selector is ever produced from a string.                                                                                                                                                           |
-| E4  | Matching `entity`/`kind` against a context whose `data id` lacks the `__identity` key throws (identity-blind contexts are loud).                                                                                                                                                  |
-| E5  | `__identity = null` yields `false` (non-entity nodes are quiet — structural recursion over mixed graphs needs no guards).                                                                                                                                                         |
-| E6  | Through the enriched adapters `__identity` is present for every node; `null` iff no entry; `id_hash`/`kind` coherent by construction; `__identity` overrides same-named projection keys; a malformed entry errors at `id_hash` access, `kind` matching unaffected.                |
-| E7  | `entity`/`kind`/`coord` selectors are function-free (Nix `==` total); `selectorEq` compares identity fields only (display `name` excluded).                                                                                                                                       |
-| E8  | Backward compatible: existing selectors, the five-accessor contract, and the graph adapter are byte-compatible; enrichment is additive (`data` output is a superset). Sole break: `sel.entityKind` is removed.                                                                    |
-| P1  | `coord dim e` matches iff `__coords` is projected, the cell has `dim`, and `__coords.${dim}.id_hash == e.id_hash`.                                                                                                                                                                |
-| P2  | `inSlice coords` matches iff every fixed coordinate matches; `inSlice { }` is vacuously true; equal to the hand-written conjunction.                                                                                                                                              |
-| P3  | `__coords` absent → throw; dim absent from a cell → `false`; malformed coordinate value → throw.                                                                                                                                                                                  |
-| P4  | Selectors are static: they read only structural context attributes, never resolved values, and force only the node data a match inspects (`entity`/`kind` never force children).                                                                                                  |
+| Law | Statement                                                                                                                                                                                                                                                                                                                                                       |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| E1  | `entity K e` matches iff `__identity` is a record with `.id_hash == e.id_hash` (and, when `K` has sealed components, a kind `kindEq` to `K`, refused by name at a sealed collision). Equal-identity entries share a match set; any identity-field difference never cross-matches.                                                                               |
+| E2  | `kind K` matches iff `__identity` is a record whose non-null `.kind` is `K`'s kind key by `kindEq`; `.kind == null` throws (kind-blind projection is loud); a name string throws.                                                                                                                                                                               |
+| E3  | `entity`/`kind` throw at construction on strings and non-conforming values; no selector is ever produced from a string.                                                                                                                                                                                                                                         |
+| E4  | Matching `entity`/`kind` against a context whose `data id` lacks the `__identity` key throws (identity-blind contexts are loud).                                                                                                                                                                                                                                |
+| E5  | `__identity = null` yields `false` (non-entity nodes are quiet — structural recursion over mixed graphs needs no guards).                                                                                                                                                                                                                                       |
+| E6  | Through the enriched adapters `__identity` is present for every node; `null` iff no entry; `id_hash`/`kind` coherent by construction; `__identity` overrides same-named projection keys; a malformed entry errors at `id_hash` access, `kind` matching unaffected.                                                                                              |
+| E7  | `entity`/`kind`/`coord` selectors are function-free over a kind with no sealed components (Nix `==` total, `builtins.toJSON` defined). Over a kind with sealed components the kind key holds its sealed subjects, which may be functions: `==` stays total, and `builtins.toJSON` aborts. `selectorEq` compares identity fields only (display `name` excluded). |
+| E8  | Backward compatible: existing selectors, the five-accessor contract, and the graph adapter are byte-compatible; enrichment is additive (`data` output is a superset). Sole break: `sel.entityKind` is removed.                                                                                                                                                  |
+| P1  | `coord dim K e` matches iff `__coords` is projected, the cell has `dim`, `__coords.${dim}.id_hash == e.id_hash`, and, when `K` has sealed components, the context's `coordKinds.${dim}` is `K` by `entityEq` (a sealed collision, and a kind-blind context, refuse by name).                                                                                    |
+| P2  | `inSlice { <dim> = { kind; entry; }; … }` matches iff every fixed coordinate matches; `inSlice { }` is vacuously true; equal to the hand-written conjunction; a dimension value that is not `{ kind; entry; }` refuses by name.                                                                                                                                 |
+| P3  | `__coords` absent → throw; dim absent from a cell → `false`; malformed coordinate value → throw.                                                                                                                                                                                                                                                                |
+| P4  | Selectors are static: they read only structural context attributes, never resolved values, and force only the node data a match inspects (`entity`/`kind` never force children).                                                                                                                                                                                |
