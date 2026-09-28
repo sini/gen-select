@@ -60,28 +60,59 @@ in
       expected = "when";
     };
     test-child-desugars-to-and = {
-      expr = (sel.child (sel.attrs { type = "env"; }) (sel.attrs { type = "host"; })).__sel;
+      expr =
+        (sel.child {
+          parent = (sel.attrs { type = "env"; });
+          child = (sel.attrs { type = "host"; });
+        }).__sel;
       expected = "and";
     };
     test-child-contains-parentMatches = {
       expr =
         let
-          s = sel.child (sel.attrs { type = "env"; }) (sel.attrs { type = "host"; });
+          s = sel.child {
+            parent = (sel.attrs { type = "env"; });
+            child = (sel.attrs { type = "host"; });
+          };
         in
         builtins.any (sub: sub.__sel == "parentMatches") s.selectors;
       expected = true;
     };
     test-descendant-desugars-to-and = {
-      expr = (sel.descendant (sel.attrs { type = "env"; }) (sel.attrs { type = "host"; })).__sel;
+      expr =
+        (sel.descendant {
+          ancestor = (sel.attrs { type = "env"; });
+          descendant = (sel.attrs { type = "host"; });
+        }).__sel;
       expected = "and";
     };
     test-descendant-contains-within = {
       expr =
         let
-          s = sel.descendant (sel.attrs { type = "env"; }) (sel.attrs { type = "host"; });
+          s = sel.descendant {
+            ancestor = (sel.attrs { type = "env"; });
+            descendant = (sel.attrs { type = "host"; });
+          };
         in
         builtins.any (sub: sub.__sel == "within") s.selectors;
       expected = true;
+    };
+    # P2, R7 (b): each takes ONE record whose field names carry the roles.
+    test-child-descendant-take-one-record = {
+      expr = [
+        (builtins.functionArgs sel.child)
+        (builtins.functionArgs sel.descendant)
+      ];
+      expected = [
+        {
+          parent = false;
+          child = false;
+        }
+        {
+          ancestor = false;
+          descendant = false;
+        }
+      ];
     };
     test-star-structural-eq = {
       expr = sel.star == sel.star;

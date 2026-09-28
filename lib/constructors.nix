@@ -146,18 +146,22 @@ rec {
     inherit selector;
   };
 
+  # Two selectors of one sort (P2, R7 (b)): one record, `child { parent; child; }` and
+  # `descendant { ancestor; descendant; }`. The field names carry the roles a positional pair left
+  # to the argument order. This library has no prelude edge, so the record is a native formal,
+  # open as a record operand is (R5).
   child =
-    parentSel: childSel:
+    { parent, child, ... }:
     and [
-      childSel
-      (parentMatches parentSel)
+      child
+      (parentMatches parent)
     ];
 
   descendant =
-    ancSel: descSel:
+    { ancestor, descendant, ... }:
     and [
-      descSel
-      (within ancSel)
+      descendant
+      (within ancestor)
     ];
 
   when = fn: {

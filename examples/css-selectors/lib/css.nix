@@ -90,15 +90,23 @@ let
 
       buildChild =
         parts:
-        builtins.foldl' (acc: p: sel.child acc (parse (trim p))) (parse (trim (builtins.head parts))) (
-          builtins.tail parts
-        );
+        builtins.foldl' (
+          acc: p:
+          sel.child {
+            parent = acc;
+            child = parse (trim p);
+          }
+        ) (parse (trim (builtins.head parts))) (builtins.tail parts);
 
       buildDesc =
         parts:
-        builtins.foldl' (acc: p: sel.descendant acc (parse (trim p))) (parse (trim (builtins.head parts))) (
-          builtins.tail parts
-        );
+        builtins.foldl' (
+          acc: p:
+          sel.descendant {
+            ancestor = acc;
+            descendant = parse (trim p);
+          }
+        ) (parse (trim (builtins.head parts))) (builtins.tail parts);
     in
     if len orParts > 1 then
       sel.any (map (p: parse (trim p)) orParts)

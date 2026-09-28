@@ -43,19 +43,19 @@ construction-time sugar with no distinct runtime tag.)
 
 ### Structural & data selectors
 
-| Constructor       | Signature                | Matches when                                                 |
-| ----------------- | ------------------------ | ------------------------------------------------------------ |
-| `star`            | `-> selector`            | always                                                       |
-| `attrs a`         | `attrset -> selector`    | every k:v in `a` equals in `data id`; missing key = no match |
-| `and ss`          | `[selector] -> selector` | all match; `and [] = true`                                   |
-| `any ss`          | `[selector] -> selector` | any matches; `any [] = false`                                |
-| `not s`           | `selector -> selector`   | `s` does not match                                           |
-| `has s`           | `selector -> selector`   | some child matches `s`                                       |
-| `within s`        | `selector -> selector`   | some ancestor matches `s`                                    |
-| `parentMatches s` | `selector -> selector`   | the immediate parent matches `s`                             |
-| `child p c`       | `sel -> sel -> selector` | sugar: `and [ c (parentMatches p) ]`                         |
-| `descendant a d`  | `sel -> sel -> selector` | sugar: `and [ d (within a) ]`                                |
-| `when fn`         | `fn -> selector`         | `fn id ctx` returns true                                     |
+| Constructor                            | Signature                               | Matches when                                                 |
+| -------------------------------------- | --------------------------------------- | ------------------------------------------------------------ |
+| `star`                                 | `-> selector`                           | always                                                       |
+| `attrs a`                              | `attrset -> selector`                   | every k:v in `a` equals in `data id`; missing key = no match |
+| `and ss`                               | `[selector] -> selector`                | all match; `and [] = true`                                   |
+| `any ss`                               | `[selector] -> selector`                | any matches; `any [] = false`                                |
+| `not s`                                | `selector -> selector`                  | `s` does not match                                           |
+| `has s`                                | `selector -> selector`                  | some child matches `s`                                       |
+| `within s`                             | `selector -> selector`                  | some ancestor matches `s`                                    |
+| `parentMatches s`                      | `selector -> selector`                  | the immediate parent matches `s`                             |
+| `child { parent; child; }`             | `{ parent; child; } -> selector`        | sugar: `and [ c (parentMatches p) ]`                         |
+| `descendant { ancestor; descendant; }` | `{ ancestor; descendant; } -> selector` | sugar: `and [ d (within a) ]`                                |
+| `when fn`                              | `fn -> selector`                        | `fn id ctx` returns true                                     |
 
 ### Identity-bearing selectors
 

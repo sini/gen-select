@@ -51,7 +51,10 @@ in
   flake.tests.sugar = {
     test-child-eq-desugared = {
       expr =
-        m (sel.child envSel hostSel) "host:web" mockCtx == m (sel.and [
+        m (sel.child {
+          parent = envSel;
+          child = hostSel;
+        }) "host:web" mockCtx == m (sel.and [
           hostSel
           (sel.parentMatches envSel)
         ]) "host:web" mockCtx;
@@ -59,7 +62,10 @@ in
     };
     test-descendant-eq-desugared = {
       expr =
-        m (sel.descendant envSel userSel) "user:tux" mockCtx == m (sel.and [
+        m (sel.descendant {
+          ancestor = envSel;
+          descendant = userSel;
+        }) "user:tux" mockCtx == m (sel.and [
           userSel
           (sel.within envSel)
         ]) "user:tux" mockCtx;
@@ -67,7 +73,10 @@ in
     };
     test-child-structural-eq = {
       expr =
-        sel.child envSel hostSel == sel.and [
+        sel.child {
+          parent = envSel;
+          child = hostSel;
+        } == sel.and [
           hostSel
           (sel.parentMatches envSel)
         ];
@@ -75,7 +84,10 @@ in
     };
     test-descendant-structural-eq = {
       expr =
-        sel.descendant envSel userSel == sel.and [
+        sel.descendant {
+          ancestor = envSel;
+          descendant = userSel;
+        } == sel.and [
           userSel
           (sel.within envSel)
         ];
