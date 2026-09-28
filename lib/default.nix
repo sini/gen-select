@@ -72,20 +72,47 @@ let
     else
       kindEq site a.kind b.kind;
 
+  # A SELECTOR's kind key, or a refusal by name (den-hoag-8hqx0 CF2). The `entity` and `coord` arms
+  # read the selector's `kind` at an equal stamp, where a hand-built record that omits it, or carries
+  # a kind NAME or a record short of `{ identity; name; sealed; }`, would otherwise abort uncatchably
+  # on the attribute access (`attribute 'kind' missing`, `expected a set but found a string`) instead
+  # of refusing (ADR-0025 item 1). One predicate, the one the `sel.kind` arm of ./match.nix writes
+  # inline for the node side; it is read only at an equal stamp, so it costs O(matches).
+  selectorKind =
+    site: ctor: s:
+    let
+      k = s.kind or null;
+    in
+    if builtins.isAttrs k && k ? identity && k ? name && k ? sealed then
+      k
+    else
+      throw "${site}: a `${s.__sel}` selector record carries ${
+        if k == null then
+          "no `kind`"
+        else if builtins.isString k then
+          "the kind name \"${k}\" as its `kind`"
+        else
+          "a `kind` that is not a kind key ({ identity; name; sealed; }); got ${builtins.typeOf k}"
+      } (a hand-built record?). Build it with ${ctor}.";
+
   constructors = import ./constructors.nix {
     inherit
       isSchemaKind
       kindKey
       kindEq
       entityEq
+      selectorKind
       algebra
       ;
   };
-  match = import ./match.nix { inherit kindEq entityEq; };
+  match = import ./match.nix { inherit kindEq entityEq selectorKind; };
   scopeAdapter = import ./adapters/scope.nix;
   graphAdapter = import ./adapters/graph.nix { inherit (match) matches; };
   registryAdapter = import ./adapters/registry.nix { inherit isSchemaKind kindKey; };
-  productAdapter = import ./adapters/product.nix { inherit (constructors) and; };
+  productAdapter = import ./adapters/product.nix {
+    inherit (constructors) and;
+    inherit isSchemaKind kindKey;
+  };
 in
 constructors
 // {

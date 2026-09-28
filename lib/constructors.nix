@@ -22,6 +22,7 @@
   kindKey,
   kindEq,
   entityEq,
+  selectorKind,
 }:
 let
   # gen-prelude's `checkRequired`, restated: a record door refuses a non-set and a missing field
@@ -64,6 +65,14 @@ rec {
   # stamp. The stamp alone therefore cannot decide; the payload stores the kind's KEY
   # (./default.nix `kindKey`) beside it, and `entityEq` refuses such a collision by name as
   # `sel.kind` does. `kindKey`'s fields are shared references, so no mark is forced here.
+  #
+  # ★ ARGUED IMPOSSIBILITY (ADR-0034: a surviving comparison owes one at its declaration). A kind that
+  # is NOT the entry's kind but mints the entry's MARK is not detected: `sel.entity k2 s1`, with `k2`
+  # sealed-colliding with `s1`'s own kind, carries `k2`'s sealed subjects, and nothing in `s1` names
+  # its own, because a gen-schema entry carries its stamp and not its kind. At an equal mark the kind
+  # is taken on the caller's word. What would have to change: the entry would have to carry its kind
+  # (arm (i) of den-hoag-l0y (β), rejected at +19 thunks per instance on every instance), which is a
+  # gen-schema change. `adapters.product.coord` states the same residue at its own declaration.
   entity =
     kindValue:
     let
@@ -205,6 +214,7 @@ rec {
   # differing display names (e.g. a kind pinning `_identity.keys` to exclude name)
   # dedup as equal in neededBy sets and dispatch rule-sets — raw `==` would wrongly
   # distinguish them. `==` is therefore finer than selectorEq exactly on `name`.
+  # `coord` payloads compare the dimension, then as `entity` payloads do.
   # `kind` payloads compare through gen-schema's `kindEq` relation (./default.nix's `kindEq`):
   # their `name` is display-only too, and a sealed collision is refused by name. `entity`
   # payloads compare through ./default.nix's `entityEq`: the stamp, then the kind by `kindEq`.
@@ -225,11 +235,33 @@ rec {
       in
       if isIntensional a.fn && isIntensional b.fn then algebra.conservativeEq a.fn b.fn else false
     else if a.__sel == "entity" && b.__sel == "entity" then
-      entityEq "gen-select: selectorEq" a b
+      # Distinct stamps decide `false` before either kind is read; at an equal stamp each selector's
+      # kind is admitted by shape (./default.nix `selectorKind`) before `entityEq` reads it.
+      a.id_hash == b.id_hash
+      && builtins.seq (selectorKind "gen-select: selectorEq" "sel.entity kind entry" a) (
+        builtins.seq (selectorKind "gen-select: selectorEq" "sel.entity kind entry" b) (
+          entityEq "gen-select: selectorEq" a b
+        )
+      )
     else if a.__sel == "kind" && b.__sel == "kind" then
       kindEq "gen-select: selectorEq" a b
     else if a.__sel == "coord" && b.__sel == "coord" then
-      a.dim == b.dim && a.id_hash == b.id_hash
+      # The coordinate is an entity at one position (den-hoag-8hqx0): the dimension, then `entity`'s
+      # decision under a site string of its own, which names the coordinate.
+      a.dim == b.dim
+      && a.id_hash == b.id_hash
+      &&
+        builtins.seq
+          (selectorKind "gen-select: selectorEq (adapters.product.coord)"
+            "adapters.product.coord dim kind entry"
+            a
+          )
+          (
+            builtins.seq (selectorKind "gen-select: selectorEq (adapters.product.coord)"
+              "adapters.product.coord dim kind entry"
+              b
+            ) (entityEq "gen-select: selectorEq (adapters.product.coord)" a b)
+          )
     else
       # ★ STRUCTURAL FALL-THROUGH, AND IT IS NOT AN IDENTITY ARM — read this before
       # routing it through `comparisonSubject` as the three arms above are.
@@ -254,6 +286,6 @@ rec {
       # cyclic or self-referential value overflows uncatchably. That is a design
       # decision rather than a local fix, so this arm stays structural and the boundary
       # is written here. `entity` and `coord` above are unaffected: they compare
-      # `id_hash` (and `entity` its kind key) and never reach the entry's payload.
+      # `id_hash` and the kind key, and never reach the entry's payload.
       a == b;
 }
