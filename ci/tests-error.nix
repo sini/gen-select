@@ -512,4 +512,93 @@ in
       };
     };
   };
+
+  # P2, R7 (b): `child` / `descendant` take one record, and a missing field (absent or misspelt) or a
+  # stale positional call is refused BY NAME, catchably. Each cell carries a live control: the
+  # well-formed record constructs under `tryEval` in the same cell.
+  flake.testsError.record-doors =
+    let
+      s = sel.star;
+      ok = v: (builtins.tryEval (builtins.seq v true)).success;
+      childOk = ok (
+        sel.child {
+          parent = s;
+          child = s;
+        }
+      );
+      descOk = ok (
+        sel.descendant {
+          ancestor = s;
+          descendant = s;
+        }
+      );
+      missing =
+        door: f: req:
+        "^gen-select\\.${door}: required field '${f}' is missing \\(required: ${req}\\) \\(in gen-select\\.checkRequired\\)$";
+      notInt =
+        door: req:
+        "^gen-select\\.${door}: the argument must be an attrset, not a int \\(required: ${req}\\) \\(in gen-select\\.checkRequired\\)$";
+    in
+    {
+      test-child-missing-field-refused = {
+        expr =
+          assert childOk;
+          sel.child { parent = s; };
+        expectedError = {
+          type = "ThrownError";
+          msg = missing "child" "child" "'parent', 'child'";
+        };
+      };
+      test-child-misspelt-field-refused = {
+        expr =
+          assert childOk;
+          sel.child {
+            parent = s;
+            chlid = s;
+          };
+        expectedError = {
+          type = "ThrownError";
+          msg = missing "child" "child" "'parent', 'child'";
+        };
+      };
+      test-child-stale-positional-refused = {
+        expr =
+          assert childOk;
+          sel.child 1;
+        expectedError = {
+          type = "ThrownError";
+          msg = notInt "child" "'parent', 'child'";
+        };
+      };
+      test-descendant-missing-field-refused = {
+        expr =
+          assert descOk;
+          sel.descendant { ancestor = s; };
+        expectedError = {
+          type = "ThrownError";
+          msg = missing "descendant" "descendant" "'ancestor', 'descendant'";
+        };
+      };
+      test-descendant-misspelt-field-refused = {
+        expr =
+          assert descOk;
+          sel.descendant {
+            ancestor = s;
+            descendent = s;
+          };
+        expectedError = {
+          type = "ThrownError";
+          msg = missing "descendant" "descendant" "'ancestor', 'descendant'";
+        };
+      };
+      test-descendant-stale-positional-refused = {
+        expr =
+          assert descOk;
+          sel.descendant 1;
+        expectedError = {
+          type = "ThrownError";
+          msg = notInt "descendant" "'ancestor', 'descendant'";
+        };
+      };
+    };
 }

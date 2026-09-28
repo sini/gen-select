@@ -97,23 +97,43 @@ in
         builtins.any (sub: sub.__sel == "within") s.selectors;
       expected = true;
     };
-    # P2, R7 (b): each takes ONE record whose field names carry the roles.
-    test-child-descendant-take-one-record = {
-      expr = [
-        (builtins.functionArgs sel.child)
-        (builtins.functionArgs sel.descendant)
-      ];
-      expected = [
-        {
-          parent = false;
-          child = false;
-        }
-        {
-          ancestor = false;
-          descendant = false;
-        }
-      ];
-    };
+    # P2, R7 (b): each takes ONE record whose field names carry the roles, and a record missing one
+    # (absent, misspelt) or a stale positional call is refused CATCHABLY, at the door's WHNF. The
+    # messages are pinned by name in ../tests-error.nix.
+    test-child-descendant-refuse-catchably =
+      let
+        s = sel.star;
+        refused = v: !(builtins.tryEval (builtins.seq v true)).success;
+      in
+      {
+        expr = map refused [
+          (sel.child { parent = s; })
+          (sel.child {
+            parent = s;
+            chlid = s;
+          })
+          (sel.child s)
+          (sel.descendant { ancestor = s; })
+          (sel.descendant {
+            ancestor = s;
+            descendent = s;
+          })
+          (sel.descendant s)
+          (sel.child {
+            parent = s;
+            child = s;
+          })
+        ];
+        expected = [
+          true
+          true
+          true
+          true
+          true
+          true
+          false
+        ];
+      };
     test-star-structural-eq = {
       expr = sel.star == sel.star;
       expected = true;

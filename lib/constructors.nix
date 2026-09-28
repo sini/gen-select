@@ -23,6 +23,22 @@
   kindEq,
   entityEq,
 }:
+let
+  # gen-prelude's `checkRequired`, restated: a record door refuses a non-set and a missing field
+  # by name, reading `<door>: … (in <construct>)`. Not exported.
+  checkRequired =
+    door: required: record:
+    let
+      quoted = builtins.concatStringsSep ", " (map (n: "'${n}'") required);
+      missing = builtins.filter (f: !(record ? ${f})) required;
+    in
+    if !builtins.isAttrs record then
+      throw "${door}: the argument must be an attrset, not a ${builtins.typeOf record} (required: ${quoted}) (in gen-select.checkRequired)"
+    else if missing != [ ] then
+      throw "${door}: required field '${builtins.head missing}' is missing (required: ${quoted}) (in gen-select.checkRequired)"
+    else
+      record;
+in
 rec {
   star = {
     __sel = "star";
@@ -148,21 +164,28 @@ rec {
 
   # Two selectors of one sort (P2, R7 (b)): one record, `child { parent; child; }` and
   # `descendant { ancestor; descendant; }`. The field names carry the roles a positional pair left
-  # to the argument order. This library has no prelude edge, so the record is a native formal,
-  # open as a record operand is (R5).
+  # to the argument order. The record is open (R5), and a missing field or a non-set is refused by
+  # name with a `throw`, so `tryEval` contains it (ADR-0025 item 1); a native `{ parent, child, ... }`
+  # formal aborts on either, past `tryEval`.
   child =
-    { parent, child, ... }:
-    and [
-      child
-      (parentMatches parent)
-    ];
+    args:
+    let
+      r = checkRequired "gen-select.child" [ "parent" "child" ] args;
+    in
+    builtins.seq r (and [
+      r.child
+      (parentMatches r.parent)
+    ]);
 
   descendant =
-    { ancestor, descendant, ... }:
-    and [
-      descendant
-      (within ancestor)
-    ];
+    args:
+    let
+      r = checkRequired "gen-select.descendant" [ "ancestor" "descendant" ] args;
+    in
+    builtins.seq r (and [
+      r.descendant
+      (within r.ancestor)
+    ]);
 
   when = fn: {
     __sel = "when";
