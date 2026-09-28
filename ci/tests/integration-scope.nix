@@ -88,19 +88,21 @@ let
     };
   };
 
-  result = genScope.eval {
-    # A hand-built scope states its own order at the site: `eval` takes the whole
-    # `{ nodes, nodeOrder }` record, because a bare node map no longer carries the
-    # declared vertex order (gen-scope `lib/require-scope.nix`).
-    scope = {
-      nodes = roots;
-      nodeOrder = builtins.attrNames roots;
-    };
-    attributes = {
-      children = _self: id: lib.filterAttrs (_: n: n.parent == id) roots;
-    };
-    parseParent = id: roots.${id}.parent or null;
-  };
+  result =
+    genScope.eval
+      {
+        parseParent = id: roots.${id}.parent or null;
+      }
+      {
+        children = _self: id: lib.filterAttrs (_: n: n.parent == id) roots;
+      }
+      # A hand-built scope states its own order at the site: `eval` takes the whole
+      # `{ nodes, nodeOrder }` record, because a bare node map no longer carries the
+      # declared vertex order (gen-scope `lib/require-scope.nix`).
+      {
+        nodes = roots;
+        nodeOrder = builtins.attrNames roots;
+      };
 
   # Explicit entryFor: these roots simulate a den-hoag-shaped consumer (identity
   # stashed under decls.registration), so entryFor's framework-agnostic default
