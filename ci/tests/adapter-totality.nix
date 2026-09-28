@@ -3,9 +3,22 @@
 # formal). O1/O2/O4/O6/O7/O8 of specs/2026-09-16-gen-select-adapter-defaults-spec.md §3 — the
 # uncatchable pattern-formal falsifiers (O3/O9) live on ../tests-error.nix, the only output the
 # batch asserter behind checks.default does not force.
-{ genSelect, ... }:
+{
+  genSelect,
+  genSchema,
+  genMerge,
+  ...
+}:
 let
   sel = genSelect;
+  # A real (migrated) kind for the coord selector below: `coord dim kind entry` admits its kind by
+  # the mark (den-hoag-8hqx0), so the selector must be well-formed for the cell to reach the door.
+  kHost =
+    (genSchema.evalSchema {
+      modules = [
+        { config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; }; }
+      ];
+    }).host;
 
   throws = x: !(builtins.tryEval (builtins.deepSeq x x)).success;
 
@@ -115,7 +128,10 @@ in
             coordsFor = _: "oops-a-string";
           };
         in
-        throws (sel.matches (sel.adapters.product.coord "host" { id_hash = "h1"; }) "c1" ctx);
+        # The selector itself decides (`isAttrs`), so the throw is the context's door, not the
+        # retired two-argument form's refusal.
+        builtins.isAttrs (sel.adapters.product.coord "host" kHost { id_hash = "h1"; })
+        && throws (sel.matches (sel.adapters.product.coord "host" kHost { id_hash = "h1"; }) "c1" ctx);
       expected = true;
     };
     test-coordsfor-underapplied-throws = {
