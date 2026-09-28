@@ -49,6 +49,7 @@ let
           config.hS1.q.addr = "10.0.0.2";
           config.hS1t.p.addr = "10.0.0.1";
           config.hS2.p.addr = "10.0.0.1";
+          config.hS2.z.addr = "10.0.0.3";
         }
       ];
     }).config;
@@ -56,6 +57,7 @@ let
   s1q = c.hS1.q;
   s1t = c.hS1t.p;
   s2 = c.hS2.p;
+  s2z = c.hS2.z;
   a = c.hA.p;
   nodes = {
     inherit
@@ -73,6 +75,23 @@ let
     s2 = kS2;
     a = kA;
   };
+  # den-hoag-8hqx0: the same pair as COORDINATES. A product factor is one registry, so one kind per
+  # dimension: `host` over `kS2`'s registry (cells `cs2`, `cs2z`), or over `kA`'s (cell `ca`).
+  # `coordsFor` has gen-product's `coordsOf` shape (cellId -> { <dim> = entry; }), which is the whole
+  # of what the adapter reads; gen-demo's refusals row drives a real gen-product space.
+  prodCells = {
+    cs2.host = s2;
+    cs2z.host = s2z;
+  };
+  mkProd =
+    cells: extra:
+    sel.adapters.product.mkContext (
+      {
+        cellIds = builtins.attrNames cells;
+        coordsFor = id: cells.${id};
+      }
+      // extra
+    );
   mkReg =
     extra:
     sel.adapters.registry.mkContext (
@@ -94,9 +113,21 @@ in
     s1q
     s1t
     s2
+    s2z
     a
     nodes
     ;
+  # product contexts (den-hoag-8hqx0): kind-bearing, kind-blind, the migrated factor both ways, a
+  # context declaring an accessor in flight (so `sel.not` clears it), and a kind NAME as `kinds`
+  prod = mkProd prodCells { kinds.host = kS2; };
+  prodBlind = mkProd prodCells { };
+  prodA = mkProd { ca.host = a; } { kinds.host = kA; };
+  prodABlind = mkProd { ca.host = a; } { };
+  prodInFlight = mkProd prodCells {
+    kinds.host = kS2;
+    inFlight = [ "parent" ];
+  };
+  prodKindName = mkProd prodCells { kinds.host = "host"; };
   # kind-bearing registry context
   reg = mkReg { kindFor = id: kinds.${id}; };
   # kind-blind: the registry adapter given no kind

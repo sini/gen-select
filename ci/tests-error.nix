@@ -329,6 +329,226 @@ in
     };
   };
 
+  # den-hoag-8hqx0: `adapters.product.coord dim kind entry` at the sealed collision, and the doors
+  # around it. ./tests/coord-sealed.nix pins the decided arms; these pin WHICH refusal fired. C1–C3
+  # are pinned by the sealed-collision sentence and not by `.success`: a build that dropped the
+  # context's kind projection refuses the same three cells under the kind-blind message instead.
+  flake.testsError.coord-sealed =
+    let
+      P = sel.adapters.product;
+      coordSealedMsg = sealedMsg "adapters\\.product\\.coord";
+      coordKindBlindMsg =
+        node:
+        "^gen-select: adapters\\.product\\.coord matched against a kind-blind product context \\(dimension 'host' of node ${node} has no kind, and the selector's kind has sealed components\\)\\. Pass adapters\\.product\\.mkContext's `kinds`\\.$";
+      handMsg =
+        site: tag: carries: ctor:
+        "^gen-select: ${site}: a `${tag}` selector record carries ${carries} \\(a hand-built record\\?\\)\\. Build it with ${ctor}\\.$";
+      coordCtor = "adapters\\.product\\.coord dim kind entry";
+      entityCtor = "sel\\.entity kind entry";
+      hand = {
+        __sel = "coord";
+        dim = "host";
+        inherit (F.s2) id_hash;
+        name = "p";
+      };
+      handE = removeAttrs hand [ "dim" ] // {
+        __sel = "entity";
+      };
+    in
+    {
+      # C1 · Controls: the separately evaluated twin decides true, another instance false.
+      test-c1-selectorEq-sealed-collision = {
+        expr =
+          assert
+            F.tr (sel.selectorEq (P.coord "host" F.kS1 F.s1) (P.coord "host" F.kS1t F.s1t)) == true
+            && F.tr (sel.selectorEq (P.coord "host" F.kS1 F.s1) (P.coord "host" F.kS1 F.s1q)) == false;
+          sel.selectorEq (P.coord "host" F.kS1 F.s1) (P.coord "host" F.kS2 F.s2);
+        expectedError = {
+          type = "ThrownError";
+          msg = sealedMsg "selectorEq \\(adapters\\.product\\.coord\\)";
+        };
+      };
+      # C2 · Controls (K2 / X2): the coordinate's own cell decides true on the kind-bearing context.
+      test-c2-match-sealed-collision = {
+        expr =
+          assert F.tr (sel.matches (P.coord "host" F.kS2 F.s2) "cs2" F.prod) == true;
+          sel.matches (P.coord "host" F.kS1 F.s1) "cs2" F.prod;
+        expectedError = {
+          type = "ThrownError";
+          msg = coordSealedMsg;
+        };
+      };
+      # C2s · the selection over the space refuses rather than return [ "cs2" ]. Control: the
+      # migrated coordinate's selection decides.
+      test-c2s-selection-sealed-collision = {
+        expr =
+          assert
+            F.tr (builtins.filter (id: sel.matches (P.coord "host" F.kA F.a) id F.prodA) [ "ca" ]) == [
+              "ca"
+            ];
+          builtins.filter (id: sel.matches (P.coord "host" F.kS1 F.s1) id F.prod) [
+            "cs2"
+            "cs2z"
+          ];
+        expectedError = {
+          type = "ThrownError";
+          msg = coordSealedMsg;
+        };
+      };
+      # C3 · `inSlice` at the pair. Control: the coordinate's own slice decides true.
+      test-c3-inSlice-sealed-collision = {
+        expr =
+          assert
+            F.tr (
+              sel.matches (P.inSlice {
+                host = {
+                  kind = F.kS2;
+                  entry = F.s2;
+                };
+              }) "cs2" F.prod
+            ) == true;
+          sel.matches (P.inSlice {
+            host = {
+              kind = F.kS1;
+              entry = F.s1;
+            };
+          }) "cs2" F.prod;
+        expectedError = {
+          type = "ThrownError";
+          msg = coordSealedMsg;
+        };
+      };
+      # C4 · a kind-blind context. Control (K4b): a migrated coordinate decides on its stamp there.
+      test-c4-kind-blind-context = {
+        expr =
+          assert F.tr (sel.matches (P.coord "host" F.kA F.a) "ca" F.prodABlind) == true;
+          sel.matches (P.coord "host" F.kS1 F.s1) "cs2" F.prodBlind;
+        expectedError = {
+          type = "ThrownError";
+          msg = coordKindBlindMsg "cs2";
+        };
+      };
+      # X1 · the coordinate's OWN cell on a kind-blind context refuses too: `kinds` is required in
+      # effect for a factor of a compared kind. Control (X2): the same match on the kind-bearing one.
+      test-x1-own-cell-kind-blind = {
+        expr =
+          assert F.tr (sel.matches (P.coord "host" F.kS2 F.s2) "cs2" F.prod) == true;
+          sel.matches (P.coord "host" F.kS2 F.s2) "cs2" F.prodBlind;
+        expectedError = {
+          type = "ThrownError";
+          msg = coordKindBlindMsg "cs2";
+        };
+      };
+      # C5 · the retired two-argument form, refused BY NAME at the match (the eager `seq`). Control:
+      # the three-argument form decides.
+      test-c5-two-argument-form = {
+        expr =
+          assert F.tr (sel.matches (P.coord "host" F.kS2 F.s2) "cs2" F.prod) == true;
+          sel.matches (P.coord "host" F.s2) "cs2" F.prod;
+        expectedError = {
+          type = "ThrownError";
+          msg = "^gen-select: adapters\\.product\\.coord expects the coordinate's kind value after the dimension \\(coord \"host\" schema\\.host hosts\\.axon\\): a gen-schema kind value carrying a mint-backed mark \\(`__mint\\.minted`, ADR-0034\\); got an entry \\(the two-argument form is retired: the coordinate's kind decides a sealed collision\\)\\.$";
+        };
+      };
+      # CF1 · the retired `inSlice { <dim> = entry; }`, refused BY NAME where the conjunct is forced
+      # (it used to hand `matches` a lambda, an uncatchable abort). Control: the kind-bearing form.
+      test-cf1-inSlice-retired-form = {
+        expr =
+          assert
+            F.tr (
+              sel.matches (P.inSlice {
+                host = {
+                  kind = F.kS2;
+                  entry = F.s2;
+                };
+              }) "cs2" F.prod
+            ) == true;
+          sel.matches (P.inSlice { host = F.s2; }) "cs2" F.prod;
+        expectedError = {
+          type = "ThrownError";
+          msg = "^gen-select: adapters\\.product\\.inSlice expects \\{ <dim> = \\{ kind; entry; \\}; \\} \\(inSlice \\{ host = \\{ kind = schema\\.host; entry = hosts\\.axon; \\}; \\}\\); dimension 'host' got an entry \\(the \\{ <dim> = entry; \\} form is retired: the coordinate's kind decides a sealed collision\\)\\.$";
+        };
+      };
+      # X5 · `kinds` naming a kind by its NAME. Control: a migrated coordinate reads no node kind.
+      test-x5-kinds-name-refused = {
+        expr =
+          assert F.tr (sel.matches (P.coord "host" F.kA F.s2) "cs2" F.prodKindName) == true;
+          sel.matches (P.coord "host" F.kS2 F.s2) "cs2" F.prodKindName;
+        expectedError = {
+          type = "ThrownError";
+          msg = "^gen-select: adapters\\.product\\.mkContext `kinds\\.host` expects a gen-schema kind value carrying a mint-backed mark \\(`__mint\\.minted`, ADR-0034\\); got the kind name \"host\"\\.$";
+        };
+      };
+      # C7 / CF2 · hand-built records at an equal stamp, one cell per arm and per malformation. The
+      # shared control: the same record at a different stamp decides false without reading a kind.
+      test-c7-coord-no-kind-match = {
+        expr =
+          assert F.tr (sel.selectorEq hand (hand // { id_hash = "z"; })) == false;
+          sel.matches hand "cs2" F.prod;
+        expectedError = {
+          type = "ThrownError";
+          msg = handMsg "adapters\\.product\\.coord" "coord" "no `kind`" coordCtor;
+        };
+      };
+      test-c7-coord-no-kind-selectorEq = {
+        expr =
+          assert F.tr (sel.selectorEq hand (hand // { id_hash = "z"; })) == false;
+          sel.selectorEq hand hand;
+        expectedError = {
+          type = "ThrownError";
+          msg = handMsg "selectorEq \\(adapters\\.product\\.coord\\)" "coord" "no `kind`" coordCtor;
+        };
+      };
+      test-cf2-coord-kind-name-match = {
+        expr =
+          assert F.tr (sel.selectorEq hand (hand // { id_hash = "z"; })) == false;
+          sel.matches (hand // { kind = "host"; }) "cs2" F.prod;
+        expectedError = {
+          type = "ThrownError";
+          msg = handMsg "adapters\\.product\\.coord" "coord" "the kind name \"host\" as its `kind`" coordCtor;
+        };
+      };
+      test-cf2-coord-kind-no-sealed-match = {
+        expr =
+          assert F.tr (sel.selectorEq hand (hand // { id_hash = "z"; })) == false;
+          sel.matches (
+            hand
+            // {
+              kind = {
+                identity = "m";
+                name = "host";
+              };
+            }
+          ) "cs2" F.prod;
+        expectedError = {
+          type = "ThrownError";
+          msg =
+            handMsg "adapters\\.product\\.coord" "coord"
+              "a `kind` that is not a kind key \\(\\{ identity; name; sealed; \\}\\); got set"
+              coordCtor;
+        };
+      };
+      # H4 / H7 · the same guard on `sel.entity`'s two arms. Control: a real entity selector decides.
+      test-cf2-entity-no-kind-match = {
+        expr =
+          assert F.tr (sel.matches (sel.entity F.kS2 F.s2) "s2" F.reg) == true;
+          sel.matches handE "s2" F.reg;
+        expectedError = {
+          type = "ThrownError";
+          msg = handMsg "sel\\.entity" "entity" "no `kind`" entityCtor;
+        };
+      };
+      test-cf2-entity-no-kind-selectorEq = {
+        expr =
+          assert F.tr (sel.selectorEq (sel.entity F.kS2 F.s2) (sel.entity F.kS2 F.s2)) == true;
+          sel.selectorEq handE handE;
+        expectedError = {
+          type = "ThrownError";
+          msg = handMsg "selectorEq" "entity" "no `kind`" entityCtor;
+        };
+      };
+    };
+
   # THE PROVENANCE MARK's refusals (ADR-0034). Message cells, because at HEAD these same two
   # expressions SUCCEEDED: a `.success == false` cell would have been red for the right reason and
   # green for the wrong one the moment any refusal appeared. What must hold is that the message

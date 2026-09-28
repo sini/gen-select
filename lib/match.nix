@@ -1,7 +1,11 @@
 # `kindEq` and `entityEq` are ./default.nix's one kind relation (gen-schema's `kindEq` subject
 # through `algebra.sealedCollisionEq`) and one entity relation, handed in so that the matcher and
 # `selectorEq` cannot disagree.
-{ kindEq, entityEq }:
+{
+  kindEq,
+  entityEq,
+  selectorKind,
+}:
 let
   # Datafun (Arntzenius & Krishnaswami 2016) splits the typing context into a
   # discrete ∆ and a monotone Γ and types every non-monotone operation (¬, =,
@@ -129,8 +133,9 @@ let
       else if data.__identity.id_hash != selector.id_hash then
         false
       # Equal stamps share one sealed key set (./default.nix `entityEq`); empty, the stamp is the whole
-      # identity and the node's kind is not read, so a kind-blind context still answers.
-      else if selector.kind.sealed == { } then
+      # identity and the node's kind is not read, so a kind-blind context still answers. The
+      # selector's kind is admitted by shape first (./default.nix `selectorKind`).
+      else if (selectorKind "gen-select: sel.entity" "sel.entity kind entry" selector).sealed == { } then
         true
       else
         entityEq "gen-select: sel.entity" {
@@ -180,6 +185,10 @@ let
       # coordinate. Coordinate-blind context throws, the identity-blind twin; a
       # cell lacking the dimension is a legitimate heterogeneous union → false; a
       # coordinate value without id_hash throws on the `.id_hash` access (malformed).
+      # At an equal stamp the coordinate is decided as `entity` decides (den-hoag-8hqx0): the
+      # selector's kind admitted by shape, the empty-sealed shortcut, then `entityEq` against the
+      # context's per-dimension kind (`adapters.product.mkContext`'s `kinds`, published as the
+      # context field `coordKinds`). That kind is read only there, so the per-cell cost is unchanged.
       let
         data = (discreteCtx ctx "coord").data id;
       in
@@ -193,7 +202,27 @@ let
         in
         # A coordinate value without id_hash is a malformed projection, not a mismatch.
         if c ? id_hash then
-          c.id_hash == selector.id_hash
+          if c.id_hash != selector.id_hash then
+            false
+          else if
+            (selectorKind "gen-select: adapters.product.coord" "adapters.product.coord dim kind entry" selector)
+            .sealed == { }
+          then
+            true
+          else
+            let
+              k = (ctx.coordKinds or { }).${selector.dim} or null;
+            in
+            entityEq "gen-select: adapters.product.coord" {
+              inherit (c) id_hash;
+              kind =
+                if k == null then
+                  throw "gen-select: adapters.product.coord matched against a kind-blind product context (dimension '${selector.dim}' of node ${id} has no kind, and the selector's kind has sealed components). Pass adapters.product.mkContext's `kinds`."
+                else if !(builtins.isAttrs k && k ? identity && k ? name && k ? sealed) then
+                  throw "gen-select: adapters.product.coord matched against a context whose `coordKinds.${selector.dim}` is not a kind key ({ identity; name; sealed; }, what adapters.product.mkContext projects from `kinds`); got ${builtins.typeOf k}."
+                else
+                  k;
+            } selector
         else
           throw "gen-select: coord matched a malformed coordinate value for dimension '${selector.dim}' on node ${id} (no id_hash). Coordinates must be registry entries."
 
