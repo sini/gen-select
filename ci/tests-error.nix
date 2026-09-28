@@ -344,6 +344,9 @@ in
         site: tag: carries: ctor:
         "^gen-select: ${site}: a `${tag}` selector record carries ${carries} \\(a hand-built record\\?\\)\\. Build it with ${ctor}\\.$";
       coordCtor = "adapters\\.product\\.coord dim kind entry";
+      nodeKindMsg =
+        got:
+        "^gen-select: adapters\\.product\\.coord matched against a context whose `coordKinds\\.host` is not a kind key \\(\\{ identity; name; sealed; \\}, what adapters\\.product\\.mkContext projects from `kinds`\\); got ${got}\\.$";
       entityCtor = "sel\\.entity kind entry";
       hand = {
         __sel = "coord";
@@ -547,6 +550,36 @@ in
           msg = handMsg "selectorEq" "entity" "no `kind`" entityCtor;
         };
       };
+      # CL-1 · the NODE side: a hand-built context whose `coordKinds.host` is not a kind key, read at an
+      # equal stamp whose selector kind is sealed. Without the guard both arms abort uncatchably (a kind
+      # NAME: `expected a set but found a string`; a key without `sealed`: at `inherit (a) name sealed`).
+      # Control: the same match on the context `mkContext` built decides true.
+      test-cl1-node-kind-name = {
+        expr =
+          assert F.tr (sel.matches (P.coord "host" F.kS2 F.s2) "cs2" F.prod) == true;
+          sel.matches (P.coord "host" F.kS2 F.s2) "cs2" (F.prod // { coordKinds.host = "host"; });
+        expectedError = {
+          type = "ThrownError";
+          msg = nodeKindMsg "string";
+        };
+      };
+      test-cl1-node-kind-no-sealed = {
+        expr =
+          assert F.tr (sel.matches (P.coord "host" F.kS2 F.s2) "cs2" F.prod) == true;
+          sel.matches (P.coord "host" F.kS2 F.s2) "cs2" (
+            F.prod
+            // {
+              coordKinds.host = {
+                identity = F.kS2.__mint.minted;
+                name = "host";
+              };
+            }
+          );
+        expectedError = {
+          type = "ThrownError";
+          msg = nodeKindMsg "set";
+        };
+      };
     };
 
   # THE PROVENANCE MARK's refusals (ADR-0034). Message cells, because at HEAD these same two
@@ -690,6 +723,39 @@ in
   };
 
   flake.testsError.adapter-totality = {
+    # PF-a (den-hoag-8hqx0 landing gate) · `coordsFor` returning a non-attrset, reached THROUGH the
+    # matcher with a well-formed three-argument coord: pinned by the context door's message, so a throw
+    # from anywhere else (the retired two-argument form's refusal, say) cannot pass it. Control: the
+    # same selector over a well-formed context decides.
+    test-coordsfor-wrong-return-throws-through-match =
+      let
+        kHost =
+          (genSchema.evalSchema {
+            modules = [
+              { config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; }; }
+            ];
+          }).host;
+        s = sel.adapters.product.coord "host" kHost { id_hash = "h1"; };
+        mk =
+          coordsFor:
+          sel.adapters.product.mkContext {
+            cellIds = [ "c1" ];
+            inherit coordsFor;
+          };
+      in
+      {
+        expr =
+          assert sel.matches s "c1" (
+            mk (_: {
+              host.id_hash = "h1";
+            })
+          );
+          sel.matches s "c1" (mk (_: "oops-a-string"));
+        expectedError = {
+          type = "ThrownError";
+          msg = "^gen-select: adapters\\.product\\.mkContext's `coordsFor` must return an attrset of dimension -> registry-entry for cell c1; got string \\(an under-applied coordsFor returns a function here\\)\\.$";
+        };
+      };
     test-entryfor-pattern-formal-uncatchable = {
       expr =
         let

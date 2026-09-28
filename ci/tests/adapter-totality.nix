@@ -3,22 +3,9 @@
 # formal). O1/O2/O4/O6/O7/O8 of specs/2026-09-16-gen-select-adapter-defaults-spec.md §3 — the
 # uncatchable pattern-formal falsifiers (O3/O9) live on ../tests-error.nix, the only output the
 # batch asserter behind checks.default does not force.
-{
-  genSelect,
-  genSchema,
-  genMerge,
-  ...
-}:
+{ genSelect, ... }:
 let
   sel = genSelect;
-  # A real (migrated) kind for the coord selector below: `coord dim kind entry` admits its kind by
-  # the mark (den-hoag-8hqx0), so the selector must be well-formed for the cell to reach the door.
-  kHost =
-    (genSchema.evalSchema {
-      modules = [
-        { config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; }; }
-      ];
-    }).host;
 
   throws = x: !(builtins.tryEval (builtins.deepSeq x x)).success;
 
@@ -117,23 +104,10 @@ in
         throws (ctx.data "c1").__coords;
       expected = true;
     };
-    # Before this build this was a SILENT WRONG MATCH ({success=true; value=false;}), not a
-    # throw at all — the sharpest fact this spec carries (§2.3). Assert the throw through the
-    # matcher too, not only through direct __coords access.
-    test-coordsfor-wrong-return-throws-through-match = {
-      expr =
-        let
-          ctx = sel.adapters.product.mkContext {
-            cellIds = [ "c1" ];
-            coordsFor = _: "oops-a-string";
-          };
-        in
-        # The selector itself decides (`isAttrs`), so the throw is the context's door, not the
-        # retired two-argument form's refusal.
-        builtins.isAttrs (sel.adapters.product.coord "host" kHost { id_hash = "h1"; })
-        && throws (sel.matches (sel.adapters.product.coord "host" kHost { id_hash = "h1"; }) "c1" ctx);
-      expected = true;
-    };
+    # The same wrong return reached THROUGH the matcher (before den-hoag-g8lo a SILENT WRONG MATCH,
+    # {success=true; value=false;}) is a MESSAGE cell in ../tests-error.nix `adapter-totality`, pinned
+    # by the `coordsFor` door's own text: as a `throws` cell here it passed on any throw, the retired
+    # two-argument coord's refusal included (den-hoag-8hqx0).
     test-coordsfor-underapplied-throws = {
       expr =
         let
