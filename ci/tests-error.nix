@@ -110,9 +110,63 @@ let
     get = _: _: [ ];
     entryFor = id: if id == "host:axon" then { name = "axon"; } else null;
   };
-  sealedMsg =
-    site:
-    "^gen-select: ${site}: two declarations of 'host' mint one identity and differ, compared as values, only at sealed component\\(s\\) 'options\\.note\\.type'; a sealed component has no identity \\(ADR-0034\\)";
+  # The fixture's `note` carries a default, open content gen-schema seals per construction
+  # (den-hoag-egei0), so the pair differs at both components and the refusal names both.
+  sealedMsgAt =
+    comps: site:
+    "^gen-select: ${site}: two declarations of 'host' mint one identity and differ, compared as values, only at sealed component\\(s\\) ${comps}; a sealed component has no identity \\(ADR-0034\\)";
+  sealedMsg = sealedMsgAt "'open\\.0\\.options\\.note\\.default', 'options\\.note\\.type'";
+  # A twin of one declaration carrying open content differs at its open subject alone.
+  twinMsg = sealedMsgAt "'open\\.0\\.options\\.note\\.default'";
+  typeMsg = sealedMsgAt "'options\\.note\\.type'";
+
+  # den-hoag-egei0: the PURE type collision, E2s's original subject. `note` carries no default and
+  # no other open content, so its twin decides and the refusal names the type alone.
+  T =
+    let
+      mkKind =
+        decl: (genSchema.evalSchema { modules = [ { config.schema.host.options = decl; } ]; }).host;
+      decl = t: {
+        addr = genMerge.mkOption { type = genMerge.types.str; };
+        note = genMerge.mkOption { type = t; };
+      };
+      k1 = mkKind (decl lib.types.lines);
+      k1t = mkKind (decl lib.types.lines);
+      k2 = mkKind (decl lib.types.commas);
+      c =
+        (genMerge.evalModuleTree {
+          modules = [
+            {
+              options.h1 = genSchema.mkInstanceRegistry k1 { };
+              options.h1t = genSchema.mkInstanceRegistry k1t { };
+              options.h2 = genSchema.mkInstanceRegistry k2 { };
+              config.h1.p.addr = "10.0.0.1";
+              config.h1t.p.addr = "10.0.0.1";
+              config.h2.p.addr = "10.0.0.1";
+            }
+          ];
+        }).config;
+      nodes = {
+        t1 = c.h1.p;
+        t1t = c.h1t.p;
+        t2 = c.h2.p;
+      };
+      kinds = {
+        t1 = k1;
+        t1t = k1t;
+        t2 = k2;
+      };
+    in
+    {
+      inherit k1 nodes;
+      s1 = nodes.t1;
+      reg = sel.adapters.registry.mkContext {
+        nodes = builtins.attrNames nodes;
+        data = id: nodes.${id};
+        parent = _: null;
+        kindFor = id: kinds.${id};
+      };
+    };
   marksMsg =
     site:
     "^gen-select: ${site}: two entries share the id_hash '[^']+' but carry kinds with different marks \\('host', 'host'\\); gen-schema mints an entry's id_hash over its kind's mark, so one of these kinds is not its entry's kind\\. Pass each entry's own kind value\\.$";
@@ -228,11 +282,12 @@ in
   # these pin WHICH refusal fired, since three refusals (sealed components, different marks,
   # kind-blind) can now reach one equal stamp.
   flake.testsError.entity-sealed = {
-    # E1 · Controls: the separately evaluated twin decides true, another instance false.
+    # E1 · Controls: the separately evaluated twin refuses (its `note` default is open content,
+    # den-hoag-egei0), another instance decides false.
     test-e1-selectorEq-sealed-collision = {
       expr =
         assert
-          F.tr (sel.selectorEq (sel.entity F.kS1 F.s1) (sel.entity F.kS1t F.s1t)) == true
+          F.tr (sel.selectorEq (sel.entity F.kS1 F.s1) (sel.entity F.kS1t F.s1t)) == "REFUSED"
           && F.tr (sel.selectorEq (sel.entity F.kS1 F.s1) (sel.entity F.kS1 F.s1q)) == false;
         sel.selectorEq (sel.entity F.kS1 F.s1) (sel.entity F.kS2 F.s2);
       expectedError = {
@@ -240,20 +295,23 @@ in
         msg = sealedMsg "selectorEq";
       };
     };
-    # E2 · Controls: the entity's own node and its twin's node decide true.
+    # E2 · Controls: the entity's own node decides true; its twin's node refuses (den-hoag-egei0).
     test-e2-match-sealed-collision = {
       expr =
         assert
           F.tr (sel.matches (sel.entity F.kS1 F.s1) "s1" F.reg) == true
-          && F.tr (sel.matches (sel.entity F.kS1 F.s1) "s1t" F.reg) == true;
+          && F.tr (sel.matches (sel.entity F.kS1 F.s1) "s1t" F.reg) == "REFUSED";
         sel.matches (sel.entity F.kS1 F.s1) "s2" F.reg;
       expectedError = {
         type = "ThrownError";
         msg = sealedMsg "sel\\.entity";
       };
     };
-    # E2s · the selection over the fixture refuses rather than return ["s1" "s1t" "s2"]. Control:
-    # the migrated entity's selection decides.
+    # E2s · the selection over the fixture refuses rather than return ["s1" "s1t" "s2"]. It now pins
+    # the TWIN refusal: `s1t` is reached before `s2`, and a twin of a declaration carrying open
+    # content refuses at its `open.*` path alone (den-hoag-egei0). The type collision this cell was
+    # written for is E2s-type's, over a fixture with no open content. Control: the migrated
+    # entity's selection decides.
     test-e2s-selection-sealed-collision = {
       expr =
         assert
@@ -262,7 +320,20 @@ in
         builtins.filter (id: sel.matches (sel.entity F.kS1 F.s1) id F.reg) (builtins.attrNames F.nodes);
       expectedError = {
         type = "ThrownError";
-        msg = sealedMsg "sel\\.entity";
+        msg = twinMsg "sel\\.entity";
+      };
+    };
+    # E2s-type · the selection over a PURE type collision refuses naming the type alone. Control:
+    # the entity's own node and its twin's node decide true, so the refusal is the pair's.
+    test-e2s-type-selection-sealed-collision = {
+      expr =
+        assert
+          F.tr (sel.matches (sel.entity T.k1 T.s1) "t1" T.reg) == true
+          && F.tr (sel.matches (sel.entity T.k1 T.s1) "t1t" T.reg) == true;
+        builtins.filter (id: sel.matches (sel.entity T.k1 T.s1) id T.reg) (builtins.attrNames T.nodes);
+      expectedError = {
+        type = "ThrownError";
+        msg = typeMsg "sel\\.entity";
       };
     };
     # E3 · the registry adapter given no kind. Control: a migrated kind decides on its stamp there.
@@ -359,11 +430,12 @@ in
       };
     in
     {
-      # C1 · Controls: the separately evaluated twin decides true, another instance false.
+      # C1 · Controls: the separately evaluated twin refuses (its `note` default is open content,
+      # den-hoag-egei0), another instance decides false.
       test-c1-selectorEq-sealed-collision = {
         expr =
           assert
-            F.tr (sel.selectorEq (P.coord "host" F.kS1 F.s1) (P.coord "host" F.kS1t F.s1t)) == true
+            F.tr (sel.selectorEq (P.coord "host" F.kS1 F.s1) (P.coord "host" F.kS1t F.s1t)) == "REFUSED"
             && F.tr (sel.selectorEq (P.coord "host" F.kS1 F.s1) (P.coord "host" F.kS1 F.s1q)) == false;
           sel.selectorEq (P.coord "host" F.kS1 F.s1) (P.coord "host" F.kS2 F.s2);
         expectedError = {

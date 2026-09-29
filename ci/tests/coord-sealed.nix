@@ -65,9 +65,10 @@ in
       };
     };
 
-    # C1 · selectorEq at the sealed pair refuses. K1 the separately evaluated twin, X3 the sealed
-    # coordinate against itself, K5 a migrated coordinate: true. Another instance, a different stamp
-    # (K6) and a different dimension (K7): false.
+    # C1 · selectorEq at the sealed pair refuses, and so does K1 the separately evaluated twin: its
+    # `note` carries a default, open content gen-schema seals per construction (den-hoag-egei0). X3
+    # the sealed coordinate against itself, K5 a migrated coordinate: true. Another instance, a
+    # different stamp (K6) and a different dimension (K7): false.
     test-c1-selectorEq = {
       expr = {
         pair = tr (sel.selectorEq (P.coord "host" kS1 s1) (P.coord "host" kS2 s2));
@@ -80,7 +81,7 @@ in
       };
       expected = {
         pair = "REFUSED";
-        twin = true;
+        twin = "REFUSED";
         self = true;
         other = false;
         migrated = true;

@@ -54,7 +54,10 @@ in
       };
       expected = {
         marksEqual = true;
-        sealedKeys = [ "options.note.type" ];
+        sealedKeys = [
+          "open.0.options.note.default"
+          "options.note.type"
+        ];
         sealedKeysEqual = true;
         migratedSealed = [ ];
         producerKindEq = "REFUSED";
@@ -62,7 +65,8 @@ in
       };
     };
 
-    # E1 · selectorEq at the sealed pair refuses; the twin decides true, another instance false.
+    # E1 · selectorEq at the sealed pair refuses, and so does the twin: its `note` carries a default,
+    # open content gen-schema seals per construction (den-hoag-egei0). Another instance decides false.
     test-e1-selectorEq = {
       expr = {
         pair = tr (sel.selectorEq (sel.entity kS1 s1) (sel.entity kS2 s2));
@@ -71,13 +75,14 @@ in
       };
       expected = {
         pair = "REFUSED";
-        twin = true;
+        twin = "REFUSED";
         other = false;
       };
     };
 
     # E2 / E2s · the match at the sealed pair refuses, and so does every selection over it; the
-    # entity's own node, its twin and a non-match decide; `sel.kind` refuses the same pair (U1 C-1).
+    # entity's own node and a non-match decide; the twin refuses, as E1's does (den-hoag-egei0);
+    # `sel.kind` refuses the same pair (U1 C-1).
     test-e2-match = {
       expr = {
         onPair = m (sel.entity kS1 s1) "s2" reg;
@@ -92,7 +97,7 @@ in
       expected = {
         onPair = "REFUSED";
         onSelf = true;
-        onTwin = true;
+        onTwin = "REFUSED";
         onOther = false;
         selection = "REFUSED";
         kindOnPair = "REFUSED";

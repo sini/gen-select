@@ -538,11 +538,11 @@
         "gen-prelude": "gen-prelude_7"
       },
       "locked": {
-        "lastModified": 1790653273,
-        "narHash": "sha256-ocj1XUIpNGk9xD6UgVLcxP+a0yc1S/IpioOWy/nafRs=",
+        "lastModified": 1790659247,
+        "narHash": "sha256-VY5q84lt1SPY/CWOILs80jy7VMWoqJDztKVZlYwhJP0=",
         "owner": "sini",
         "repo": "gen-schema",
-        "rev": "c882104352ebd4dd4283b6357e0a9c37c0ff2d5f",
+        "rev": "85438e33e231f979e102fab7f4e8542d1b5174e8",
         "type": "github"
       },
       "original": {

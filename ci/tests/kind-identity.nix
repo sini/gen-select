@@ -47,6 +47,19 @@ let
   kS2 = mkSealed lib.types.str; # the sealed twin: same nixpkgs type value
   kG = mkSealed genMerge.types.int; # the migrated control beside kS's shape
 
+  # den-hoag-egei0: two kinds differing only at a default. The default is open content, so gen-schema
+  # seals it per construction and its `kindEq` refuses the pair by name; this relation must agree.
+  mkDefaulted =
+    d:
+    mkHost {
+      addr = genMerge.mkOption {
+        type = genMerge.types.str;
+        default = d;
+      };
+    };
+  kD = mkDefaulted "a";
+  kD2 = mkDefaulted "b";
+
   ev = genMerge.evalModuleTree {
     modules = [
       {
@@ -72,6 +85,12 @@ let
   };
 
   throws = x: !(builtins.tryEval (builtins.deepSeq x x)).success;
+  tr =
+    x:
+    let
+      r = builtins.tryEval (builtins.deepSeq x x);
+    in
+    if r.success then r.value else "REFUSED";
 in
 {
   flake.tests.kind-identity = {
@@ -108,6 +127,21 @@ in
         selectorEqRefused = true;
         migrated = false;
         sealedTwin = true;
+      };
+    };
+
+    # C1o · open content: the pair differing only at a default is refused by BOTH relations, never
+    # `true` here while gen-schema refuses. The live arm: one kind value with itself decides.
+    test-open-content-agrees-with-kindEq = {
+      expr = {
+        selectorEq = tr (sel.selectorEq (sel.kind kD) (sel.kind kD2));
+        kindEq = tr (kindEq kD kD2);
+        self = sel.selectorEq (sel.kind kD) (sel.kind kD);
+      };
+      expected = {
+        selectorEq = "REFUSED";
+        kindEq = "REFUSED";
+        self = true;
       };
     };
 
