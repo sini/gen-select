@@ -1,3 +1,4 @@
+{ isSchemaKind, kindKey }:
 {
   mkContext =
     {
@@ -34,8 +35,9 @@
       inherit inFlight;
       # __identity is composed OUTSIDE the projection and merged last, so it is
       # always present (record or null) and a user decl named __identity can never
-      # shadow it (reserved-namespace discipline). `kind` is a named refusal (see
-      # below): a positional node type is a name, not a kind declaration. A malformed
+      # shadow it (reserved-namespace discipline). `kind` is the node's carried kind
+      # value's key, or a named refusal (see below): a positional node type is a
+      # name, not a kind declaration, and is never projected as one. A malformed
       # `entryFor` result surfaces at the first `id_hash` access (missing attribute),
       # never a silent null.
       data =
@@ -65,15 +67,27 @@
                       e.id_hash
                     else
                       throw "gen-select: entryFor returned a value without id_hash for node ${id}; a registry entry must carry id_hash.";
-                  # REFUSED, lazily (den-hoag-l0y): a gen-scope node's `type` is a positional
-                  # NAME, not a kind declaration, and `sel.kind` compares minted identities. What
-                  # a gen-scope node's kind declaration IS is an open ruling; until it lands this
-                  # projection refuses by name rather than compare a name. Lazy, so `attrs`
-                  # matching on the projected `type` is unaffected, and so is `sel.entity` for a
-                  # kind with no sealed components (the stamp decides alone). At an equal stamp
-                  # whose kind HAS sealed components, `sel.entity` demands the node's kind too and
-                  # reaches this refusal (den-hoag-l0y (β)).
-                  kind = throw "gen-select: adapters.scope.mkContext: node ${id} has the positional type ${builtins.toJSON n.type}, which is a name and not a kind declaration; sel.kind, and sel.entity at a stamp whose kind has sealed components, compare minted kind identities and cannot match it (den-hoag-l0y).";
+                  # The node's KIND VALUE (den-hoag-l0y, arm (B′)): gen-scope stamps the value
+                  # its kind declares (`mkKind { kindValue = schema.<kind>; }`) on every node of
+                  # that kind as the record field `kindValue`, and this projects its key exactly
+                  # as the registry adapter does (`normalizeKind`/`kindKey`), so `sel.kind` compares
+                  # minted identities. A node carrying none is REFUSED by name, lazily: its `type`
+                  # is a positional NAME and is never compared as a kind. Lazy, so `attrs` matching
+                  # on the projected `type` is unaffected, and so is `sel.entity` for a kind with
+                  # no sealed components (the stamp decides alone); at an equal stamp whose kind
+                  # HAS sealed components, `sel.entity` demands the node's kind and reaches it.
+                  kind =
+                    let
+                      v = n.kindValue or null;
+                    in
+                    if isSchemaKind v then
+                      kindKey v
+                    else if v == null then
+                      throw "gen-select: adapters.scope.mkContext: node ${id} (type ${
+                        builtins.toJSON (n.type or null)
+                      }) carries no kind value; sel.kind, and sel.entity at a stamp whose kind has sealed components, compare minted kind identities. Declare the kind's value on its gen-scope kind (`mkKind { kindValue = schema.<kind>; }`)."
+                    else
+                      throw "gen-select: adapters.scope.mkContext: node ${id} carries a `kindValue` with no mint-backed mark (`__mint.minted`, ADR-0034); a hand-written `{ kind = ...; ... }` is not a kind value.";
                   entry = e;
                 };
         };
