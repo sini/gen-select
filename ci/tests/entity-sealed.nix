@@ -55,7 +55,7 @@ in
       expected = {
         marksEqual = true;
         sealedKeys = [
-          "open.0.options.note.default"
+          "open.options.note.default"
           "options.note.type"
         ];
         sealedKeysEqual = true;

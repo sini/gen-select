@@ -115,9 +115,9 @@ let
   sealedMsgAt =
     comps: site:
     "^gen-select: ${site}: two declarations of 'host' mint one identity and differ, compared as values, only at sealed component\\(s\\) ${comps}; a sealed component has no identity \\(ADR-0034\\)";
-  sealedMsg = sealedMsgAt "'open\\.0\\.options\\.note\\.default', 'options\\.note\\.type'";
+  sealedMsg = sealedMsgAt "'open\\.options\\.note\\.default', 'options\\.note\\.type'";
   # A twin of one declaration carrying open content differs at its open subject alone.
-  twinMsg = sealedMsgAt "'open\\.0\\.options\\.note\\.default'";
+  twinMsg = sealedMsgAt "'open\\.options\\.note\\.default'";
   typeMsg = sealedMsgAt "'options\\.note\\.type'";
 
   # den-hoag-egei0: the PURE type collision, E2s's original subject. `note` carries no default and
