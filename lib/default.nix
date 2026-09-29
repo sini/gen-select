@@ -106,7 +106,7 @@ let
       ;
   };
   match = import ./match.nix { inherit kindEq entityEq selectorKind; };
-  scopeAdapter = import ./adapters/scope.nix;
+  scopeAdapter = import ./adapters/scope.nix { inherit isSchemaKind kindKey; };
   graphAdapter = import ./adapters/graph.nix { inherit (match) matches; };
   registryAdapter = import ./adapters/registry.nix { inherit isSchemaKind kindKey; };
   productAdapter = import ./adapters/product.nix {

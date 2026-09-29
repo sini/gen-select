@@ -275,14 +275,15 @@ in
         msg = kindBlindMsg "entity" "s1";
       };
     };
-    # E3 · the scope adapter: its lazy kind refusal. Control: a migrated kind decides there.
+    # E3 · the scope adapter: a node carrying no kind value, its lazy refusal. Control: a migrated
+    # kind decides there.
     test-e3-kind-blind-scope = {
       expr =
         assert F.tr (sel.matches (sel.entity F.kA F.a) "a" F.scope) == true;
         sel.matches (sel.entity F.kS1 F.s1) "s1" F.scope;
       expectedError = {
         type = "ThrownError";
-        msg = "^gen-select: adapters\\.scope\\.mkContext: node s1 has the positional type \"host\", which is a name and not a kind declaration; sel\\.kind, and sel\\.entity at a stamp whose kind has sealed components, compare minted kind identities and cannot match it \\(den-hoag-l0y\\)\\.$";
+        msg = "^gen-select: adapters\\.scope\\.mkContext: node s1 \\(type \"host\"\\) carries no kind value; sel\\.kind, and sel\\.entity at a stamp whose kind has sealed components, compare minted kind identities\\. Declare the kind's value on its gen-scope kind \\(`mkKind \\{ kindValue = schema\\.<kind>; }`\\)\\.$";
       };
     };
     # E3 / C-2 · a hand record omitting `kind`: the named kind-blind refusal, never an uncatchable
@@ -676,8 +677,9 @@ in
       };
     };
 
-    # C4 · `sel.kind` over the scope adapter refuses by name (a positional type is a name, not a
-    # kind declaration). Control: `attrs` on the projected `type`, same context and node.
+    # C4 / c5 · `sel.kind` over a scope node carrying no kind value refuses by name, and never
+    # compares its positional `type` (a name, not a kind declaration). Control: `attrs` on the
+    # projected `type`, same context and node.
     test-scope-kind-refused = {
       expr =
         assert
@@ -688,7 +690,36 @@ in
         sel.matches (sel.kind kG) "n1" scopeCtx;
       expectedError = {
         type = "ThrownError";
-        msg = "^gen-select: adapters\\.scope\\.mkContext: node n1 has the positional type \"host\", which is a name and not a kind declaration; sel\\.kind, and sel\\.entity at a stamp whose kind has sealed components, compare minted kind identities and cannot match it \\(den-hoag-l0y\\)\\.$";
+        msg = "^gen-select: adapters\\.scope\\.mkContext: node n1 \\(type \"host\"\\) carries no kind value; sel\\.kind, and sel\\.entity at a stamp whose kind has sealed components, compare minted kind identities\\. Declare the kind's value on its gen-scope kind \\(`mkKind \\{ kindValue = schema\\.<kind>; }`\\)\\.$";
+      };
+    };
+
+    # A node carrying a `kindValue` with no mint (the hand-written stand-in) is refused by that
+    # name, never matched. Control: the same node carrying the minted value matches.
+    test-scope-markless-kind-value-refused = {
+      expr =
+        let
+          ctxWith =
+            v:
+            sel.adapters.scope.mkContext {
+              node = _: {
+                id = "n1";
+                type = "host";
+                parent = null;
+                id_hash = "h-n1";
+                kindValue = v;
+              };
+              get = _: _: [ ];
+            };
+        in
+        assert F.tr (sel.matches (sel.kind kG) "n1" (ctxWith kG)) == true;
+        sel.matches (sel.kind kG) "n1" (ctxWith {
+          kind = "host";
+          options = { };
+        });
+      expectedError = {
+        type = "ThrownError";
+        msg = "^gen-select: adapters\\.scope\\.mkContext: node n1 carries a `kindValue` with no mint-backed mark \\(`__mint\\.minted`, ADR-0034\\); a hand-written `\\{ kind = \\.\\.\\.; \\.\\.\\. }` is not a kind value\\.$";
       };
     };
 
