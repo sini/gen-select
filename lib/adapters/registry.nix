@@ -45,7 +45,7 @@
         else if !(builtins.isAttrs kind) then
           throw "gen-select: adapters.registry.mkContext `kind` expects a gen-schema kind value or null; got ${builtins.typeOf kind}."
         else
-          throw "gen-select: adapters.registry.mkContext `kind` expects a gen-schema kind value carrying a mint-backed mark (`__mint.minted`, ADR-0034); got an attrset with no mark. A hand-written `{ kind = ...; options = ...; }` is not a kind value — take the kind from a schema (e.g. `schema.widget`).";
+          throw "gen-select: adapters.registry.mkContext `kind` expects a gen-schema kind value carrying a mint-backed mark (`__mint.minted`; a kind's identity comes only from the one mint); got an attrset with no mark. A hand-written `{ kind = ...; options = ...; }` is not a kind value — take the kind from a schema (e.g. `schema.widget`).";
       normalizeKind =
         k:
         if k == null then
@@ -53,9 +53,9 @@
         else if isSchemaKind k then
           kindKey k
         else if builtins.isString k then
-          throw "gen-select: adapters.registry.mkContext `kindFor` returned the kind name \"${k}\"; a kind name is a reference, and resolving it to its declaration needs the shared resolver (den-hoag-7gp66 P1). Return the kind value."
+          throw "gen-select: adapters.registry.mkContext `kindFor` returned the kind name \"${k}\"; a kind name is a reference, and resolving it to its declaration needs the shared resolver. Return the kind value."
         else
-          throw "gen-select: adapters.registry.mkContext `kindFor` expects a gen-schema kind value carrying a mint-backed mark (`__mint.minted`, ADR-0034); got ${
+          throw "gen-select: adapters.registry.mkContext `kindFor` expects a gen-schema kind value carrying a mint-backed mark (`__mint.minted`; a kind's identity comes only from the one mint); got ${
             if builtins.isAttrs k then "an attrset with no mark" else builtins.typeOf k
           }.";
     in

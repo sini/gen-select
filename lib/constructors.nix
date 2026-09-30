@@ -83,7 +83,7 @@ rec {
         if builtins.isString kindValue then
           throw "gen-select: sel.entity expects the entry's kind value first (sel.entity schema.host hosts.axon), got the string \"${kindValue}\". A kind name is a reference; pass the kind value."
         else if !(isSchemaKind kindValue) then
-          throw "gen-select: sel.entity expects the entry's kind value first (sel.entity schema.host hosts.axon): a gen-schema kind value carrying a mint-backed mark (`__mint.minted`, ADR-0034); got ${
+          throw "gen-select: sel.entity expects the entry's kind value first (sel.entity schema.host hosts.axon): a gen-schema kind value carrying a mint-backed mark (`__mint.minted`; a kind's identity comes only from the one mint); got ${
             if builtins.isAttrs kindValue && kindValue ? id_hash then
               "an entry (the one-argument form is retired: the entry's kind decides a sealed collision)"
             else if builtins.isAttrs kindValue then
@@ -130,11 +130,11 @@ rec {
   kind =
     kindValue:
     if builtins.isString kindValue then
-      throw "gen-select: sel.kind expects a kind value (e.g. schema.user), got the string \"${kindValue}\". A kind name is a reference, and resolving it to its declaration needs the shared resolver (den-hoag-7gp66 P1); pass the kind value."
+      throw "gen-select: sel.kind expects a kind value (e.g. schema.user), got the string \"${kindValue}\". A kind name is a reference, and resolving it to its declaration needs the shared resolver; pass the kind value."
     else if !(builtins.isAttrs kindValue) then
       throw "gen-select: sel.kind expects a gen-schema kind value; got ${builtins.typeOf kindValue}."
     else if !(isSchemaKind kindValue) then
-      throw "gen-select: sel.kind expects a gen-schema kind value carrying a mint-backed mark (`__mint.minted`, ADR-0034); got an attrset with no mark. A hand-written `{ kind = ...; options = ...; }` is not a kind value — take the kind from a schema (e.g. `schema.widget`)."
+      throw "gen-select: sel.kind expects a gen-schema kind value carrying a mint-backed mark (`__mint.minted`; a kind's identity comes only from the one mint); got an attrset with no mark. A hand-written `{ kind = ...; options = ...; }` is not a kind value — take the kind from a schema (e.g. `schema.widget`)."
     else
       {
         __sel = "kind";

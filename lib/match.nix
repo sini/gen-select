@@ -53,7 +53,7 @@ let
           name = acc;
           value =
             _:
-            throw "gen-select: sel.${tag} observes the in-flight accessor `${acc}` at a NON-MONOTONE position. A selector may not observe a graph under construction negatively (ADR-0019/0020; Datafun's discrete/monotone separation). Either evaluate this selector against the materialized projection, or drop `${acc}` from the context's `inFlight` list once it is frozen.";
+            throw "gen-select: sel.${tag} observes the in-flight accessor `${acc}` at a NON-MONOTONE position. A selector may not observe a graph under construction negatively: a query observes reached declarations only, so negation reads only what an earlier stratum settled (Datafun's discrete/monotone separation). Either evaluate this selector against the materialized projection, or drop `${acc}` from the context's `inFlight` list once it is frozen.";
         }) inFlight
       )
       // {

@@ -114,7 +114,7 @@ let
   # (den-hoag-egei0), so the pair differs at both components and the refusal names both.
   sealedMsgAt =
     comps: site:
-    "^gen-select: ${site}: two declarations of 'host' mint one identity and differ, compared as values, only at sealed component\\(s\\) ${comps}; a sealed component has no identity \\(ADR-0034\\)";
+    "^gen-select: ${site}: two declarations of 'host' mint one identity and differ, compared as values, only at sealed component\\(s\\) ${comps}; a sealed component has no identity, because identity is minted from inert structure alone";
   sealedMsg = sealedMsgAt "'open\\.options\\.note\\.default', 'options\\.note\\.type'";
   # A twin of one declaration carrying open content differs at its open subject alone.
   twinMsg = sealedMsgAt "'open\\.options\\.note\\.default'";
@@ -175,7 +175,7 @@ let
     "^gen-select: sel\\.${tag} matched against a kind-blind projection \\(node ${node} is entity-backed but __identity\\.kind is null or absent\\)\\. Pass the registry adapter's `kind` argument, supply a `kindFor`, or use a kind-bearing projection\\.$";
   kindFirstMsg =
     got:
-    "^gen-select: sel\\.entity expects the entry's kind value first \\(sel\\.entity schema\\.host hosts\\.axon\\): a gen-schema kind value carrying a mint-backed mark \\(`__mint\\.minted`, ADR-0034\\); got ${got}\\.$";
+    "^gen-select: sel\\.entity expects the entry's kind value first \\(sel\\.entity schema\\.host hosts\\.axon\\): a gen-schema kind value carrying a mint-backed mark \\(`__mint\\.minted`; a kind's identity comes only from the one mint\\); got ${got}\\.$";
 in
 {
   # den-hoag-l0y (β): `sel.entity kindValue entry`'s admission refusals. Three refusals now share
@@ -523,7 +523,7 @@ in
           sel.matches (P.coord "host" F.s2) "cs2" F.prod;
         expectedError = {
           type = "ThrownError";
-          msg = "^gen-select: adapters\\.product\\.coord expects the coordinate's kind value after the dimension \\(coord \"host\" schema\\.host hosts\\.axon\\): a gen-schema kind value carrying a mint-backed mark \\(`__mint\\.minted`, ADR-0034\\); got an entry \\(the two-argument form is retired: the coordinate's kind decides a sealed collision\\)\\.$";
+          msg = "^gen-select: adapters\\.product\\.coord expects the coordinate's kind value after the dimension \\(coord \"host\" schema\\.host hosts\\.axon\\): a gen-schema kind value carrying a mint-backed mark \\(`__mint\\.minted`; a kind's identity comes only from the one mint\\); got an entry \\(the two-argument form is retired: the coordinate's kind decides a sealed collision\\)\\.$";
         };
       };
       # CF1 · the retired `inSlice { <dim> = entry; }`, refused BY NAME where the conjunct is forced
@@ -552,7 +552,7 @@ in
           sel.matches (P.coord "host" F.kS2 F.s2) "cs2" F.prodKindName;
         expectedError = {
           type = "ThrownError";
-          msg = "^gen-select: adapters\\.product\\.mkContext `kinds\\.host` expects a gen-schema kind value carrying a mint-backed mark \\(`__mint\\.minted`, ADR-0034\\); got the kind name \"host\"\\.$";
+          msg = "^gen-select: adapters\\.product\\.mkContext `kinds\\.host` expects a gen-schema kind value carrying a mint-backed mark \\(`__mint\\.minted`; a kind's identity comes only from the one mint\\); got the kind name \"host\"\\.$";
         };
       };
       # C7 / CF2 · hand-built records at an equal stamp, one cell per arm and per malformation. The
@@ -677,7 +677,7 @@ in
         sel.kind standIn;
       expectedError = {
         type = "ThrownError";
-        msg = "^gen-select: sel\\.kind expects a gen-schema kind value carrying a mint-backed mark \\(`__mint\\.minted`, ADR-0034\\); got an attrset with no mark\\. A hand-written `\\{ kind = \\.\\.\\.; options = \\.\\.\\.; \\}` is not a kind value — take the kind from a schema \\(e\\.g\\. `schema\\.widget`\\)\\.$";
+        msg = "^gen-select: sel\\.kind expects a gen-schema kind value carrying a mint-backed mark \\(`__mint\\.minted`; a kind's identity comes only from the one mint\\); got an attrset with no mark\\. A hand-written `\\{ kind = \\.\\.\\.; options = \\.\\.\\.; \\}` is not a kind value — take the kind from a schema \\(e\\.g\\. `schema\\.widget`\\)\\.$";
       };
     };
 
@@ -706,7 +706,7 @@ in
         (mk standIn).children "n1";
       expectedError = {
         type = "ThrownError";
-        msg = "^gen-select: adapters\\.registry\\.mkContext `kind` expects a gen-schema kind value carrying a mint-backed mark \\(`__mint\\.minted`, ADR-0034\\); got an attrset with no mark\\. A hand-written `\\{ kind = \\.\\.\\.; options = \\.\\.\\.; \\}` is not a kind value — take the kind from a schema \\(e\\.g\\. `schema\\.widget`\\)\\.$";
+        msg = "^gen-select: adapters\\.registry\\.mkContext `kind` expects a gen-schema kind value carrying a mint-backed mark \\(`__mint\\.minted`; a kind's identity comes only from the one mint\\); got an attrset with no mark\\. A hand-written `\\{ kind = \\.\\.\\.; options = \\.\\.\\.; \\}` is not a kind value — take the kind from a schema \\(e\\.g\\. `schema\\.widget`\\)\\.$";
       };
     };
   };
@@ -729,7 +729,7 @@ in
         sel.selectorEq (sel.kind kS) (sel.kind kI);
       expectedError = {
         type = "ThrownError";
-        msg = "^gen-select: selectorEq: two declarations of 'host' mint one identity and differ, compared as values, only at sealed component\\(s\\) 'options\\.addr\\.type'; a sealed component has no identity \\(ADR-0034\\)";
+        msg = "^gen-select: selectorEq: two declarations of 'host' mint one identity and differ, compared as values, only at sealed component\\(s\\) 'options\\.addr\\.type'; a sealed component has no identity, because identity is minted from inert structure alone";
       };
     };
 
@@ -745,7 +745,7 @@ in
         sel.matches (sel.kind kG) "axon" (registryCtx (_: "host"));
       expectedError = {
         type = "ThrownError";
-        msg = "^gen-select: adapters\\.registry\\.mkContext `kindFor` returned the kind name \"host\"; a kind name is a reference, and resolving it to its declaration needs the shared resolver \\(den-hoag-7gp66 P1\\)\\. Return the kind value\\.$";
+        msg = "^gen-select: adapters\\.registry\\.mkContext `kindFor` returned the kind name \"host\"; a kind name is a reference, and resolving it to its declaration needs the shared resolver\\. Return the kind value\\.$";
       };
     };
 
@@ -791,7 +791,7 @@ in
         });
       expectedError = {
         type = "ThrownError";
-        msg = "^gen-select: adapters\\.scope\\.mkContext: node n1 carries a `kindValue` with no mint-backed mark \\(`__mint\\.minted`, ADR-0034\\); a hand-written `\\{ kind = \\.\\.\\.; \\.\\.\\. }` is not a kind value\\.$";
+        msg = "^gen-select: adapters\\.scope\\.mkContext: node n1 carries a `kindValue` with no mint-backed mark \\(`__mint\\.minted`; a kind's identity comes only from the one mint\\); a hand-written `\\{ kind = \\.\\.\\.; \\.\\.\\. }` is not a kind value\\.$";
       };
     };
 

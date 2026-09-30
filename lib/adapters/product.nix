@@ -41,7 +41,7 @@ let
         if builtins.isString kindValue then
           throw "gen-select: adapters.product.coord expects the coordinate's kind value after the dimension (coord \"host\" schema.host hosts.axon), got the string \"${kindValue}\". A kind name is a reference; pass the kind value."
         else if !(isSchemaKind kindValue) then
-          throw "gen-select: adapters.product.coord expects the coordinate's kind value after the dimension (coord \"host\" schema.host hosts.axon): a gen-schema kind value carrying a mint-backed mark (`__mint.minted`, ADR-0034); got ${
+          throw "gen-select: adapters.product.coord expects the coordinate's kind value after the dimension (coord \"host\" schema.host hosts.axon): a gen-schema kind value carrying a mint-backed mark (`__mint.minted`; a kind's identity comes only from the one mint); got ${
             if builtins.isAttrs kindValue && kindValue ? id_hash then
               "an entry (the two-argument form is retired: the coordinate's kind decides a sealed collision)"
             else if builtins.isAttrs kindValue then
@@ -132,7 +132,7 @@ in
         if isSchemaKind k then
           kindKey k
         else
-          throw "gen-select: adapters.product.mkContext `kinds.${dim}` expects a gen-schema kind value carrying a mint-backed mark (`__mint.minted`, ADR-0034); got ${
+          throw "gen-select: adapters.product.mkContext `kinds.${dim}` expects a gen-schema kind value carrying a mint-backed mark (`__mint.minted`; a kind's identity comes only from the one mint); got ${
             if builtins.isString k then "the kind name \"${k}\"" else builtins.typeOf k
           }."
       ) kinds;

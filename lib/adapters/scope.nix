@@ -87,7 +87,7 @@
                         builtins.toJSON (n.type or null)
                       }) carries no kind value; sel.kind, and sel.entity at a stamp whose kind has sealed components, compare minted kind identities. Declare the kind's value on its gen-scope kind (`mkKind { kindValue = schema.<kind>; }`)."
                     else
-                      throw "gen-select: adapters.scope.mkContext: node ${id} carries a `kindValue` with no mint-backed mark (`__mint.minted`, ADR-0034); a hand-written `{ kind = ...; ... }` is not a kind value.";
+                      throw "gen-select: adapters.scope.mkContext: node ${id} carries a `kindValue` with no mint-backed mark (`__mint.minted`; a kind's identity comes only from the one mint); a hand-written `{ kind = ...; ... }` is not a kind value.";
                   entry = e;
                 };
         };
