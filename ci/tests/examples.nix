@@ -1,11 +1,10 @@
 # The examples emit derivations (checks, devShells); `tests` is the non-derivation output.
-# After 29a2b16 the examples take `gen-select.lib`, so the parent is supplied as the working-tree lib.
-{ lib, genSelect, ... }:
+# The examples bind gen-select as `import ../.. { }`, the tree they ship in, so the parent is not supplied.
+{ lib, ... }:
 let
   of = d: {
     inherit
       ((import ../../examples/${d}/flake.nix).outputs {
-        gen-select.lib = genSelect;
         nixpkgs.lib = lib;
         nix-unit = null;
       })

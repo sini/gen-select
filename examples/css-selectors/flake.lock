@@ -1,38 +1,5 @@
 {
   "nodes": {
-    "gen-algebra": {
-      "locked": {
-        "lastModified": 1790675832,
-        "narHash": "sha256-QPLStTbjiS2ijrbiZXgyvVdtwS0WtN1JgsCC1sPwFCw=",
-        "owner": "sini",
-        "repo": "gen-algebra",
-        "rev": "c3465415d8ade421104711276fe66b738ebdd538",
-        "type": "github"
-      },
-      "original": {
-        "owner": "sini",
-        "repo": "gen-algebra",
-        "type": "github"
-      }
-    },
-    "gen-select": {
-      "inputs": {
-        "gen-algebra": "gen-algebra"
-      },
-      "locked": {
-        "lastModified": 1790691200,
-        "narHash": "sha256-Zr5JFoIWzTHmW8GPIT7XEsOMt68TqDmG68NrNqyb7g4=",
-        "owner": "sini",
-        "repo": "gen-select",
-        "rev": "16fa5a73830c03b6208cfe05717a562c4d2b6cec",
-        "type": "github"
-      },
-      "original": {
-        "owner": "sini",
-        "repo": "gen-select",
-        "type": "github"
-      }
-    },
     "nix-github-actions": {
       "inputs": {
         "nixpkgs": [
@@ -91,7 +58,6 @@
     },
     "root": {
       "inputs": {
-        "gen-select": "gen-select",
         "nix-unit": "nix-unit",
         "nixpkgs": "nixpkgs"
       }

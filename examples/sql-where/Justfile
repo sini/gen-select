@@ -1,4 +1,4 @@
 system := `nix-instantiate --eval --raw -E builtins.currentSystem`
 
 ci test="" *args:
-  nix-unit --override-input gen-select ../.. --flake .#.tests{{if test != "" { "." + test } else { "" }}} --gc-roots-dir .gcroots {{args}}
+  nix-unit --flake .#.tests{{if test != "" { "." + test } else { "" }}} --gc-roots-dir .gcroots {{args}}
