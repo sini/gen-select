@@ -9,6 +9,7 @@
   and,
   isSchemaKind,
   kindKey,
+  projectedKindKey,
 }:
 let
   # coord dim kind entry — the vertex-membership predicate of the sub-product fixing `dim` at the
@@ -130,7 +131,7 @@ in
       kindKeys = builtins.mapAttrs (
         dim: k:
         if isSchemaKind k then
-          kindKey k
+          projectedKindKey k
         else
           throw "gen-select: adapters.product.mkContext `kinds.${dim}` expects a gen-schema kind value carrying a mint-backed mark (`__mint.minted`; a kind's identity comes only from the one mint); got ${
             if builtins.isString k then "the kind name \"${k}\"" else builtins.typeOf k

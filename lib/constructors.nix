@@ -39,6 +39,22 @@ let
       throw "${door}: required field '${builtins.head missing}' is missing (required: ${quoted}) (in gen-select.checkRequired)"
     else
       record;
+
+  # The door `sel.kind` and `sel.subkind` share: a kind value carrying gen-schema's mark, stored as its
+  # `kindKey` under the constructor's tag.
+  kindSelector =
+    tag: kindValue:
+    if builtins.isString kindValue then
+      throw "gen-select: sel.${tag} expects a kind value (e.g. schema.user), got the string \"${kindValue}\". A kind name is a reference, and resolving it to its declaration needs the shared resolver; pass the kind value."
+    else if !(builtins.isAttrs kindValue) then
+      throw "gen-select: sel.${tag} expects a gen-schema kind value; got ${builtins.typeOf kindValue}."
+    else if !(isSchemaKind kindValue) then
+      throw "gen-select: sel.${tag} expects a gen-schema kind value carrying a mint-backed mark (`__mint.minted`; a kind's identity comes only from the one mint); got an attrset with no mark. A hand-written `{ kind = ...; options = ...; }` is not a kind value — take the kind from a schema (e.g. `schema.widget`)."
+    else
+      {
+        __sel = tag;
+      }
+      // kindKey kindValue;
 in
 rec {
   star = {
@@ -127,19 +143,15 @@ rec {
   # hand-written attrset of that shape was admitted, matched, and was indistinguishable
   # from a real kind under `selectorEq`. See ./kind-mark.nix for the read and for why it
   # is not `algebra.identityOf`.
-  kind =
-    kindValue:
-    if builtins.isString kindValue then
-      throw "gen-select: sel.kind expects a kind value (e.g. schema.user), got the string \"${kindValue}\". A kind name is a reference, and resolving it to its declaration needs the shared resolver; pass the kind value."
-    else if !(builtins.isAttrs kindValue) then
-      throw "gen-select: sel.kind expects a gen-schema kind value; got ${builtins.typeOf kindValue}."
-    else if !(isSchemaKind kindValue) then
-      throw "gen-select: sel.kind expects a gen-schema kind value carrying a mint-backed mark (`__mint.minted`; a kind's identity comes only from the one mint); got an attrset with no mark. A hand-written `{ kind = ...; options = ...; }` is not a kind value — take the kind from a schema (e.g. `schema.widget`)."
-    else
-      {
-        __sel = "kind";
-      }
-      // kindKey kindValue;
+  kind = kindSelector "kind";
+
+  # Subkind selector: a node whose kind is `kindValue` or has it among its transitive ancestors
+  # (den-hoag-l0y; owner ruling Q3 "a": a new operator, and `sel.kind` stays exact). Admitted through
+  # `sel.kind`'s door with the same payload, `kindKey`, under its own tag. The match looks the
+  # selector's mark up in the node's ancestor map and decides a hit by `kindEq`, as `sel.kind`
+  # decides: a parent of the same name at another mark is not the kind, and an open-content twin in
+  # the lineage is refused by name (./match.nix).
+  subkind = kindSelector "subkind";
 
   and = selectors: {
     __sel = "and";
@@ -215,7 +227,7 @@ rec {
   # dedup as equal in neededBy sets and dispatch rule-sets — raw `==` would wrongly
   # distinguish them. `==` is therefore finer than selectorEq exactly on `name`.
   # `coord` payloads compare the dimension, then as `entity` payloads do.
-  # `kind` payloads compare through gen-schema's `kindEq` relation (./default.nix's `kindEq`):
+  # `kind` and `subkind` payloads compare through gen-schema's `kindEq` relation (./default.nix's `kindEq`):
   # their `name` is display-only too, and a sealed collision is refused by name. `entity`
   # payloads compare through ./default.nix's `entityEq`: the stamp, then the kind by `kindEq`.
   selectorEq =
@@ -244,6 +256,10 @@ rec {
         )
       )
     else if a.__sel == "kind" && b.__sel == "kind" then
+      kindEq "gen-select: selectorEq" a b
+    else if a.__sel == "subkind" && b.__sel == "subkind" then
+      # As the `kind` arm: without it the payloads fall through to `==`, which decides `false` on an
+      # open-content twin that `kindEq` refuses by name.
       kindEq "gen-select: selectorEq" a b
     else if a.__sel == "coord" && b.__sel == "coord" then
       # The coordinate is an entity at one position (den-hoag-8hqx0): the dimension, then `entity`'s

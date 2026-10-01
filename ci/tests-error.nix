@@ -990,4 +990,113 @@ in
         };
       };
     };
+
+  # den-hoag-l0y U3: `sel.subkind`'s refusals, each pinning WHICH refusal fired, each with a live
+  # control under `tryEval` in the same cell (the kind-mark group's measured reason).
+  flake.testsError.subkind =
+    let
+      T = genMerge.types;
+      tree =
+        modules:
+        (genMerge.evalModuleTree {
+          modules = [ { options.schema = genSchema.mkSchemaOption { }; } ] ++ modules;
+        }).config.schema;
+      fwOf =
+        _:
+        tree [
+          {
+            config.schema.base.options.b = genMerge.mkOption {
+              type = T.int;
+              default = 0;
+            };
+          }
+        ];
+      V = (fwOf 1).base;
+      twin = (fwOf 2).base;
+      childOf =
+        parent:
+        (tree [
+          {
+            config.schema.sub = {
+              inherits = [ parent ];
+              options.extra = genMerge.mkOption { type = T.int; };
+            };
+          }
+        ]).sub;
+      kinds = {
+        s = childOf V;
+        o = childOf twin;
+      };
+      ctx = sel.adapters.registry.mkContext {
+        nodes = builtins.attrNames kinds;
+        data = id: { id_hash = "h-${id}"; };
+        parent = _: null;
+        kindFor = id: kinds.${id};
+      };
+      # a hand projection of the subkind's key with no ancestor map
+      noMapCtx = {
+        data = _: {
+          __identity = {
+            id_hash = "h-s";
+            kind = removeAttrs ((ctx.data "s").__identity.kind) [ "ancestors" ];
+          };
+        };
+        parent = _: null;
+      };
+      ok =
+        e: v:
+        (builtins.tryEval (builtins.deepSeq e e)) == {
+          success = true;
+          value = v;
+        };
+    in
+    {
+      # N1 / F14-4 · an open-content twin in the lineage is refused by `kindEq`'s own text at the
+      # match. Control: the subkind of the selector's own kind matches.
+      test-open-content-twin-in-lineage-refused-by-name = {
+        expr =
+          assert ok (sel.matches (sel.subkind V) "s" ctx) true;
+          sel.matches (sel.subkind V) "o" ctx;
+        expectedError = {
+          type = "ThrownError";
+          msg = "^gen-select: sel\\.subkind: two declarations of 'base' mint one identity and differ, compared as values, only at sealed component\\(s\\) 'open\\.options\\.b\\.default'";
+        };
+      };
+
+      # SEL · `selectorEq` refuses two subkind selectors over open-content twins by name, as the
+      # `kind` arm does. Control: one kind value with itself decides `true`.
+      test-selectorEq-subkind-open-twin-refused-by-name = {
+        expr =
+          assert ok (sel.selectorEq (sel.subkind V) (sel.subkind V)) true;
+          sel.selectorEq (sel.subkind V) (sel.subkind twin);
+        expectedError = {
+          type = "ThrownError";
+          msg = "^gen-select: selectorEq: two declarations of 'base' mint one identity and differ, compared as values, only at sealed component\\(s\\) 'open\\.options\\.b\\.default'";
+        };
+      };
+
+      # S6 / P3 · a projected kind key carrying no ancestor map is refused by name, never `false`
+      # and never an abort. Control: the adapter's own projection of the same node answers.
+      test-projection-without-ancestor-map-refused = {
+        expr =
+          assert ok (sel.matches (sel.subkind V) "s" ctx) true;
+          sel.matches (sel.subkind V) "n" noMapCtx;
+        expectedError = {
+          type = "ThrownError";
+          msg = "^gen-select: sel\\.subkind matched against a projection whose __identity\\.kind for node n carries no ancestor map \\(`ancestors`, gen-schema's `__kindAncestors`\\), so whether the node's kind is a subkind cannot be answered\\.";
+        };
+      };
+
+      # The door is `sel.kind`'s: a kind NAME is refused under the operator's own name. Control: the
+      # kind value constructs.
+      test-subkind-kind-name-refused = {
+        expr =
+          assert ok (sel.subkind V).__sel "subkind";
+          sel.subkind "base";
+        expectedError = {
+          type = "ThrownError";
+          msg = "^gen-select: sel\\.subkind expects a kind value \\(e\\.g\\. schema\\.user\\), got the string \"base\"\\.";
+        };
+      };
+    };
 }

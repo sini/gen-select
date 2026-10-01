@@ -35,8 +35,8 @@ matches : selector -> id -> context -> bool
 ```
 
 Evaluates a selector against the node identified by `id`. Dispatches on the `__sel` tag.
-Distinct runtime tags: `star`, `attrs`, `entity`, `kind`, `and`, `any`, `not`, `has`,
-`within`, `parentMatches`, `when`, `coord`. (`child`, `descendant`, `inSlice` are
+Distinct runtime tags: `star`, `attrs`, `entity`, `kind`, `subkind`, `and`, `any`, `not`,
+`has`, `within`, `parentMatches`, `when`, `coord`. (`child`, `descendant`, `inSlice` are
 construction-time sugar with no distinct runtime tag.)
 
 ## Constructors
@@ -65,7 +65,8 @@ values), never `"kind:name"` strings. Both read the reserved `__identity` projec
 
 ```
 entity : registry-entry    -> selector
-kind   : kind-value        -> selector
+kind    : kind-value       -> selector
+subkind : kind-value       -> selector
 ```
 
 **`entity K e`** — matches the node whose `__identity.id_hash` equals `e.id_hash`; when
@@ -95,6 +96,20 @@ judged at the first application, so the retired one-argument `entity e` refuses 
   kind keys, the helper gen-schema's `kindEq` calls.
 - A node carrying a positional `type` but no entry does not match `kind` — use
   `attrs { type = "…"; }` for positional-type matching.
+
+**`subkind K`** — matches every node whose projected kind is `K`, or has `K` among its
+transitive ancestors (a kind reaching `K` through gen-schema's `inherits`, at any depth); each
+candidate is decided as `kind K` decides. `kind` stays exact.
+
+- Construction is `kind`'s door and payload under the tag `"subkind"`.
+- The adapters project the node's kind as `{ identity; name; sealed; ancestors; }`, where
+  `ancestors` is gen-schema's `__kindAncestors` (mark → ancestor kind value), a shared
+  reference per kind. The selector payload carries no ancestors.
+- Matching: `kind`'s guards (identity-blind, `null`, kind-blind, name, malformed key); a key
+  whose `ancestors` is not an attrset → **throw** (the question cannot be answered); the
+  node's own mark equal to `K`'s → `kindEq`; otherwise `ancestors.${K's mark}`: a miss is
+  `false`, a hit is `kindEq` against `K` — so a same-named parent at another mark is `false`,
+  a type-only twin in the lineage is `true`, and an open-content twin is refused by name.
 
 **`entityKind`** — removed. Use `kind <kind-value>`, or `attrs { type = "…"; }` for
 positional typing.
@@ -148,8 +163,9 @@ selectorEq   : selector -> selector -> bool
   `__id` — the name never decides;
 - `entity`: `id_hash`, then (equal stamps) the kind key by `entityEq`: different marks refuse, equal marks decide by `kindEq` (display-only `name` excluded);
 - `coord`: `dim`, then as `entity` (display-only `name` excluded);
-- everything else (including `kind`, whose payload has no display field): structural `==`
-  on the selector, which forces whatever the payload holds — see the caveat below.
+- `kind`, and `subkind` with `subkind`: `kindEq` over the kind keys (a sealed collision is
+  refused by name; `name` excluded);
+- everything else: structural `==` on the selector, which forces whatever the payload holds — see the caveat below.
 
 Fig. 5 is a conjunction over identity AND closure, so a name-only relation ships one
 conjunct: a program point is constant across a constructor's instances, and comparing it
