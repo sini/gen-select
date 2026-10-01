@@ -114,7 +114,7 @@ let
   # (den-hoag-egei0), so the pair differs at both components and the refusal names both.
   sealedMsgAt =
     comps: site:
-    "^gen-select: ${site}: two declarations of 'host' mint one identity and differ, compared as values, only at sealed component\\(s\\) ${comps}; a sealed component has no identity, because identity is minted from inert structure alone";
+    "^gen-select: ${site}: two declarations of 'host' mint one identity and are unequal only at sealed component\\(s\\) ${comps}: a sealed component is compared by its seal, the whole value under Nix `==`, where two separately built functions are never equal, so two separate constructions are refused even where the values they compute are equal; a sealed component has no identity, because identity is minted from inert structure alone";
   sealedMsg = sealedMsgAt "'open\\.options\\.note\\.default', 'options\\.note\\.type'";
   # A twin of one declaration carrying open content differs at its open subject alone.
   twinMsg = sealedMsgAt "'open\\.options\\.note\\.default'";
@@ -729,7 +729,7 @@ in
         sel.selectorEq (sel.kind kS) (sel.kind kI);
       expectedError = {
         type = "ThrownError";
-        msg = "^gen-select: selectorEq: two declarations of 'host' mint one identity and differ, compared as values, only at sealed component\\(s\\) 'options\\.addr\\.type'; a sealed component has no identity, because identity is minted from inert structure alone";
+        msg = "^gen-select: selectorEq: two declarations of 'host' mint one identity and are unequal only at sealed component\\(s\\) 'options\\.addr\\.type': a sealed component is compared by its seal, the whole value under Nix `==`, where two separately built functions are never equal, so two separate constructions are refused even where the values they compute are equal; a sealed component has no identity, because identity is minted from inert structure alone";
       };
     };
 
