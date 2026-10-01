@@ -1,4 +1,4 @@
-{ isSchemaKind, kindKey }:
+{ isSchemaKind, projectedKindKey }:
 {
   mkContext =
     {
@@ -70,7 +70,7 @@
                   # The node's KIND VALUE (den-hoag-l0y, arm (B′)): gen-scope stamps the value
                   # its kind declares (`mkKind { kindValue = schema.<kind>; }`) on every node of
                   # that kind as the record field `kindValue`, and this projects its key exactly
-                  # as the registry adapter does (`normalizeKind`/`kindKey`), so `sel.kind` compares
+                  # as the registry adapter does (`normalizeKind`/`projectedKindKey`), so `sel.kind` compares
                   # minted identities. A node carrying none is REFUSED by name, lazily: its `type`
                   # is a positional NAME and is never compared as a kind. Lazy, so `attrs` matching
                   # on the projected `type` is unaffected, and so is `sel.entity` for a kind with
@@ -81,7 +81,7 @@
                       v = n.kindValue or null;
                     in
                     if isSchemaKind v then
-                      kindKey v
+                      projectedKindKey v
                     else if v == null then
                       throw "gen-select: adapters.scope.mkContext: node ${id} (type ${
                         builtins.toJSON (n.type or null)

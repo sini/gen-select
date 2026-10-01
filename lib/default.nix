@@ -31,6 +31,13 @@ let
         or (throw "gen-select: the kind value '${k.kind}' carries a mark but no sealed subjects (`__sealed`), so it cannot be compared as gen-schema's own `kindEq` compares it. Take the kind from a gen-schema that stamps both.");
   };
 
+  # A NODE's kind key: `kindKey` plus the kind's transitive ancestors, gen-schema's `__kindAncestors`
+  # (mark -> ancestor kind value), which `sel.subkind` looks up at the selector's mark. Node side
+  # only: a selector never reads ancestors, so its payload stays `kindKey`. A shared reference into
+  # the kind value, so the map is built once per KIND. A kind value from a gen-schema that publishes
+  # no map projects `null`, which `sel.subkind` refuses by name.
+  projectedKindKey = k: kindKey k // { ancestors = k.__kindAncestors or null; };
+
   # THE ONE KIND RELATION: gen-schema's `kindEq` subject handed to the same helper `kindEq` calls, so
   # `selectorEq` and the matcher decide what the producer's own door decides — true, false, or a
   # refusal by name at a sealed collision.
@@ -105,13 +112,20 @@ let
       algebra
       ;
   };
-  match = import ./match.nix { inherit kindEq entityEq selectorKind; };
-  scopeAdapter = import ./adapters/scope.nix { inherit isSchemaKind kindKey; };
+  match = import ./match.nix {
+    inherit
+      kindKey
+      kindEq
+      entityEq
+      selectorKind
+      ;
+  };
+  scopeAdapter = import ./adapters/scope.nix { inherit isSchemaKind projectedKindKey; };
   graphAdapter = import ./adapters/graph.nix { inherit (match) matches; };
-  registryAdapter = import ./adapters/registry.nix { inherit isSchemaKind kindKey; };
+  registryAdapter = import ./adapters/registry.nix { inherit isSchemaKind projectedKindKey; };
   productAdapter = import ./adapters/product.nix {
     inherit (constructors) and;
-    inherit isSchemaKind kindKey;
+    inherit isSchemaKind kindKey projectedKindKey;
   };
 in
 constructors
