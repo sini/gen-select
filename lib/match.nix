@@ -2,6 +2,7 @@
 # through `algebra.sealedCollisionEq`) and one entity relation, handed in so that the matcher and
 # `selectorEq` cannot disagree.
 {
+  kindKey,
   kindEq,
   entityEq,
   selectorKind,
@@ -178,6 +179,35 @@ let
         throw "gen-select: sel.kind matched against a projection whose __identity.kind for node ${id} is not a kind key ({ identity; name; sealed; }, what the registry adapter projects from a kind value); got ${builtins.typeOf data.__identity.kind}."
       else
         kindEq "gen-select: sel.kind" data.__identity.kind selector
+
+    else if tag == "subkind" then
+      # The `kind` arm's guards, then the node's kind or one of its transitive ancestors decided as
+      # `sel.kind` decides (den-hoag-l0y). The ancestor map is keyed by mark: a miss is `false`, and a
+      # hit is decided by `kindEq`, so a same-named parent at another mark never matches and an
+      # open-content twin in the lineage is refused by name rather than admitted by its mark. One
+      # lookup per node, and one `sealedCollisionEq` on a hit only. A projection with no map cannot
+      # answer, so it is refused by name, never read as "no ancestors".
+      let
+        data = (discreteCtx ctx "subkind").data id;
+      in
+      if !(data ? __identity) then
+        throw "gen-select: sel.subkind matched against an identity-blind context (its `data ${id}` has no __identity key). Use adapters.scope.mkContext / adapters.registry.mkContext, or project __identity."
+      else if data.__identity == null then
+        false
+      else
+        let
+          k = nodeKindKey "subkind" id data;
+          ancestors = k.ancestors or null;
+        in
+        if !(builtins.isAttrs ancestors) then
+          throw "gen-select: sel.subkind matched against a projection whose __identity.kind for node ${id} carries no ancestor map (`ancestors`, gen-schema's `__kindAncestors`), so whether the node's kind is a subkind cannot be answered. Project the kind with the registry or scope adapter, from a gen-schema that publishes `__kindAncestors`."
+        else if k.identity == selector.identity then
+          kindEq "gen-select: sel.subkind" k selector
+        else
+          let
+            a = ancestors.${selector.identity} or null;
+          in
+          if a == null then false else kindEq "gen-select: sel.subkind" (kindKey a) selector
 
     else if tag == "coord" then
       # Product-coordinate match (Imrich & Klavžar, Handbook of Product Graphs): a cell

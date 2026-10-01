@@ -1,4 +1,4 @@
-{ isSchemaKind, kindKey }:
+{ isSchemaKind, projectedKindKey }:
 {
   mkContext =
     {
@@ -25,7 +25,7 @@
       ),
       # id -> kindValue | null. Default = the constant registry kind (every node in a
       # per-kind registry projects that kind); heterogeneous unions pass an explicit per-id
-      # accessor. Projected as the kind's KEY (minted identity; ./default.nix `kindKey`). A
+      # accessor. Projected as the kind's KEY (minted identity; ./default.nix `projectedKindKey`). A
       # bare name is REFUSED by name: it is a reference, and resolving it needs the shared
       # resolver (den-hoag-7gp66 P1).
       kindFor ? (_: kind),
@@ -51,7 +51,7 @@
         if k == null then
           null
         else if isSchemaKind k then
-          kindKey k
+          projectedKindKey k
         else if builtins.isString k then
           throw "gen-select: adapters.registry.mkContext `kindFor` returned the kind name \"${k}\"; a kind name is a reference, and resolving it to its declaration needs the shared resolver. Return the kind value."
         else
