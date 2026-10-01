@@ -36,7 +36,27 @@ let
   # only: a selector never reads ancestors, so its payload stays `kindKey`. A shared reference into
   # the kind value, so the map is built once per KIND. A kind value from a gen-schema that publishes
   # no map projects `null`, which `sel.subkind` refuses by name.
-  projectedKindKey = k: kindKey k // { ancestors = k.__kindAncestors or null; };
+  #
+  # Destructured rather than `kindKey k // { … }`: the adapters call this once per NODE, and a formal
+  # binds the kind's attribute itself where a selection allocates a thunk for it, so `name`,
+  # `sealed` and `ancestors` cost nothing and `sel.kind` pays no more per node than it did before
+  # the map was projected (the hub bench's `kindMatch`, bound at anchor + 0.000). Every caller has
+  # passed `isSchemaKind`, so `kind` and `__mint` are present; the defaults are thunked only when
+  # their attribute is absent, so the `__sealed` refusal stays lazy.
+  projectedKindKey =
+    {
+      __mint,
+      kind,
+      __sealed ? throw "gen-select: the kind value '${kind}' carries a mark but no sealed subjects (`__sealed`), so it cannot be compared as gen-schema's own `kindEq` compares it. Take the kind from a gen-schema that stamps both.",
+      __kindAncestors ? null,
+      ...
+    }:
+    {
+      identity = __mint.minted;
+      name = kind;
+      sealed = __sealed;
+      ancestors = __kindAncestors;
+    };
 
   # THE ONE KIND RELATION: gen-schema's `kindEq` subject handed to the same helper `kindEq` calls, so
   # `selectorEq` and the matcher decide what the producer's own door decides — true, false, or a
