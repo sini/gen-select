@@ -16,6 +16,7 @@ let
   # has. It is not published: the seam's test is this library's own business, and a second copy in
   # the adapter is how two readers of one tagged sum stop agreeing.
   isSchemaKind = import ./kind-mark.nix;
+  stampOk = import ./kind-stamp.nix;
 
   # A KIND KEY: what a kind selector carries and what an adapter projects as `__identity.kind`. The
   # minted identity is the key (owner-ruled 2026-09-25, den-hoag-l0y (a)); `name` is display and
@@ -30,6 +31,22 @@ let
       k.__sealed
         or (throw "gen-select: the kind value '${k.kind}' carries a mark but no sealed subjects (`__sealed`), so it cannot be compared as gen-schema's own `kindEq` compares it. Take the kind from a gen-schema that stamps both.");
   };
+
+  # A SELECTOR's kind key: `kindKey`, whose `identity` refuses a kind value that is not the value its
+  # schema built (`./kind-stamp.nix`), as gen-schema's `kindEq` refuses it. In `identity` because
+  # every comparison reads it first, so the refusal holds at equal and unequal marks alike; read once
+  # per selector, never per node. A kind value carrying no stamp is from a gen-schema whose own
+  # `kindEq` reads none, and is keyed as before.
+  selectorKindKey =
+    k:
+    kindKey k
+    // {
+      identity =
+        if k ? __kindSelf && !(stampOk k) then
+          throw "gen-select: the kind value '${k.kind}' is not the value its schema built: a `//` over a kind value keeps its mark while changing what the mark stands for, and gen-schema's own `kindEq` refuses it. Pass the kind value the schema published."
+        else
+          k.__mint.minted;
+    };
 
   # A NODE's kind key: `kindKey` plus the kind's transitive ancestors, gen-schema's `__kindAncestors`
   # (mark -> ancestor kind value), which `sel.subkind` looks up at the selector's mark. Node side
@@ -125,7 +142,7 @@ let
   constructors = import ./constructors.nix {
     inherit
       isSchemaKind
-      kindKey
+      selectorKindKey
       kindEq
       entityEq
       selectorKind

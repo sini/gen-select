@@ -192,6 +192,8 @@ in
       # The mark reader (ADR-0034). It arrived HERE as a red before it was noticed anywhere else,
       # which is this cell doing exactly the job its comment claims for it.
       "lib/kind-mark.nix"
+      # The completion-stamp reader (den-hoag-1a4f6), which arrived the same way.
+      "lib/kind-stamp.nix"
       "lib/match.nix"
       "flake.nix"
       "default.nix"
