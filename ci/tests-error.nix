@@ -660,6 +660,24 @@ in
   # green for the wrong one the moment any refusal appeared. What must hold is that the message
   # names the mark, which is now the thing the guard actually reads.
   flake.testsError.kind-mark = {
+    # den-hoag-1a4f6 K1 · a kind value with a mark and no completion stamp is refused by name at the
+    # selector, as gen-schema's `kindEq` refuses it. Control: the stamped kind decides `true`.
+    test-stampless-kind-refused-at-the-selector = {
+      expr =
+        assert
+          let
+            control = builtins.tryEval (sel.selectorEq (sel.kind schema.user) (sel.kind schema.user));
+          in
+          control.success && control.value;
+        sel.selectorEq (sel.kind (removeAttrs schema.user [ "__kindSelf" ])) (
+          sel.kind (removeAttrs schema.user [ "__kindSelf" ])
+        );
+      expectedError = {
+        type = "ThrownError";
+        msg = "^gen-select: the kind value 'user' carries a mark but no completion stamp \\(`__kindSelf`\\), so nothing ties the mark to this value, as gen-schema's own `kindEq` refuses it\\. Take the kind from a gen-schema that stamps it\\.$";
+      };
+    };
+
     test-hand-written-stand-in-refused = {
       expr =
         # ★ LIVE CONTROL, same cell and same run — and it is wrapped in `tryEval` for a reason
