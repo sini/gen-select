@@ -16,8 +16,8 @@
 # kind with a throwing computed field. Two components that both have no WHNF value agree, as the
 # kind's mark tags both `undefined`.
 #
-# A value with no witness is from a gen-schema that does not stamp, whose own `kindEq` does not read
-# one; the caller decides what that means (`./default.nix` `selectorKindKey`).
+# A value with no witness is from a gen-schema that does not stamp; the caller decides what that
+# means (`./default.nix` `selectorKindKey` refuses it, as `kindEq` does).
 let
   defined = v: (builtins.tryEval (builtins.seq v true)).success;
   cellAgrees =

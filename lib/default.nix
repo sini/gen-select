@@ -35,14 +35,16 @@ let
   # A SELECTOR's kind key: `kindKey`, whose `identity` refuses a kind value that is not the value its
   # schema built (`./kind-stamp.nix`), as gen-schema's `kindEq` refuses it. In `identity` because
   # every comparison reads it first, so the refusal holds at equal and unequal marks alike; read once
-  # per selector, never per node. A kind value carrying no stamp is from a gen-schema whose own
-  # `kindEq` reads none, and is keyed as before.
+  # per selector, never per node. A kind value carrying no stamp is refused too, as gen-schema's own
+  # `kindEq` refuses it: nothing ties its mark to the value.
   selectorKindKey =
     k:
     kindKey k
     // {
       identity =
-        if k ? __kindSelf && !(stampOk k) then
+        if !(k ? __kindSelf) then
+          throw "gen-select: the kind value '${k.kind}' carries a mark but no completion stamp (`__kindSelf`), so nothing ties the mark to this value, as gen-schema's own `kindEq` refuses it. Take the kind from a gen-schema that stamps it."
+        else if !(stampOk k) then
           throw "gen-select: the kind value '${k.kind}' is not the value its schema built: a `//` over a kind value keeps its mark while changing what the mark stands for, and gen-schema's own `kindEq` refuses it. Pass the kind value the schema published."
         else
           k.__mint.minted;
@@ -76,8 +78,11 @@ let
     };
 
   # THE ONE KIND RELATION: gen-schema's `kindEq` subject handed to the same helper `kindEq` calls, so
-  # `selectorEq` and the matcher decide what the producer's own door decides — true, false, or a
-  # refusal by name at a sealed collision.
+  # `selectorEq` decides what the producer's own door decides — true, false, or a refusal by name at
+  # a sealed collision. ★ THE NODE SIDE IS AN ENUMERATED EXCEPTION: `projectedKindKey` reads no
+  # stamp, so a node whose own kind value is a `//` copy still matches (silent at the base too; the
+  # per-node read is the cost the destructure exists to avoid). ADR-0025's cxlc0 rider; deferred to
+  # den-hoag-jrbis (§3b.1 of the 1a4f6 spec).
   #
   # Distinct marks decide `false` before either subject is built. That is the helper's own first
   # arm, taken early because the matcher runs this once per NODE: measured on the hub bench's

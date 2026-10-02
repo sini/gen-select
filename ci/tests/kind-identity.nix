@@ -156,6 +156,10 @@ in
             }
           );
           self = both kA kA;
+          # a kind value short of the completion stamp: `kindEq` refuses it, so `selectorEq` must
+          stampless = both kA (removeAttrs kA [ "__kindSelf" ]);
+          stamplessCopy = both kA (removeAttrs (kA // { options = { }; }) [ "__kindSelf" ]);
+          stamplessBoth = both (removeAttrs kA [ "__kindSelf" ]) (removeAttrs kA [ "__kindSelf" ]);
         };
         expected =
           let
@@ -177,6 +181,9 @@ in
             metaRebindEqual = admitted;
             metaRebindDiffer = refused;
             self = admitted;
+            stampless = refused;
+            stamplessCopy = refused;
+            stamplessBoth = refused;
           };
       };
 
