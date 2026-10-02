@@ -111,6 +111,75 @@ in
       };
     };
 
+    # den-hoag-1a4f6 · a `//` copy of a kind value is refused by both libraries, at an equal and an
+    # unequal mark, and a content-equal rebind is admitted by both. `kMeta`'s computed field holds a
+    # throwing thunk, which nix and Determinate force under `==` and Lix does not: both copies of the
+    # stamp predicate must descend through it alike. Each arm reads both doors, so a library that
+    # refused everything, or nothing, disagrees somewhere.
+    test-selectorEq-agrees-with-kindEq-on-a-swapped-kind =
+      let
+        kMeta =
+          (genMerge.evalModuleTree {
+            modules = [
+              {
+                options.schema = genSchema.mkSchemaOption {
+                  computed = _: _: {
+                    meta = {
+                      boom = throw "meta-boom";
+                      ok = 1;
+                    };
+                  };
+                };
+              }
+              { config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; }; }
+            ];
+          }).config.schema.host;
+        both = a: b: {
+          selectorEq = tr (sel.selectorEq (sel.kind a) (sel.kind b));
+          kindEq = tr (kindEq a b);
+        };
+      in
+      {
+        expr = {
+          swapped = both kA (kA // { options = { }; });
+          swappedReversed = both (kA // { options = { }; }) kA;
+          swappedAgainstAnother = both kB (kA // { options = { }; });
+          addedKey = both kA (kA // { extra = 1; });
+          rebindEqual = both kA (kA // { inherit (kA) options; });
+          metaRebindEqual = both kMeta (kMeta // { meta = kMeta.meta // { }; });
+          metaRebindDiffer = both kMeta (
+            kMeta
+            // {
+              meta = kMeta.meta // {
+                ok = 2;
+              };
+            }
+          );
+          self = both kA kA;
+        };
+        expected =
+          let
+            refused = {
+              selectorEq = "REFUSED";
+              kindEq = "REFUSED";
+            };
+            admitted = {
+              selectorEq = true;
+              kindEq = true;
+            };
+          in
+          {
+            swapped = refused;
+            swappedReversed = refused;
+            swappedAgainstAnother = refused;
+            addedKey = refused;
+            rebindEqual = admitted;
+            metaRebindEqual = admitted;
+            metaRebindDiffer = refused;
+            self = admitted;
+          };
+      };
+
     # C1s · a sealed collision is REFUSED, as `kindEq` refuses it, never collapsed to `true`. The
     # live arms: the migrated pair decides `false`, the sealed twin decides `true`.
     test-sealed-collision-refused = {

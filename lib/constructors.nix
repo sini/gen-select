@@ -19,7 +19,7 @@
 {
   algebra,
   isSchemaKind,
-  kindKey,
+  selectorKindKey,
   kindEq,
   entityEq,
   selectorKind,
@@ -54,7 +54,7 @@ let
       {
         __sel = tag;
       }
-      // kindKey kindValue;
+      // selectorKindKey kindValue;
 in
 rec {
   star = {
@@ -108,7 +108,7 @@ rec {
               builtins.typeOf kindValue
           }."
         else
-          kindKey kindValue;
+          selectorKindKey kindValue;
     in
     builtins.seq kind (
       entry:
