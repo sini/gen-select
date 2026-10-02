@@ -1059,7 +1059,7 @@ in
           sel.matches (sel.subkind V) "o" ctx;
         expectedError = {
           type = "ThrownError";
-          msg = "^gen-select: sel\\.subkind: two declarations of 'base' mint one identity and differ, compared as values, only at sealed component\\(s\\) 'open\\.options\\.b\\.default'";
+          msg = "^gen-select: sel\\.subkind: two declarations of 'base' mint one identity and are unequal only at sealed component\\(s\\) 'open\\.options\\.b\\.default'";
         };
       };
 
@@ -1071,7 +1071,7 @@ in
           sel.selectorEq (sel.subkind V) (sel.subkind twin);
         expectedError = {
           type = "ThrownError";
-          msg = "^gen-select: selectorEq: two declarations of 'base' mint one identity and differ, compared as values, only at sealed component\\(s\\) 'open\\.options\\.b\\.default'";
+          msg = "^gen-select: selectorEq: two declarations of 'base' mint one identity and are unequal only at sealed component\\(s\\) 'open\\.options\\.b\\.default'";
         };
       };
 
