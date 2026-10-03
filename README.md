@@ -191,11 +191,16 @@ selectorEq   : selector -> selector -> bool
 
 The three regimes are read off the wrapped value's `__mint` field, which is a **tagged sum** and is total — a reader that branched on field presence and then read `.minted` raw would abort uncatchably on a value that has no mintable identity:
 
-| regime     | the value carries     | the relation                                                            |
-| ---------- | --------------------- | ----------------------------------------------------------------------- |
-| minted     | `__mint.minted`       | digest equality — the identity is total in the distinguishing content   |
-| unmintable | `__mint`, no `minted` | Nix `==` on the reified value **minus `__id`**                          |
-| unmigrated | no `__mint`           | Nix `==` on the reified value **minus `__id`** — the name never decides |
+| regime     | the value carries     | the relation                                                                                      |
+| ---------- | --------------------- | ------------------------------------------------------------------------------------------------- |
+| minted     | `__mint.minted`       | digest equality — the identity is total in the distinguishing content                             |
+| unmintable | `__mint`, no `minted` | Nix `==` on its declared subject where it carries one, else on the reified value **minus `__id`** |
+| unmigrated | no `__mint`           | Nix `==` on the reified value **minus `__id`** — the name never decides                           |
+
+A value built by gen-algebra's encoder (`mkIntensional`) is on the unmintable arm and carries a declared
+comparison subject — its registry coordinate (`members`, `revision`), constructor and inert arguments —
+so two `when` selectors over two constructions of one registered term compare equal and a different
+argument, member set or revision compares unequal; the builder's lambda is never compared.
 
 Palmer's Fig. 5 is a **conjunction** over identity *and* closure, and comparing `name` alone ships its first conjunct only: a program point is constant across a constructor's instances, so a name-only relation calls behaviourally distinct values equal — the coarsening direction §2.3 forbids. What replaces it is the regime dispatch rather than a second conjunct, because a minted identity is already total over the distinguishing content and needs none.
 
