@@ -23,9 +23,8 @@ let
     };
   tree =
     modules:
-    (genMerge.evalModuleTree {
-      modules = [ { options.schema = genSchema.mkSchemaOption { }; } ] ++ modules;
-    }).config.schema;
+    (genMerge.evalModuleTree { } ([ { options.schema = genSchema.mkSchemaOption { }; } ] ++ modules))
+    .config.schema;
   mark = k: k.__mint.minted;
 
   # `base` carries open content (a default), `baseT` only a type. `fw2` is an independent evaluation

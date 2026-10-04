@@ -45,14 +45,12 @@ let
   kI = mkHost { addr = genMerge.mkOption { type = lib.types.int; }; };
   kS2 = mkHost { addr = genMerge.mkOption { type = lib.types.str; }; };
   kG = mkHost { addr = genMerge.mkOption { type = genMerge.types.str; }; };
-  instances = genMerge.evalModuleTree {
-    modules = [
-      {
-        options.hs = genSchema.mkInstanceRegistry kG { };
-        config.hs.axon.addr = "10.0.0.1";
-      }
-    ];
-  };
+  instances = genMerge.evalModuleTree { } [
+    {
+      options.hs = genSchema.mkInstanceRegistry kG { };
+      config.hs.axon.addr = "10.0.0.1";
+    }
+  ];
   registryCtx =
     kindFor:
     sel.adapters.registry.mkContext {
@@ -134,18 +132,16 @@ let
       k1t = mkKind (decl lib.types.lines);
       k2 = mkKind (decl lib.types.commas);
       c =
-        (genMerge.evalModuleTree {
-          modules = [
-            {
-              options.h1 = genSchema.mkInstanceRegistry k1 { };
-              options.h1t = genSchema.mkInstanceRegistry k1t { };
-              options.h2 = genSchema.mkInstanceRegistry k2 { };
-              config.h1.p.addr = "10.0.0.1";
-              config.h1t.p.addr = "10.0.0.1";
-              config.h2.p.addr = "10.0.0.1";
-            }
-          ];
-        }).config;
+        (genMerge.evalModuleTree { } [
+          {
+            options.h1 = genSchema.mkInstanceRegistry k1 { };
+            options.h1t = genSchema.mkInstanceRegistry k1t { };
+            options.h2 = genSchema.mkInstanceRegistry k2 { };
+            config.h1.p.addr = "10.0.0.1";
+            config.h1t.p.addr = "10.0.0.1";
+            config.h2.p.addr = "10.0.0.1";
+          }
+        ]).config;
       nodes = {
         t1 = c.h1.p;
         t1t = c.h1t.p;
@@ -1016,9 +1012,8 @@ in
       T = genMerge.types;
       tree =
         modules:
-        (genMerge.evalModuleTree {
-          modules = [ { options.schema = genSchema.mkSchemaOption { }; } ] ++ modules;
-        }).config.schema;
+        (genMerge.evalModuleTree { } ([ { options.schema = genSchema.mkSchemaOption { }; } ] ++ modules))
+        .config.schema;
       fwOf =
         _:
         tree [

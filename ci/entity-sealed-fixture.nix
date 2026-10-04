@@ -37,22 +37,20 @@ let
   kS2 = mkKind declS2;
   kS1t = mkKind declS1;
   c =
-    (M.evalModuleTree {
-      modules = [
-        {
-          options.hA = genSchema.mkInstanceRegistry kA { };
-          options.hS1 = genSchema.mkInstanceRegistry kS1 { };
-          options.hS1t = genSchema.mkInstanceRegistry kS1t { };
-          options.hS2 = genSchema.mkInstanceRegistry kS2 { };
-          config.hA.p.addr = "10.0.0.1";
-          config.hS1.p.addr = "10.0.0.1";
-          config.hS1.q.addr = "10.0.0.2";
-          config.hS1t.p.addr = "10.0.0.1";
-          config.hS2.p.addr = "10.0.0.1";
-          config.hS2.z.addr = "10.0.0.3";
-        }
-      ];
-    }).config;
+    (M.evalModuleTree { } [
+      {
+        options.hA = genSchema.mkInstanceRegistry kA { };
+        options.hS1 = genSchema.mkInstanceRegistry kS1 { };
+        options.hS1t = genSchema.mkInstanceRegistry kS1t { };
+        options.hS2 = genSchema.mkInstanceRegistry kS2 { };
+        config.hA.p.addr = "10.0.0.1";
+        config.hS1.p.addr = "10.0.0.1";
+        config.hS1.q.addr = "10.0.0.2";
+        config.hS1t.p.addr = "10.0.0.1";
+        config.hS2.p.addr = "10.0.0.1";
+        config.hS2.z.addr = "10.0.0.3";
+      }
+    ]).config;
   s1 = c.hS1.p;
   s1q = c.hS1.q;
   s1t = c.hS1t.p;

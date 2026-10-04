@@ -411,11 +411,11 @@
         "gen-types": "gen-types"
       },
       "locked": {
-        "lastModified": 1791137760,
-        "narHash": "sha256-zJqmmRFCnlWe7z/Bb9OgQZ1D5tKbId6FCQQh2Q3DaCA=",
+        "lastModified": 1791145173,
+        "narHash": "sha256-QKQ9DYpe8zDeuuM/QT9bPrNNBv4nxNBPH6x88yiOiPc=",
         "owner": "sini",
         "repo": "gen-merge",
-        "rev": "c5bd939da262ebd97c4cf6cb362729bc4896fb48",
+        "rev": "c0be9908eec8daf94aaf1da525ed44dd328b23dc",
         "type": "github"
       },
       "original": {
@@ -570,11 +570,11 @@
         "gen-prelude": "gen-prelude_7"
       },
       "locked": {
-        "lastModified": 1791137885,
-        "narHash": "sha256-hab/TP6IwbgsPF5qc7pyK7KCifKNUtMnK+lQdjNuFBU=",
+        "lastModified": 1791144930,
+        "narHash": "sha256-gtEf+naZ8mB6S97JHdgJGpDFCCHpHIvEmXc2QGec/6I=",
         "owner": "sini",
         "repo": "gen-schema",
-        "rev": "845df53971736cffbb122e8d0aa8edd4ceb813b1",
+        "rev": "f9d087694b1ab9ef41994b55f0417f862453dcab",
         "type": "github"
       },
       "original": {

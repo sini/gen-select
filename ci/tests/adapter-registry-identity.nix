@@ -22,17 +22,15 @@ let
     ];
   };
 
-  eval = genMerge.evalModuleTree {
-    modules = [
-      {
-        options.users = mkInstanceRegistry schema.user { };
-        options.hosts = mkInstanceRegistry schema.host { };
-        config.users.sini.uid = 1000;
-        config.users.vic.uid = 1001;
-        config.hosts.axon.addr = "10.0.0.1";
-      }
-    ];
-  };
+  eval = genMerge.evalModuleTree { } [
+    {
+      options.users = mkInstanceRegistry schema.user { };
+      options.hosts = mkInstanceRegistry schema.host { };
+      config.users.sini.uid = 1000;
+      config.users.vic.uid = 1001;
+      config.hosts.axon.addr = "10.0.0.1";
+    }
+  ];
   users = eval.config.users;
   hosts = eval.config.hosts;
 
@@ -109,14 +107,12 @@ let
   };
   pewterOf =
     kindValue:
-    (genMerge.evalModuleTree {
-      modules = [
-        {
-          options.hosts = mkInstanceRegistry kindValue { };
-          config.hosts.pewter.addr = "10.0.0.9";
-        }
-      ];
-    }).config.hosts.pewter;
+    (genMerge.evalModuleTree { } [
+      {
+        options.hosts = mkInstanceRegistry kindValue { };
+        config.hosts.pewter.addr = "10.0.0.9";
+      }
+    ]).config.hosts.pewter;
   pewterA = pewterOf kindA;
   pewterB = pewterOf kindB;
   ctxOf =

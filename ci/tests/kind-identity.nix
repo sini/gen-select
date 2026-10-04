@@ -60,16 +60,14 @@ let
   kD = mkDefaulted "a";
   kD2 = mkDefaulted "b";
 
-  ev = genMerge.evalModuleTree {
-    modules = [
-      {
-        options.hostsA = mkInstanceRegistry kA { };
-        options.hostsB = mkInstanceRegistry kB { };
-        config.hostsA.axon.addr = "10.0.0.1";
-        config.hostsB.axon.addr = "10.0.0.1";
-      }
-    ];
-  };
+  ev = genMerge.evalModuleTree { } [
+    {
+      options.hostsA = mkInstanceRegistry kA { };
+      options.hostsB = mkInstanceRegistry kB { };
+      config.hostsA.axon.addr = "10.0.0.1";
+      config.hostsB.axon.addr = "10.0.0.1";
+    }
+  ];
   nodeData = {
     a = ev.config.hostsA.axon;
     b = ev.config.hostsB.axon;
@@ -119,21 +117,19 @@ in
     test-selectorEq-agrees-with-kindEq-on-a-swapped-kind =
       let
         kMeta =
-          (genMerge.evalModuleTree {
-            modules = [
-              {
-                options.schema = genSchema.mkSchemaOption {
-                  computed = _: _: {
-                    meta = {
-                      boom = throw "meta-boom";
-                      ok = 1;
-                    };
+          (genMerge.evalModuleTree { } [
+            {
+              options.schema = genSchema.mkSchemaOption {
+                computed = _: _: {
+                  meta = {
+                    boom = throw "meta-boom";
+                    ok = 1;
                   };
                 };
-              }
-              { config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; }; }
-            ];
-          }).config.schema.host;
+              };
+            }
+            { config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; }; }
+          ]).config.schema.host;
         both = a: b: {
           selectorEq = tr (sel.selectorEq (sel.kind a) (sel.kind b));
           kindEq = tr (kindEq a b);
@@ -259,14 +255,12 @@ in
     test-match-sealed-collision-refused = {
       expr =
         let
-          evS = genMerge.evalModuleTree {
-            modules = [
-              {
-                options.hs = mkInstanceRegistry kS { };
-                config.hs.axon.addr = "10.0.0.1";
-              }
-            ];
-          };
+          evS = genMerge.evalModuleTree { } [
+            {
+              options.hs = mkInstanceRegistry kS { };
+              config.hs.axon.addr = "10.0.0.1";
+            }
+          ];
           c = sel.adapters.registry.mkContext {
             nodes = [ "axon" ];
             data = id: evS.config.hs.${id};

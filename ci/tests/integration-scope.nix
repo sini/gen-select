@@ -32,19 +32,17 @@ let
 
   mkEval =
     siniUid:
-    genMerge.evalModuleTree {
-      modules = [
-        {
-          options.users = mkInstanceRegistry schema.user { };
-          options.hosts = mkInstanceRegistry schema.host { };
-          config.users.sini.uid = siniUid;
-          config.users.vic.uid = 1001;
-          config.users.ghost.uid = 4242; # registered but never placed in the graph
-          config.hosts.axon.addr = "10.0.0.1";
-          config.hosts.sini.addr = "10.0.0.9"; # host homonym of a user — id_hash embeds kind
-        }
-      ];
-    };
+    genMerge.evalModuleTree { } [
+      {
+        options.users = mkInstanceRegistry schema.user { };
+        options.hosts = mkInstanceRegistry schema.host { };
+        config.users.sini.uid = siniUid;
+        config.users.vic.uid = 1001;
+        config.users.ghost.uid = 4242; # registered but never placed in the graph
+        config.hosts.axon.addr = "10.0.0.1";
+        config.hosts.sini.addr = "10.0.0.9"; # host homonym of a user — id_hash embeds kind
+      }
+    ];
 
   eval = mkEval 1000;
   users = eval.config.users;
