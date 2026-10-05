@@ -18,14 +18,12 @@ let
 
   # Two real kinds, minted by gen-schema. Their NAMES are what every assertion below turns on, so
   # the schema declares exactly the two this file names and nothing else.
-  schema = genSchema.evalSchema {
-    modules = [
-      {
-        config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
-        config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
-      }
-    ];
-  };
+  schema = genSchema.evalSchema { } [
+    {
+      config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
+      config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
+    }
+  ];
 
   entryA = {
     id_hash = "hash-A";

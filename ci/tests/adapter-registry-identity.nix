@@ -13,19 +13,17 @@ let
   sel = genSelect;
   inherit (genSchema) mkInstanceRegistry;
 
-  schema = genSchema.evalSchema {
-    modules = [
-      {
-        config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
-        config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
-      }
-    ];
-  };
+  schema = genSchema.evalSchema { } [
+    {
+      config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
+      config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
+    }
+  ];
 
   eval = genMerge.evalModuleTree { } [
     {
-      options.users = mkInstanceRegistry schema.user { };
-      options.hosts = mkInstanceRegistry schema.host { };
+      options.users = mkInstanceRegistry { } schema.user;
+      options.hosts = mkInstanceRegistry { } schema.host;
       config.users.sini.uid = 1000;
       config.users.vic.uid = 1001;
       config.hosts.axon.addr = "10.0.0.1";
@@ -88,16 +86,14 @@ let
   # two stamps are equal (den-hoag-l0y (β)), and these two stamps differ.
   twinSchema =
     extra:
-    (genSchema.evalSchema {
-      modules = [
-        {
-          config.schema.host.options = {
-            addr = genMerge.mkOption { type = genMerge.types.str; };
-          }
-          // extra;
+    (genSchema.evalSchema { } [
+      {
+        config.schema.host.options = {
+          addr = genMerge.mkOption { type = genMerge.types.str; };
         }
-      ];
-    }).host;
+        // extra;
+      }
+    ]).host;
   kindA = twinSchema { };
   kindB = twinSchema {
     tags = genMerge.mkOption {
@@ -109,7 +105,7 @@ let
     kindValue:
     (genMerge.evalModuleTree { } [
       {
-        options.hosts = mkInstanceRegistry kindValue { };
+        options.hosts = mkInstanceRegistry { } kindValue;
         config.hosts.pewter.addr = "10.0.0.9";
       }
     ]).config.hosts.pewter;

@@ -21,21 +21,19 @@ let
   sel = genSelect;
   inherit (genSchema) mkInstanceRegistry;
 
-  schema = genSchema.evalSchema {
-    modules = [
-      {
-        config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
-        config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
-      }
-    ];
-  };
+  schema = genSchema.evalSchema { } [
+    {
+      config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
+      config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
+    }
+  ];
 
   mkEval =
     siniUid:
     genMerge.evalModuleTree { } [
       {
-        options.users = mkInstanceRegistry schema.user { };
-        options.hosts = mkInstanceRegistry schema.host { };
+        options.users = mkInstanceRegistry { } schema.user;
+        options.hosts = mkInstanceRegistry { } schema.host;
         config.users.sini.uid = siniUid;
         config.users.vic.uid = 1001;
         config.users.ghost.uid = 4242; # registered but never placed in the graph
@@ -117,14 +115,12 @@ let
 
   # A scope whose `host` kind declares its value, and a second `host` declaration beside it.
   otherHost =
-    (genSchema.evalSchema {
-      modules = [
-        {
-          config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
-          config.schema.host.options.port = genMerge.mkOption { type = genMerge.types.int; };
-        }
-      ];
-    }).host;
+    (genSchema.evalSchema { } [
+      {
+        config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
+        config.schema.host.options.port = genMerge.mkOption { type = genMerge.types.int; };
+      }
+    ]).host;
   kinded = genScope.buildRoots {
     parentGraph = genScope.vertex "a";
     types.a = "host";

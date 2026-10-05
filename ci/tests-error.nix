@@ -23,11 +23,9 @@ let
   sel = genSelect;
 
   # A REAL kind, for the live control inside each kind-mark cell below.
-  schema = genSchema.evalSchema {
-    modules = [
-      { config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; }; }
-    ];
-  };
+  schema = genSchema.evalSchema { } [
+    { config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; }; }
+  ];
 
   # The stand-in the retired `? kind && ? options` guard admitted. den-hoag's compat tree mints
   # exactly this and feeds it to two live `sel.kind` constructions, with an in-file comment
@@ -40,14 +38,14 @@ let
 
   # den-hoag-l0y: two `host` kinds whose only difference is an option typed with a nixpkgs
   # `lib.types` type — unmigrated, so the component is SEALED and the two mint one mark.
-  mkHost = d: (genSchema.evalSchema { modules = [ { config.schema.host.options = d; } ]; }).host;
+  mkHost = d: (genSchema.evalSchema { } [ { config.schema.host.options = d; } ]).host;
   kS = mkHost { addr = genMerge.mkOption { type = lib.types.str; }; };
   kI = mkHost { addr = genMerge.mkOption { type = lib.types.int; }; };
   kS2 = mkHost { addr = genMerge.mkOption { type = lib.types.str; }; };
   kG = mkHost { addr = genMerge.mkOption { type = genMerge.types.str; }; };
   instances = genMerge.evalModuleTree { } [
     {
-      options.hs = genSchema.mkInstanceRegistry kG { };
+      options.hs = genSchema.mkInstanceRegistry { } kG;
       config.hs.axon.addr = "10.0.0.1";
     }
   ];
@@ -122,8 +120,7 @@ let
   # no other open content, so its twin decides and the refusal names the type alone.
   T =
     let
-      mkKind =
-        decl: (genSchema.evalSchema { modules = [ { config.schema.host.options = decl; } ]; }).host;
+      mkKind = decl: (genSchema.evalSchema { } [ { config.schema.host.options = decl; } ]).host;
       decl = t: {
         addr = genMerge.mkOption { type = genMerge.types.str; };
         note = genMerge.mkOption { type = t; };
@@ -134,9 +131,9 @@ let
       c =
         (genMerge.evalModuleTree { } [
           {
-            options.h1 = genSchema.mkInstanceRegistry k1 { };
-            options.h1t = genSchema.mkInstanceRegistry k1t { };
-            options.h2 = genSchema.mkInstanceRegistry k2 { };
+            options.h1 = genSchema.mkInstanceRegistry { } k1;
+            options.h1t = genSchema.mkInstanceRegistry { } k1t;
+            options.h2 = genSchema.mkInstanceRegistry { } k2;
             config.h1.p.addr = "10.0.0.1";
             config.h1t.p.addr = "10.0.0.1";
             config.h2.p.addr = "10.0.0.1";
@@ -847,11 +844,9 @@ in
     test-coordsfor-wrong-return-throws-through-match =
       let
         kHost =
-          (genSchema.evalSchema {
-            modules = [
-              { config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; }; }
-            ];
-          }).host;
+          (genSchema.evalSchema { } [
+            { config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; }; }
+          ]).host;
         s = sel.adapters.product.coord "host" kHost { id_hash = "h1"; };
         mk =
           coordsFor:

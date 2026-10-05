@@ -17,14 +17,12 @@ let
   # one this file wrote. Test-tier deps reach through the hub; the library itself stays Class A.
   mkSchema =
     _:
-    genSchema.evalSchema {
-      modules = [
-        {
-          config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
-          config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
-        }
-      ];
-    };
+    genSchema.evalSchema { } [
+      {
+        config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
+        config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
+      }
+    ];
   schema = mkSchema null;
 
   # ★ AN INDEPENDENTLY EVALUATED SCHEMA OF IDENTICAL CONTENT, and the second cell below is

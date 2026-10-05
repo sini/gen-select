@@ -15,8 +15,7 @@
 let
   sel = genSelect;
   M = genMerge;
-  mkKind =
-    decl: (genSchema.evalSchema { modules = [ { config.schema.host.options = decl; } ]; }).host;
+  mkKind = decl: (genSchema.evalSchema { } [ { config.schema.host.options = decl; } ]).host;
   declA = {
     addr = M.mkOption { type = M.types.str; };
   };
@@ -39,10 +38,10 @@ let
   c =
     (M.evalModuleTree { } [
       {
-        options.hA = genSchema.mkInstanceRegistry kA { };
-        options.hS1 = genSchema.mkInstanceRegistry kS1 { };
-        options.hS1t = genSchema.mkInstanceRegistry kS1t { };
-        options.hS2 = genSchema.mkInstanceRegistry kS2 { };
+        options.hA = genSchema.mkInstanceRegistry { } kA;
+        options.hS1 = genSchema.mkInstanceRegistry { } kS1;
+        options.hS1t = genSchema.mkInstanceRegistry { } kS1t;
+        options.hS2 = genSchema.mkInstanceRegistry { } kS2;
         config.hA.p.addr = "10.0.0.1";
         config.hS1.p.addr = "10.0.0.1";
         config.hS1.q.addr = "10.0.0.2";

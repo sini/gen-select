@@ -27,16 +27,14 @@ let
       default = [ ];
     };
   };
-  mkHost = d: (genSchema.evalSchema { modules = [ { config.schema.host.options = d; } ]; }).host;
+  mkHost = d: (genSchema.evalSchema { } [ { config.schema.host.options = d; } ]).host;
   kA = mkHost declA;
   kA2 = mkHost declA; # the twin: same declaration, separately evaluated
   kB = mkHost declB;
   kUser =
-    (genSchema.evalSchema {
-      modules = [
-        { config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; }; }
-      ];
-    }).user;
+    (genSchema.evalSchema { } [
+      { config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; }; }
+    ]).user;
 
   # ADR-0034's sealed limb: an option typed with a nixpkgs `lib.types` type is UNMIGRATED, so the
   # component is sealed and the mark cannot tell `str` from `int`. gen-schema's `kindEq` REFUSES the
@@ -62,8 +60,8 @@ let
 
   ev = genMerge.evalModuleTree { } [
     {
-      options.hostsA = mkInstanceRegistry kA { };
-      options.hostsB = mkInstanceRegistry kB { };
+      options.hostsA = mkInstanceRegistry { } kA;
+      options.hostsB = mkInstanceRegistry { } kB;
       config.hostsA.axon.addr = "10.0.0.1";
       config.hostsB.axon.addr = "10.0.0.1";
     }
@@ -257,7 +255,7 @@ in
         let
           evS = genMerge.evalModuleTree { } [
             {
-              options.hs = mkInstanceRegistry kS { };
+              options.hs = mkInstanceRegistry { } kS;
               config.hs.axon.addr = "10.0.0.1";
             }
           ];

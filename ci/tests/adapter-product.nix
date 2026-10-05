@@ -14,14 +14,12 @@ let
   sel = genSelect;
   P = sel.adapters.product;
 
-  schema = genSchema.evalSchema {
-    modules = [
-      {
-        config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
-        config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
-      }
-    ];
-  };
+  schema = genSchema.evalSchema { } [
+    {
+      config.schema.user.options.uid = genMerge.mkOption { type = genMerge.types.int; };
+      config.schema.host.options.addr = genMerge.mkOption { type = genMerge.types.str; };
+    }
+  ];
   kH = schema.host;
   kU = schema.user;
 
