@@ -159,8 +159,8 @@ selectorEq   : selector -> selector -> bool
 
 - `when` selectors wrapping intensional functions: **conservative equality** (Palmer
   §2.3/§5.3), dispatched on the wrapped value's `__mint` tag — digest equality when
-  minted, otherwise (unmintable or unmigrated) Nix `==` on the reified value MINUS
-  `__id` — the name never decides;
+  minted, otherwise (unmintable or unmigrated) Nix `==` on the reified value — the name
+  never decides;
 - `entity`: `id_hash`, then (equal stamps) the kind key by `entityEq`: different marks refuse, equal marks decide by `kindEq` (display-only `name` excluded);
 - `coord`: `dim`, then as `entity` (display-only `name` excluded);
 - `kind`, and `subkind` with `subkind`: `kindEq` over the kind keys (a sealed collision is
@@ -175,16 +175,14 @@ component-wise form is false even against itself and the relation would be empty
 than finer. Its precision is an allocation artefact: separately-constructed equal-shaped
 values compare unequal, which merges strictly less than Fig. 5 and never more.
 
-That arm excludes `__id` and nothing else. `__id` is an accessor rather than
-distinguishing content, and in this regime it IS the named refusal, so comparing the
-value whole would force the refusal inside the decision it exists to permit. One
-exclusion suffices: `__mint.minted` is the only other refusal-valued accessor, and the
-tagged sum shields it — its minted and sealed arms live under different key names, and
-Nix `==` decides on the name set before forcing any value.
+That arm excludes nothing. No field of a type record refuses when forced (demanding an
+identity is gen-types' `idOf`, a function), and `__mint.minted` is shielded by the tagged
+sum — its minted and sealed arms live under different key names, and Nix `==` decides on
+the name set before forcing any value.
 
 **Caveat on the structural fall-through.** The last bullet is plain Nix `==` on two
 selector records, so it forces every value reachable in their payloads. A selector whose
-payload holds a throwing value — under any key name, `__id` included — aborts rather than
+payload holds a throwing value — under any key name — aborts rather than
 deciding. This is a property of structural equality over caller-supplied match
 specifications, not of the identity regimes: an ordinary key carrying a throw aborts
 identically, measured. The `entity` and `coord` branches are unaffected, comparing

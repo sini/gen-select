@@ -191,11 +191,11 @@ selectorEq   : selector -> selector -> bool
 
 The three regimes are read off the wrapped value's `__mint` field, which is a **tagged sum** and is total — a reader that branched on field presence and then read `.minted` raw would abort uncatchably on a value that has no mintable identity:
 
-| regime     | the value carries     | the relation                                                                                      |
-| ---------- | --------------------- | ------------------------------------------------------------------------------------------------- |
-| minted     | `__mint.minted`       | digest equality — the identity is total in the distinguishing content                             |
-| unmintable | `__mint`, no `minted` | Nix `==` on its declared subject where it carries one, else on the reified value **minus `__id`** |
-| unmigrated | no `__mint`           | Nix `==` on the reified value **minus `__id`** — the name never decides                           |
+| regime     | the value carries     | the relation                                                                     |
+| ---------- | --------------------- | -------------------------------------------------------------------------------- |
+| minted     | `__mint.minted`       | digest equality — the identity is total in the distinguishing content            |
+| unmintable | `__mint`, no `minted` | Nix `==` on its declared subject where it carries one, else on the reified value |
+| unmigrated | no `__mint`           | Nix `==` on the reified value — the name never decides                           |
 
 A value built by gen-algebra's encoder (`mkIntensional`) is on the unmintable arm and carries a declared
 comparison subject — its registry coordinate (`members`, `revision`), constructor and inert arguments —
@@ -206,7 +206,7 @@ Palmer's Fig. 5 is a **conjunction** over identity *and* closure, and comparing 
 
 Where nothing is minted the decision compares **the value itself**, never a list of components: an attribute selection is an indirection, so a component-wise form is false even against itself and the relation would be *empty* rather than finer. The whole-value form takes the evaluator's cell fast path instead — two selectors reaching one value compare equal. Its precision is therefore an **allocation artefact**: two separately-constructed equal-shaped values compare unequal, so the relation merges strictly less than Fig. 5 and never more, which is the safe direction for a relation that merely merges work.
 
-The compared subject is that value **minus `__id`**, and minus nothing else. `__id` is an accessor rather than distinguishing content, and in this regime that accessor *is* the named refusal — so comparing the value whole would force the refusal inside the very decision it exists to permit. **One exclusion is sufficient, not arbitrary:** `__mint.minted` is the only other refusal-valued accessor, and the tagged sum shields it, since its minted and sealed arms live under *different key names* and Nix `==` decides on the name set before forcing any value. The one path that does force a mint is a minted-against-minted comparison, which never reaches this arm.
+The compared subject is that value whole. No field of a type record refuses when forced — demanding an identity is gen-types' `idOf`, a function — and `__mint.minted` is shielded by the tagged sum, since its minted and sealed arms live under *different key names* and Nix `==` decides on the name set before forcing any value. The one path that does force a mint is a minted-against-minted comparison, which never reaches this arm.
 
 ### Adapters
 

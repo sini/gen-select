@@ -158,11 +158,14 @@ in
       );
       expected = false;
     };
-    # The sealed arm compares the reified value MINUS `__id`: that accessor is what a
-    # consumer reads when it DEMANDS an identity, and where nothing is minted it IS the
-    # named refusal. Forcing it inside a decision would detonate the very decision the
-    # refusal exists to permit, so a poisoned accessor must not disturb the relation.
-    test-sealed-comparison-does-not-force-id = {
+    # The sealed arm compares the reified value WHOLE: no producer carries a field that
+    # refuses when forced (the identity demand is gen-types' `idOf`, a function), so a
+    # field named `__id` is ordinary content and a refusal under it surfaces, as one
+    # under any other key does, against itself too (`when` wraps it, so no fast path
+    # spans the record). A distinct pair is not pinned: whether `==` meets the differing
+    # lambda before the poisoned key is an evaluation-order fact. Reds on a gen-algebra
+    # that still excludes the retired field (den-hoag-6orb8 A1).
+    test-sealed-comparison-compares-every-field = {
       expr =
         let
           poison =
@@ -172,15 +175,12 @@ in
               __id = throw "identity: 'shared-point' has no mintable identity";
             };
           a = poison (unmintableFn (id: ctx: true));
-          b = poison (unmintableFn (id: ctx: false));
         in
         {
-          self = sel.selectorEq (sel.when a) (sel.when a);
-          distinct = sel.selectorEq (sel.when a) (sel.when b);
+          self = (builtins.tryEval (sel.selectorEq (sel.when a) (sel.when a))).success;
         };
       expected = {
-        self = true;
-        distinct = false;
+        self = false;
       };
     };
 
@@ -189,10 +189,9 @@ in
     # records, so it forces every value reachable in their payloads, and a throwing one
     # aborts rather than deciding.
     #
-    # The second reading is why `comparisonSubject` is not the remedy here: `__id` is
-    # NOT distinguished — an ordinary payload key aborts IDENTICALLY — so this is a
-    # property of structural equality over caller-supplied match specifications, not of
-    # the identity regimes. Closing it needs a bounded recursive walk, which is a design
+    # A key named `__id` is NOT distinguished — an ordinary payload key aborts
+    # IDENTICALLY — so this is a property of structural equality over caller-supplied
+    # match specifications, not of the identity regimes. Closing it needs a bounded recursive walk, which is a design
     # decision. If a future change closes it, the first two readings flip together and
     # the boundary comment in `lib/constructors.nix` is what needs rewriting.
     test-structural-fallthrough-forces-its-payload = {

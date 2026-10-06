@@ -15,7 +15,7 @@
 # constructor that EMITS the tag; nothing here re-derives them. See
 # `gen-algebra/lib/intensional.nix` for why each arm exists, why no reader may branch on
 # field presence and read `.minted` raw, and why the sealed arm's comparison subject
-# excludes `__id`.
+# is the whole value.
 {
   algebra,
   isSchemaKind,
@@ -279,23 +279,14 @@ rec {
             ) (entityEq "gen-select: selectorEq (adapters.product.coord)" a b)
           )
     else
-      # ★ STRUCTURAL FALL-THROUGH, AND IT IS NOT AN IDENTITY ARM — read this before
-      # routing it through `comparisonSubject` as the three arms above are.
+      # ★ STRUCTURAL FALL-THROUGH, AND IT IS NOT AN IDENTITY ARM.
       #
       # This is plain Nix `==` on two whole selector records, so it forces every value
       # reachable in their payloads. A selector whose payload holds a throwing value
       # therefore ABORTS rather than deciding — measured, on
-      # `attrs { k = "v"; __id = throw …; }` against a separately-built equal.
-      #
-      # `comparisonSubject` does NOT discharge that, on two counts, both measured:
-      #   1. It strips at the TOP LEVEL, and a selector's keys are `__sel` and its
-      #      payload — the `__id` sits one level down inside `a`, and deeper again
-      #      through `and`/`has`/`within`. Stripping the selector leaves the abort.
-      #   2. `__id` is NOT DISTINGUISHED here: a payload key named `zz` carrying a
-      #      throw aborts IDENTICALLY. So this is a property of structural equality
-      #      over caller-supplied MATCH-SPECIFICATION data, not of the identity
-      #      regimes, and excluding one key name out of infinitely many would signal
-      #      that a class was closed when it is not.
+      # `attrs { k = "v"; zz = throw …; }` against a separately-built equal, under any
+      # key name. This is a property of structural equality over caller-supplied
+      # MATCH-SPECIFICATION data, not of the identity regimes.
       #
       # Closing it properly needs a BOUNDED recursive walk — and an unbounded one over
       # caller data is exactly the class the identity design exists to refuse, since a
