@@ -161,10 +161,10 @@ in
     # The sealed arm compares the reified value WHOLE: no producer carries a field that
     # refuses when forced (the identity demand is gen-types' `idOf`, a function), so a
     # field named `__id` is ordinary content and a refusal under it surfaces, as one
-    # under any other key does, against itself too (`when` wraps it, so no fast path
-    # spans the record). A distinct pair is not pinned: whether `==` meets the differing
-    # lambda before the poisoned key is an evaluation-order fact. Reds on a gen-algebra
-    # that still excludes the retired field (den-hoag-6orb8 A1).
+    # under any other key does. The pair is two copies of ONE value, so every other field
+    # shares its slot and compares equal on every evaluator, and the poisoned key is
+    # where the comparison has to go. Reds on a gen-algebra that still excludes the
+    # retired field (den-hoag-6orb8 A1).
     test-sealed-comparison-compares-every-field = {
       expr =
         let
@@ -174,13 +174,17 @@ in
             // {
               __id = throw "identity: 'shared-point' has no mintable identity";
             };
-          a = poison (unmintableFn (id: ctx: true));
+          x = unmintableFn (id: ctx: true);
         in
         {
-          self = (builtins.tryEval (sel.selectorEq (sel.when a) (sel.when a))).success;
+          twoCopies = (builtins.tryEval (sel.selectorEq (sel.when (poison x)) (sel.when (poison x)))).success;
+          # CONTROL: the same two copies without the poisoned key decide `true`, so the refusal
+          # is the key's and not a pair that never compares equal.
+          control = sel.selectorEq (sel.when (x // { })) (sel.when (x // { }));
         };
       expected = {
-        self = false;
+        twoCopies = false;
+        control = true;
       };
     };
 
