@@ -10,21 +10,22 @@
 # kind's declared inert surface, through the substrate's one minting authority, and this is the
 # read.
 #
-# FOUR READS, AND THE LAST TWO ARE NOT INTERCHANGEABLE WITH `? __mint` ALONE. `__mint` is a TAGGED
-# SUM, authored in `gen-algebra/lib/intensional.nix`, whose comment forbids branching on field
+# FOUR READS, AND THE LAST IS gen-algebra's `hasMark`, NOT `? __mint` ALONE. `__mint` is a TAGGED
+# SUM, authored in `gen-algebra/lib/intensional.nix`, whose contract forbids branching on field
 # presence and then reading `.minted` raw: on a value carrying no mintable identity `? __mint`
-# holds while `minted` is absent, and that read aborts uncatchably rather than refusing. `? minted`
-# is how the MINTED ARM IS SELECTED. A presence-only `? __mint` would also be measurably no better
-# than the `? options` it replaces — a literal is a literal.
+# holds while `minted` is absent, and that read aborts uncatchably rather than refusing. `hasMark`
+# is how the MINTED ARM IS SELECTED, read from the library that authors the tag. A presence-only
+# `? __mint` would also be measurably no better than the `? options` it replaces — a literal is a
+# literal.
 #
-# ★ WHY THIS IS NOT `algebra.identityOf`, given that this library imports that discipline rather
-# than vendoring it (see ./default.nix's header). `identityOf` is total over the three regimes of
-# an INTENSIONAL VALUE, and its fall-through arm is `{ unmigrated = v.name; }` — a PROGRAM-POINT
-# name, which a kind value does not carry and is not defined to. Routing kind admission through it
-# would key this seam to an arm defined over a different population, and it would not answer
-# `? kind` at all. The tagged-sum DISCIPLINE is what is shared here, not the accessor.
+# ★ WHY THIS IS `algebra.hasMark` AND NOT `algebra.identityOf`. A kind mark is not an identity: a
+# kind with any option default carries a non-empty `__sealed`, and `identityOf` answers the
+# compared arm for it while the mark is still minted. Admission through `identityOf` would refuse
+# every such kind. `identityOf`'s fall-through arm is also `{ unmigrated = v.name; }`, a
+# PROGRAM-POINT name a kind value does not carry. The mark readers are the ones a kind is read by.
 #
-# NOTHING BELOW FORCES THE DIGEST. `v.__mint ? minted` forces the mark RECORD and stops, which is
-# the same reach gen-schema's own guards take — its `mkInstanceRegistry` guard sits at
-# option-declaration time and would deadlock if the read went one level further.
-v: builtins.isAttrs v && v ? kind && v ? __mint && v.__mint ? minted
+# NOTHING BELOW FORCES THE DIGEST. `hasMark` forces the mark RECORD and stops, which is the same
+# reach gen-schema's own guards take — its `mkInstanceRegistry` guard sits at option-declaration
+# time and would deadlock if the read went one level further.
+{ hasMark }:
+v: builtins.isAttrs v && v ? kind && hasMark v

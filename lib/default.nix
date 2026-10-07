@@ -15,7 +15,7 @@ let
   # ONE reader of gen-schema's provenance mark, shared by the two kind-admission sites this library
   # has. It is not published: the seam's test is this library's own business, and a second copy in
   # the adapter is how two readers of one tagged sum stop agreeing.
-  isSchemaKind = import ./kind-mark.nix;
+  isSchemaKind = import ./kind-mark.nix { inherit (algebra) hasMark; };
   stampOk = import ./kind-stamp.nix;
 
   # A KIND KEY: what a kind selector carries and what an adapter projects as `__identity.kind`. The
@@ -25,7 +25,7 @@ let
   # three are shared references into the kind value, so the digest is paid once per KIND: nothing
   # here mints, and nothing forces the mark before a comparison demands it.
   kindKey = k: {
-    identity = k.__mint.minted;
+    identity = algebra.markOf k;
     name = k.kind;
     sealed =
       k.__sealed
@@ -47,7 +47,7 @@ let
         else if !(stampOk k) then
           throw "gen-select: the kind value '${k.kind}' is not the value its schema built: a `//` over a kind value keeps its mark while changing what the mark stands for, and gen-schema's own `kindEq` refuses it. Pass the kind value the schema published."
         else
-          k.__mint.minted;
+          algebra.markOf k;
     };
 
   # A NODE's kind key: `kindKey` plus the kind's transitive ancestors, gen-schema's `__kindAncestors`
@@ -60,18 +60,18 @@ let
   # binds the kind's attribute itself where a selection allocates a thunk for it, so `name`,
   # `sealed` and `ancestors` cost nothing and `sel.kind` pays no more per node than it did before
   # the map was projected (the hub bench's `kindMatch`, bound at anchor + 0.000). Every caller has
-  # passed `isSchemaKind`, so `kind` and `__mint` are present; the defaults are thunked only when
-  # their attribute is absent, so the `__sealed` refusal stays lazy.
+  # passed `isSchemaKind`, so `kind` and the mark are present; the defaults are thunked only when
+  # their attribute is absent, so the `__sealed` refusal stays lazy. The mark is read through
+  # gen-algebra's `markOf` off the whole value, never `__mint.minted` raw.
   projectedKindKey =
-    {
-      __mint,
+    k@{
       kind,
       __sealed ? throw "gen-select: the kind value '${kind}' carries a mark but no sealed subjects (`__sealed`), so it cannot be compared as gen-schema's own `kindEq` compares it. Take the kind from a gen-schema that stamps both.",
       __kindAncestors ? null,
       ...
     }:
     {
-      identity = __mint.minted;
+      identity = algebra.markOf k;
       name = kind;
       sealed = __sealed;
       ancestors = __kindAncestors;

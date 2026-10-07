@@ -12,6 +12,7 @@
   genSelect,
   genSchema,
   genMerge,
+  algebra,
   ...
 }:
 let
@@ -296,6 +297,35 @@ in
       expected = {
         bare = true;
         value = true;
+      };
+    };
+
+    # den-hoag-dg8d1 · a kind with an option default is keyed by its MARK, read through gen-algebra's
+    # mark readers: `identityOf` answers the compared arm for it (`s`), the mark still answers, and
+    # the selector side, the node side and admission all read it. Live arm: the unsealed kA mints.
+    test-a-defaulted-kind-is-keyed-by-its-mark = {
+      expr =
+        let
+          c = sel.adapters.registry.mkContext {
+            nodes = [ "d" ];
+            data = _: nodeData.a;
+            parent = _: null;
+            kindFor = _: kD;
+          };
+        in
+        {
+          regime = algebra.regimeTagOf (algebra.identityOf kD);
+          control = algebra.regimeTagOf (algebra.identityOf kA);
+          selector = (sel.kind kD).identity == algebra.markOf kD;
+          node = sel.matches (sel.kind kD) "d" c;
+          other = sel.matches (sel.kind kA) "d" c;
+        };
+      expected = {
+        regime = "s";
+        control = "m";
+        selector = true;
+        node = true;
+        other = false;
       };
     };
 
