@@ -10,6 +10,8 @@
     gen-merge.url = "github:sini/gen-merge";
     gen-schema.url = "github:sini/gen-schema";
     gen-schema.inputs.gen-merge.follows = "gen-merge";
+    # gen-scope reads kind marks through gen-algebra too: one gen-algebra revision in the graph.
+    gen-scope.inputs.gen-algebra.follows = "gen-algebra";
     # gen-algebra is the library's OWN dependency (not a test-tier one): ../lib takes it as
     # a named argument, so the ci flake must supply the same input the root flake does.
     gen-algebra.url = "github:sini/gen-algebra";
