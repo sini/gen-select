@@ -154,8 +154,8 @@ in
       };
     };
 
-    # E5 · the retired one-argument form refuses by name when the selector is used, catchably (the
-    # eager `seq`); without it, it would hand back a function that aborts uncatchably.
+    # E5 · an entry given where the kind belongs refuses by name when the selector is used,
+    # catchably (the eager `seq`); without it, it would hand back a function that aborts uncatchably.
     test-e5-one-argument-form = {
       expr = {
         matched = m (sel.entity s1) "s1" reg;

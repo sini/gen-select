@@ -101,7 +101,7 @@ rec {
         else if !(isSchemaKind kindValue) then
           throw "gen-select: sel.entity expects the entry's kind value first (sel.entity schema.host hosts.axon): a gen-schema kind value carrying a mint-backed mark (`__mint.minted`; a kind's identity comes only from the one mint); got ${
             if builtins.isAttrs kindValue && kindValue ? id_hash then
-              "an entry (the one-argument form is retired: the entry's kind decides a sealed collision)"
+              "an entry"
             else if builtins.isAttrs kindValue then
               "an attrset with no mark"
             else

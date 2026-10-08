@@ -154,10 +154,11 @@ in
       };
     };
 
-    # C5 · the retired two-argument form refuses by name when the selector is used, catchably (the
-    # eager `seq`); without it, it would hand back a function that aborts uncatchably. The stale
-    # one-argument-per-dimension `inSlice { host = entry; }` refuses the same way (CF1).
-    test-c5-retired-forms = {
+    # C5 · an entry given where the kind belongs refuses by name when the selector is used,
+    # catchably (the eager `seq`); without it, it would hand back a function that aborts
+    # uncatchably. A bare entry as a dimension's value, `inSlice { host = entry; }`, refuses the
+    # same way (CF1).
+    test-c5-an-entry-in-the-kind-position = {
       expr = {
         coordMatched = m (P.coord "host" s2) "cs2" prod;
         isFunction = builtins.isFunction (P.coord "host" kS2);

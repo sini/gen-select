@@ -72,7 +72,7 @@ subkind : kind-value       -> selector
 **`entity K e`** — matches the node whose `__identity.id_hash` equals `e.id_hash`; when
 `K` has sealed components, an equal stamp also compares the node's projected kind with `K`
 by `kindEq`, and a sealed collision (or a kind-blind projection) is refused by name. `K` is
-judged at the first application, so the retired one-argument `entity e` refuses by name.
+judged at the first application, so an entry given where the kind belongs refuses by name.
 
 - Construction validates `e ? id_hash`. A string throws with an identity-law message; any
   other value lacking `id_hash` throws naming its `builtins.typeOf`.
@@ -127,7 +127,7 @@ adapters.product.inSlice : { <dim> = { kind; entry; }; … } -> selector
 
 **`coord dim K e`** — a coordinate decides an entity identity at one position, so it takes
 the entry's kind as `entity` does: `K` is validated with `entity`'s guard (judged at the
-second application, so the retired two-argument `coord dim e` is refused by name when the
+second application, so an entry given where the kind belongs is refused by name when the
 selector is used) and `e` like `entity`'s entry; payload
 `{ __sel = "coord"; dim; kind; id_hash; name; }`. Matching: `__coords` absent → **throw**
 (coordinate-blind); `dim` absent from the cell → `false`; different `id_hash` → `false`
@@ -137,8 +137,8 @@ is refused by name; a kind-blind context is refused by name).
 
 **`inSlice { <dim> = { kind; entry; }; … }`** — construction-time sugar for the conjunction
 of one `coord dim kind entry` per fixed dimension; `inSlice { }` is vacuously true. A
-dimension whose value is not `{ kind; entry; }` (the retired `{ <dim> = entry; }` form
-included) is refused by name where the conjunct is forced.
+dimension whose value is not `{ kind; entry; }` (a bare entry included) is refused by name
+where the conjunct is forced.
 
 **Argued impossibility** (ADR-0034, written at the declarations of `coord`, `inSlice` and
 `entity`): a kind that is not its entry's kind but mints the entry's mark is taken on the

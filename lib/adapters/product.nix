@@ -22,9 +22,9 @@ let
   # `==`-comparable data is stored for a migrated kind; a sealed kind's `sealed` subjects may hold
   # functions, so `builtins.toJSON` of such a selector aborts, as it already did for `sel.entity`.
   #
-  # The kind is judged at the SECOND application (`builtins.seq`), so the retired two-argument call
-  # `coord "host" entry` refuses by name when the selector is used, rather than handing `matches` a
-  # function that aborts uncatchably at `selector.__sel`.
+  # The kind is judged at the SECOND application (`builtins.seq`), so a call `coord "host" entry`
+  # that hands an entry where the kind belongs refuses by name when the selector is used, rather
+  # than handing `matches` a function that aborts uncatchably at `selector.__sel`.
   #
   # ★ ARGUED IMPOSSIBILITY (ADR-0034: a surviving comparison owes one at its declaration). A kind that
   # is NOT the entry's kind but mints the entry's MARK is not detected here: `coord "host" k2 s1`,
@@ -44,7 +44,7 @@ let
         else if !(isSchemaKind kindValue) then
           throw "gen-select: adapters.product.coord expects the coordinate's kind value after the dimension (coord \"host\" schema.host hosts.axon): a gen-schema kind value carrying a mint-backed mark (`__mint.minted`; a kind's identity comes only from the one mint); got ${
             if builtins.isAttrs kindValue && kindValue ? id_hash then
-              "an entry (the two-argument form is retired: the coordinate's kind decides a sealed collision)"
+              "an entry"
             else if builtins.isAttrs kindValue then
               "an attrset with no mark"
             else
@@ -76,8 +76,8 @@ in
   # rides beside its own entry, so there is no shared kind record for a foreign entry to borrow.
   # `inSlice { }` == `and [ ]` is vacuously true, consistent with existing and-semantics. Dims
   # iterate in attrNames order, irrelevant to the conjunction result and stable for structural
-  # equality. The retired `{ <dim> = entry; }` value carries `id_hash` and no `kind`/`entry`, so it
-  # refuses by name, catchably, where the conjunct is forced.
+  # equality. A dimension's value that is not `{ kind; entry; }` (a bare entry included) refuses by
+  # name, catchably, where the conjunct is forced.
   #
   # ★ ARGUED IMPOSSIBILITY: `coord`'s, above. A `kind` that is not its `entry`'s kind but mints the
   # same mark is taken on the caller's word; detecting it needs the entry to carry its kind.
@@ -94,7 +94,7 @@ in
         else
           throw "gen-select: adapters.product.inSlice expects { <dim> = { kind; entry; }; } (inSlice { host = { kind = schema.host; entry = hosts.axon; }; }); dimension '${dim}' got ${
             if builtins.isAttrs v && v ? id_hash then
-              "an entry (the { <dim> = entry; } form is retired: the coordinate's kind decides a sealed collision)"
+              "an entry"
             else if builtins.isAttrs v then
               "an attrset without both `kind` and `entry`"
             else

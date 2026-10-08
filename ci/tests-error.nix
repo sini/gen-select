@@ -186,15 +186,16 @@ in
         msg = "^gen-select: sel\\.entity expects the entry's kind value first \\(sel\\.entity schema\\.host hosts\\.axon\\), got the string \"user\"\\. A kind name is a reference; pass the kind value\\.$";
       };
     };
-    # The kind argument: the retired one-argument form, refused BY NAME at the match (E5). Eager, so
-    # it is catchable; a lazily curried form would hand `matches` a function and abort uncatchably.
+    # The kind argument: an entry given where the kind belongs, refused BY NAME at the match (E5).
+    # Eager, so it is catchable; a lazily curried form would hand `matches` a function and abort
+    # uncatchably.
     test-kind-first-entry-refused = {
       expr =
         assert decides (sel.matches (sel.entity F.kS1 F.s1) "s1" F.reg);
         sel.matches (sel.entity F.s1) "s1" F.reg;
       expectedError = {
         type = "ThrownError";
-        msg = kindFirstMsg "an entry \\(the one-argument form is retired: the entry's kind decides a sealed collision\\)";
+        msg = kindFirstMsg "an entry";
       };
     };
     # The kind argument: an attrset carrying no mark (and no id_hash).
@@ -508,20 +509,21 @@ in
           msg = coordKindBlindMsg "cs2";
         };
       };
-      # C5 · the retired two-argument form, refused BY NAME at the match (the eager `seq`). Control:
-      # the three-argument form decides.
+      # C5 · an entry given where the kind belongs, refused BY NAME at the match (the eager `seq`).
+      # Control: the three-argument form decides.
       test-c5-two-argument-form = {
         expr =
           assert F.tr (sel.matches (P.coord "host" F.kS2 F.s2) "cs2" F.prod) == true;
           sel.matches (P.coord "host" F.s2) "cs2" F.prod;
         expectedError = {
           type = "ThrownError";
-          msg = "^gen-select: adapters\\.product\\.coord expects the coordinate's kind value after the dimension \\(coord \"host\" schema\\.host hosts\\.axon\\): a gen-schema kind value carrying a mint-backed mark \\(`__mint\\.minted`; a kind's identity comes only from the one mint\\); got an entry \\(the two-argument form is retired: the coordinate's kind decides a sealed collision\\)\\.$";
+          msg = "^gen-select: adapters\\.product\\.coord expects the coordinate's kind value after the dimension \\(coord \"host\" schema\\.host hosts\\.axon\\): a gen-schema kind value carrying a mint-backed mark \\(`__mint\\.minted`; a kind's identity comes only from the one mint\\); got an entry\\.$";
         };
       };
-      # CF1 · the retired `inSlice { <dim> = entry; }`, refused BY NAME where the conjunct is forced
-      # (it used to hand `matches` a lambda, an uncatchable abort). Control: the kind-bearing form.
-      test-cf1-inSlice-retired-form = {
+      # CF1 · a bare entry as a dimension's value, `inSlice { <dim> = entry; }`, refused BY NAME where
+      # the conjunct is forced (it used to hand `matches` a lambda, an uncatchable abort). Control:
+      # the kind-bearing form.
+      test-cf1-inSlice-bare-entry = {
         expr =
           assert
             F.tr (
@@ -535,7 +537,7 @@ in
           sel.matches (P.inSlice { host = F.s2; }) "cs2" F.prod;
         expectedError = {
           type = "ThrownError";
-          msg = "^gen-select: adapters\\.product\\.inSlice expects \\{ <dim> = \\{ kind; entry; \\}; \\} \\(inSlice \\{ host = \\{ kind = schema\\.host; entry = hosts\\.axon; \\}; \\}\\); dimension 'host' got an entry \\(the \\{ <dim> = entry; \\} form is retired: the coordinate's kind decides a sealed collision\\)\\.$";
+          msg = "^gen-select: adapters\\.product\\.inSlice expects \\{ <dim> = \\{ kind; entry; \\}; \\} \\(inSlice \\{ host = \\{ kind = schema\\.host; entry = hosts\\.axon; \\}; \\}\\); dimension 'host' got an entry\\.$";
         };
       };
       # X5 · `kinds` naming a kind by its NAME. Control: a migrated coordinate reads no node kind.
@@ -839,7 +841,7 @@ in
   flake.testsError.adapter-totality = {
     # PF-a (den-hoag-8hqx0 landing gate) · `coordsFor` returning a non-attrset, reached THROUGH the
     # matcher with a well-formed three-argument coord: pinned by the context door's message, so a throw
-    # from anywhere else (the retired two-argument form's refusal, say) cannot pass it. Control: the
+    # from anywhere else (the kind-position refusal, say) cannot pass it. Control: the
     # same selector over a well-formed context decides.
     test-coordsfor-wrong-return-throws-through-match =
       let
