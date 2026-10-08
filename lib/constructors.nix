@@ -92,9 +92,9 @@ rec {
   entity =
     kindValue:
     let
-      # Judged at the FIRST application, as gen-schema's `mkIdentityModule` judges its operand: a
-      # stale one-argument call `sel.entity entry` must refuse by name when the selector is used,
-      # not hand back a function that aborts uncatchably at `selector.__sel`.
+      # Judged at the FIRST application, as gen-schema's `mkIdentityModule` judges its operand: an
+      # entry given where the kind belongs must refuse by name when the selector is used, not hand
+      # back a function that aborts uncatchably at `selector.__sel`.
       kind =
         if builtins.isString kindValue then
           throw "gen-select: sel.entity expects the entry's kind value first (sel.entity schema.host hosts.axon), got the string \"${kindValue}\". A kind name is a reference; pass the kind value."
