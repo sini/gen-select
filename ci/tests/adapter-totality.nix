@@ -86,7 +86,7 @@ in
       expr =
         let
           ctx = sel.adapters.product.mkContext {
-            cellIds = [ "c1" ];
+            nodeIds = [ "c1" ];
             coordsFor = "not-a-function";
           };
         in
@@ -97,7 +97,7 @@ in
       expr =
         let
           ctx = sel.adapters.product.mkContext {
-            cellIds = [ "c1" ];
+            nodeIds = [ "c1" ];
             coordsFor = _: "oops-a-string";
           };
         in
@@ -112,7 +112,7 @@ in
       expr =
         let
           ctx = sel.adapters.product.mkContext {
-            cellIds = [ "c1" ];
+            nodeIds = [ "c1" ];
             coordsFor = _a: _b: {
               host = {
                 id_hash = "h1";

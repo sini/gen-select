@@ -52,6 +52,15 @@
       # calling this library's own `id` string, "expected a set but found a string") genuinely
       # abort: the batch asserter behind checks.default forces every `flake.tests` expr
       # unconditionally and would crash on them rather than fail a cell. Second output instead.
-      extraModules = [ ./tests-error.nix ];
+      extraModules = [
+        ./tests-error.nix
+        # `any` is a TOMBSTONE (lib/constructors.nix, `── THE RETIRED NAME ──`): `checks.root-surface`
+        # excludes it from the walk, and the generated `root-surface-retired.test-retired-any` cell
+        # pins this exact message at the root seam, so a resurrected or reworded tombstone reds.
+        {
+          gen.ci.rootSurface.retired.any =
+            "gen-select: `any` is renamed `anyOf`. gen-prelude's `any` is the list predicate `any pred list`, and two callables of one sort with different meanings take two names (grammar R10 rule 3); the arguments and the behaviour are unchanged.";
+        }
+      ];
     };
 }

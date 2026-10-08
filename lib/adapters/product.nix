@@ -3,7 +3,7 @@
 # Imrich & Klavžar, Handbook of Product Graphs: vertices of a product graph are
 # coordinate tuples and a sub-product fixes a subset of coordinates. `coord`/`inSlice`
 # are the vertex-membership predicates of such sub-products. The adapter consumes an
-# accessor shape (cellIds + coordsFor) satisfied by gen-product's `pgraph.nodes` +
+# accessor shape (nodeIds + coordsFor) satisfied by gen-product's `pgraph.nodes` +
 # `pgraph.product.coordsOf` — no gen-product import (pure structural translator).
 {
   and,
@@ -105,9 +105,9 @@ in
 
   mkContext =
     {
-      cellIds, # [ cellId ] — gen-product's pgraph.nodes
-      coordsFor, # cellId -> { <dim> = registry-entry; … } — gen-product's product.coordsOf
-      dataFor ? (_: { }), # cellId -> attrset (extra matchable cell data)
+      nodeIds, # [ nodeId ] — gen-product's pgraph.nodes
+      coordsFor, # nodeId -> { <dim> = registry-entry; … } — gen-product's product.coordsOf
+      dataFor ? (_: { }), # nodeId -> attrset (extra matchable node data)
       parent ? (_: null), # product lattices are flat by default; overridable
       # Accessor names (drawn from data/parent/children/ancestors/siblings) that
       # read a graph still under construction. Passed straight through to the
@@ -154,7 +154,7 @@ in
           # file's own discreteCtx house rule in match.nix).
           __coords =
             if !(builtins.isFunction coordsFor) then
-              throw "gen-select: adapters.product.mkContext's `coordsFor` must be a function (cellId -> { <dim> = registry-entry; ... }); got ${builtins.typeOf coordsFor}."
+              throw "gen-select: adapters.product.mkContext's `coordsFor` must be a function (nodeId -> { <dim> = registry-entry; ... }); got ${builtins.typeOf coordsFor}."
             else
               let
                 c = coordsFor id;
@@ -170,7 +170,7 @@ in
       # With the default flat `parent` these all yield [ ]; when `parent` is supplied
       # the registry adapter's derivations apply (structural selectors over the
       # containment lattice are gen-product's business, not the matcher's).
-      children = id: builtins.filter (nid: parent nid == id) cellIds;
+      children = id: builtins.filter (nid: parent nid == id) nodeIds;
       ancestors =
         id:
         let
@@ -195,6 +195,6 @@ in
         if p == null then
           [ ]
         else
-          builtins.filter (cid: cid != id) (builtins.filter (nid: parent nid == p) cellIds);
+          builtins.filter (cid: cid != id) (builtins.filter (nid: parent nid == p) nodeIds);
     };
 }

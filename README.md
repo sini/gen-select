@@ -112,7 +112,7 @@ sel.matches (sel.attrs { type = "service"; }) "web" ctx
 | `sel.kind K`                               | `kind-value -> selector`                   | the node's projected kind (`__identity.kind`) is `K` by minted identity                                                                                              |
 | `sel.subkind K`                            | `kind-value -> selector`                   | the node's projected kind is `K`, or has `K` among its transitive ancestors, each decided as `sel.kind` decides                                                      |
 | `sel.and ss`                               | `[selector] -> selector`                   | all match; `sel.and [] = true`                                                                                                                                       |
-| `sel.any ss`                               | `[selector] -> selector`                   | any matches; `sel.any [] = false`                                                                                                                                    |
+| `sel.anyOf ss`                             | `[selector] -> selector`                   | any matches; `sel.anyOf [] = false`                                                                                                                                  |
 | `sel.not s`                                | `selector -> selector`                     | does not match                                                                                                                                                       |
 | `sel.has s`                                | `selector -> selector`                     | any child matches                                                                                                                                                    |
 | `sel.within s`                             | `selector -> selector`                     | any ancestor matches                                                                                                                                                 |
@@ -268,8 +268,8 @@ adapters.product = {
   coord   : dim-name -> kind -> registry-entry -> selector;  # coord "host" schema.host den.hosts.axon-01
   inSlice : { <dim> = { kind; entry; }; … } -> selector;     # sugar: and (coord per fixed dimension)
   mkContext : {
-    cellIds,                  # [ cellId ]        — gen-product's pgraph.nodes
-    coordsFor,                # cellId -> coords   — gen-product's product.coordsOf
+    nodeIds,                  # [ nodeId ]        — gen-product's pgraph.nodes
+    coordsFor,                # nodeId -> coords   — gen-product's product.coordsOf
     dataFor ? (_: {}),        # extra matchable cell data
     parent  ? (_: null),      # product lattices are flat by default
     inFlight ? [ ],           # accessors read under construction (discrete/monotone separation)
@@ -292,7 +292,7 @@ Maps CSS selector syntax concepts to gen-select combinators. Demonstrates `sel.a
 
 ### SQL WHERE (`examples/sql-where/`)
 
-Maps SQL WHERE clause concepts to gen-select. Demonstrates `sel.attrs` as column equality, `sel.and`/`sel.any` as AND/OR, `sel.not` as NOT, and `sel.when` for range predicates and LIKE patterns. Tests verify against a table-like flat context.
+Maps SQL WHERE clause concepts to gen-select. Demonstrates `sel.attrs` as column equality, `sel.and`/`sel.anyOf` as AND/OR, `sel.not` as NOT, and `sel.when` for range predicates and LIKE patterns. Tests verify against a table-like flat context.
 
 ## Performance
 
@@ -301,7 +301,7 @@ gen-select evaluates selectors lazily through accessor functions. When wired to 
 - **O(1) data access** — each `ctx.data id` call hits gen-scope's memoized evaluation; repeated access for the same node evaluates once
 - **Proportional to selector structure** — `matches` only inspects what the selector asks for; `sel.attrs { role = "x"; }` touches one field, not the full node
 - **No Tier 2 materialization** — selectors never enumerate all nodes; the caller decides iteration scope
-- **Structural combinators short-circuit** — `sel.and` stops at the first false; `sel.any` stops at the first true
+- **Structural combinators short-circuit** — `sel.and` stops at the first false; `sel.anyOf` stops at the first true
 - **Ancestor/child walks are bounded** — `within` and `has` traverse only the relevant subtree or chain, not the full graph
 
 Memory consumption is proportional to what the selector inspects, not the total graph size.
@@ -349,5 +349,5 @@ gen-select draws on both academic research and industrial standards. Each source
 | **Neron, Tolmach, Visser & Wachsmuth (2015)** — *A Theory of Name Resolution* | The five-field accessor context (`data`, `parent`, `children`, `ancestors`, `siblings`) models the P-edge (parent/child/ancestor) traversal axes of a scope graph; does NOT implement the resolution calculus (no well-formedness, specificity, shadowing, or import edges) |
 | **Arntzenius & Krishnaswami (2016)** — *Datafun: A Functional Datalog*        | Monotone pattern matching over lattice-structured data informed the design of composable selector predicates that respect structural ordering                                                                                                                               |
 | **Reynolds (1983)** — *Types, Abstraction, and Parametric Polymorphism*       | Parametricity constraints on selector generality: selectors operate uniformly over any context satisfying the accessor interface, not over concrete representations                                                                                                         |
-| **Mokhov (2017)** — *Algebraic Graphs with Class*                             | Algebraic composition of graph predicates (overlay/connect as selector combinators) informed how `sel.and`/`sel.any` compose without coupling to graph representation                                                                                                       |
+| **Mokhov (2017)** — *Algebraic Graphs with Class*                             | Algebraic composition of graph predicates (overlay/connect as selector combinators) informed how `sel.and`/`sel.anyOf` compose without coupling to graph representation                                                                                                     |
 | **XPath 3.1** — W3C                                                           | Axis-based navigation model (ancestor, child, descendant, sibling) informed the context accessor vocabulary and structural combinator naming                                                                                                                                |

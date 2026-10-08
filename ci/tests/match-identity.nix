@@ -173,7 +173,7 @@ in
 
     # ---- E5: composition over mixed entity/non-entity nodes, no throw ----
     test-any-mixed-no-throw = {
-      expr = m (sel.any [
+      expr = m (sel.anyOf [
         (sel.kind kindUser)
         (sel.kind kindHost)
       ]) "plain" ctx;

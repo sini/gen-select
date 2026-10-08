@@ -158,10 +158,18 @@ rec {
     inherit selectors;
   };
 
-  any = selectors: {
+  # The disjunction. Its tag stays `"any"`: the tag is the selector's data, and only the published
+  # name moved (grammar R10 rule 3).
+  anyOf = selectors: {
     __sel = "any";
     inherit selectors;
   };
+
+  # ── THE RETIRED NAME ──
+  # A tombstone rather than a silent alias, as gen-schema's `ref`: gen-prelude's `any` is the
+  # standard list predicate, and keeps the name by that parity, so this side takes the other name. A published value, not a
+  # lambda, so reaching the name refuses as well as applying it; the message interpolates nothing.
+  any = throw "gen-select: `any` is renamed `anyOf`. gen-prelude's `any` is the list predicate `any pred list`, and two callables of one sort with different meanings take two names (grammar R10 rule 3); the arguments and the behaviour are unchanged.";
 
   not = selector: {
     __sel = "not";

@@ -86,7 +86,16 @@ let
   matchOne =
     selector: id: ctx:
     let
-      tag = selector.__sel;
+      # A non-selector is a wrong-form argument, refused by name and catchably (grammar R10 rule 2:
+      # `star`, `attrs` and `any` are other members' names too, and handing one of those here must
+      # not abort on the `__sel` read).
+      tag =
+        if builtins.isAttrs selector && selector ? __sel then
+          selector.__sel
+        else
+          throw "gen-select.matches: got ${builtins.typeOf selector}${
+            if builtins.isAttrs selector then " with no `__sel`" else ""
+          }, expected a selector (a record built by gen-select's constructors)";
     in
     if tag == "star" then
       true

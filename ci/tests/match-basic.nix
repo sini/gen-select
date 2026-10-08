@@ -85,21 +85,21 @@ in
       expected = true;
     };
     test-or-one-matches = {
-      expr = m (sel.any [
+      expr = m (sel.anyOf [
         (sel.attrs { type = "user"; })
         (sel.attrs { type = "host"; })
       ]) "host:web" mockCtx;
       expected = true;
     };
     test-or-none = {
-      expr = m (sel.any [
+      expr = m (sel.anyOf [
         (sel.attrs { type = "user"; })
         (sel.attrs { env = "dev"; })
       ]) "host:web" mockCtx;
       expected = false;
     };
     test-or-empty = {
-      expr = m (sel.any [ ]) "host:web" mockCtx;
+      expr = m (sel.anyOf [ ]) "host:web" mockCtx;
       expected = false;
     };
     test-not-true = {

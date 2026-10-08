@@ -109,7 +109,7 @@ let
         ) (parse (trim (builtins.head parts))) (builtins.tail parts);
     in
     if len orParts > 1 then
-      sel.any (map (p: parse (trim p)) orParts)
+      sel.anyOf (map (p: parse (trim p)) orParts)
     else if len childParts > 1 then
       buildChild childParts
     else if len descParts > 1 then

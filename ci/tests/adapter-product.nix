@@ -59,17 +59,17 @@ let
       user = u2;
     };
   };
-  cellIds = builtins.attrNames coordMap;
+  nodeIds = builtins.attrNames coordMap;
   ctx = P.mkContext {
-    inherit cellIds;
+    inherit nodeIds;
     coordsFor = id: coordMap.${id};
   };
-  matchCells = selector: builtins.filter (id: sel.matches selector id ctx) cellIds;
+  matchCells = selector: builtins.filter (id: sel.matches selector id ctx) nodeIds;
   sortStr = builtins.sort (a: b: a < b);
 
   # Heterogeneous cell missing the user dimension.
   hetCtx = P.mkContext {
-    cellIds = [ "x" ];
+    nodeIds = [ "x" ];
     coordsFor = _: { host = h1; };
   };
   # Coordinate-blind context (no __coords projected).
@@ -82,7 +82,7 @@ let
   };
   # Malformed coordinate value (no id_hash).
   badCtx = P.mkContext {
-    cellIds = [ "b" ];
+    nodeIds = [ "b" ];
     coordsFor = _: {
       host = {
         name = "nope";

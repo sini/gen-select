@@ -7,7 +7,7 @@ filtered with SQL-ish predicates instead of hand-built selector trees:
 
 ```nix
 compile "env = 'prod' AND (type = 'host' OR type = 'cache')"
-# => sel.and [ (sel.attrs { env = "prod"; }) (sel.any [ (sel.attrs { type = "host"; }) (sel.attrs { type = "cache"; }) ]) ]
+# => sel.and [ (sel.attrs { env = "prod"; }) (sel.anyOf [ (sel.attrs { type = "host"; }) (sel.attrs { type = "cache"; }) ]) ]
 ```
 
 The compiled selector is evaluated with `genSelect.matches selector nodeId ctx`.
@@ -15,7 +15,7 @@ The compiled selector is evaluated with `genSelect.matches selector nodeId ctx`.
 ## What it shows
 
 - Building `gen-select` selectors programmatically from an external surface syntax.
-- The selector constructors used: `attrs`, `not`, `and`, `any`.
+- The selector constructors used: `attrs`, `not`, `and`, `anyOf`.
 - Matching a selector against node data via a minimal accessor `ctx`
   (`data`, `parent`, `children`, `ancestors`).
 

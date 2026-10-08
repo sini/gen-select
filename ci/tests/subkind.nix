@@ -101,7 +101,7 @@ let
   productFields =
     builtins.attrNames
       (sel.adapters.product.mkContext {
-        cellIds = [ ];
+        nodeIds = [ ];
         coordsFor = _: { };
         kinds.host = sub;
       }).coordKinds.host;

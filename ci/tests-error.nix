@@ -851,7 +851,7 @@ in
         mk =
           coordsFor:
           sel.adapters.product.mkContext {
-            cellIds = [ "c1" ];
+            nodeIds = [ "c1" ];
             inherit coordsFor;
           };
       in
@@ -893,7 +893,7 @@ in
       expr =
         let
           ctx = sel.adapters.product.mkContext {
-            cellIds = [ "c1" ];
+            nodeIds = [ "c1" ];
             coordsFor =
               { id }:
               {
@@ -1104,6 +1104,39 @@ in
         expectedError = {
           type = "ThrownError";
           msg = "^gen-select: sel\\.subkind expects a kind value \\(e\\.g\\. schema\\.user\\), got the string \"base\"\\.";
+        };
+      };
+    };
+
+  # den-hoag-7gp66 row 13 (R10 rule 2): `matches` refuses a non-selector by name, catchably, naming
+  # the door. Control: the same context answers a real selector.
+  flake.testsError.grammar-renames =
+    let
+      ctx = {
+        data = id: { type = id; };
+        parent = _: null;
+        children = _: [ ];
+        ancestors = _: [ ];
+        siblings = _: [ ];
+      };
+    in
+    {
+      test-matches-names-the-door-for-a-callable = {
+        expr =
+          assert sel.matches sel.star "a" ctx;
+          sel.matches builtins.any "a" ctx;
+        expectedError = {
+          type = "ThrownError";
+          msg = "^gen-select\\.matches: got lambda, expected a selector \\(a record built by gen-select's constructors\\)$";
+        };
+      };
+      test-matches-names-the-door-for-a-set = {
+        expr =
+          assert sel.matches sel.star "a" ctx;
+          sel.matches genMerge.types.attrs "a" ctx;
+        expectedError = {
+          type = "ThrownError";
+          msg = "^gen-select\\.matches: got set with no `__sel`, expected a selector";
         };
       };
     };

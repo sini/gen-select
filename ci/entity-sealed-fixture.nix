@@ -74,7 +74,7 @@ let
   };
   # den-hoag-8hqx0: the same pair as COORDINATES. A product factor is one registry, so one kind per
   # dimension: `host` over `kS2`'s registry (cells `cs2`, `cs2z`), or over `kA`'s (cell `ca`).
-  # `coordsFor` has gen-product's `coordsOf` shape (cellId -> { <dim> = entry; }), which is the whole
+  # `coordsFor` has gen-product's `coordsOf` shape (nodeId -> { <dim> = entry; }), which is the whole
   # of what the adapter reads; gen-demo's refusals row drives a real gen-product space.
   prodCells = {
     cs2.host = s2;
@@ -84,7 +84,7 @@ let
     cells: extra:
     sel.adapters.product.mkContext (
       {
-        cellIds = builtins.attrNames cells;
+        nodeIds = builtins.attrNames cells;
         coordsFor = id: cells.${id};
       }
       // extra

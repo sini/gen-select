@@ -48,7 +48,7 @@ construction-time sugar with no distinct runtime tag.)
 | `star`                                 | `-> selector`                           | always                                                       |
 | `attrs a`                              | `attrset -> selector`                   | every k:v in `a` equals in `data id`; missing key = no match |
 | `and ss`                               | `[selector] -> selector`                | all match; `and [] = true`                                   |
-| `any ss`                               | `[selector] -> selector`                | any matches; `any [] = false`                                |
+| `anyOf ss`                             | `[selector] -> selector`                | any matches; `anyOf [] = false`                              |
 | `not s`                                | `selector -> selector`                  | `s` does not match                                           |
 | `has s`                                | `selector -> selector`                  | some child matches `s`                                       |
 | `within s`                             | `selector -> selector`                  | some ancestor matches `s`                                    |
@@ -235,12 +235,12 @@ resolving a name needs the shared resolver. Omitting both makes `sel.kind` throw
 ### `adapters.product.mkContext`
 
 ```
-{ cellIds, coordsFor, dataFor ? (_: {}), parent ? (_: null), inFlight ? [ ], kinds ? { } } -> context
+{ nodeIds, coordsFor, dataFor ? (_: {}), parent ? (_: null), inFlight ? [ ], kinds ? { } } -> context
 ```
 
 `data id = (dataFor id) // { __coords = coordsFor id; __identity = null; }`. Flat by
 default; when `parent` is supplied the registry-adapter derivations apply. Consumes
-gen-product's `pgraph.nodes` (`cellIds`) + `pgraph.product.coordsOf` (`coordsFor`) without
+gen-product's `pgraph.nodes` (`nodeIds`) + `pgraph.product.coordsOf` (`coordsFor`) without
 importing gen-product. `kinds` maps a dimension to the kind value of that factor's
 coordinates (one registry, one kind); each is validated and published once per context as
 the context field `coordKinds = { <dim> = <kind-key>; }`, never per cell. **Required in
