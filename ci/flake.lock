@@ -589,6 +589,37 @@
         "type": "github"
       }
     },
+    "gen-program": {
+      "inputs": {
+        "gen-algebra": [
+          "gen-algebra"
+        ],
+        "gen-identity": [
+          "gen-scope",
+          "gen-identity"
+        ],
+        "gen-prelude": [
+          "gen-scope",
+          "gen-prelude"
+        ],
+        "gen-scope": [
+          "gen-scope"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792563842,
+        "narHash": "sha256-1KTALyU8jf/oKH4xJyPBCGwBufcVrGv0RYsmC22aXdc=",
+        "owner": "sini",
+        "repo": "gen-program",
+        "rev": "2b46eea3f51a31edf0dac58c3775d7a0a99912a4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sini",
+        "repo": "gen-program",
+        "type": "github"
+      }
+    },
     "gen-schema": {
       "inputs": {
         "gen-algebra": "gen-algebra_4",
@@ -1145,6 +1176,7 @@
         "gen-algebra": "gen-algebra",
         "gen-harness": "gen-harness",
         "gen-merge": "gen-merge",
+        "gen-program": "gen-program",
         "gen-schema": "gen-schema",
         "gen-scope": "gen-scope_2",
         "nixpkgs": "nixpkgs_6"

@@ -15,6 +15,13 @@
     # gen-algebra is the library's OWN dependency (not a test-tier one): ../lib takes it as
     # a named argument, so the ci flake must supply the same input the root flake does.
     gen-algebra.url = "github:sini/gen-algebra";
+    # TEST-TIER: `adapters.program`'s cells solve the bodies it emits (den-hoag-mr6xf), so they
+    # need gen-program and the substrate it is applied to, read through gen-scope's own pins.
+    gen-program.url = "github:sini/gen-program";
+    gen-program.inputs.gen-scope.follows = "gen-scope";
+    gen-program.inputs.gen-algebra.follows = "gen-algebra";
+    gen-program.inputs.gen-prelude.follows = "gen-scope/gen-prelude";
+    gen-program.inputs.gen-identity.follows = "gen-scope/gen-identity";
     # nixpkgs is the CI runner's dependency (test harness, treefmt).
     nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
   };
@@ -26,6 +33,7 @@
       gen-schema,
       gen-merge,
       gen-algebra,
+      gen-program,
       ...
     }:
     let
@@ -34,6 +42,12 @@
       genScope = gen-scope.lib;
       genSchema = gen-schema.lib;
       genMerge = gen-merge.lib;
+      genProgram = import (gen-program + "/lib") {
+        prelude = gen-scope.inputs.gen-prelude.lib;
+        scope = genScope;
+        inherit algebra;
+        identity = gen-scope.inputs.gen-identity.lib;
+      };
     in
     gen-harness.lib.mkCi {
       inherit inputs;
@@ -45,6 +59,7 @@
           genScope
           genSchema
           genMerge
+          genProgram
           algebra
           ;
       };

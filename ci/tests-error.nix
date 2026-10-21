@@ -1162,4 +1162,39 @@ in
         };
       };
     };
+
+  # den-hoag-mr6xf: `adapters.program.bodies` refuses a non-selector and a non-string atom by name.
+  # Each cell's live control is the same call well-formed, asserted before the refusal.
+  flake.testsError.adapter-program = {
+    test-bodies-refuses-a-non-selector = {
+      expr =
+        assert
+          sel.adapters.program.bodies (s: s.__sel) sel.star == [
+            {
+              pos = [ ];
+              neg = [ ];
+            }
+          ];
+        sel.adapters.program.bodies (s: s.__sel) { a = 1; };
+      expectedError = {
+        type = "ThrownError";
+        msg = "^gen-select\\.adapters\\.program\\.bodies: got set with no `__sel`, expected a selector";
+      };
+    };
+    test-bodies-refuses-a-non-string-atom = {
+      expr =
+        assert
+          sel.adapters.program.bodies (_: "x") (sel.not (sel.attrs { x = 1; })) == [
+            {
+              pos = [ ];
+              neg = [ "x" ];
+            }
+          ];
+        builtins.deepSeq (sel.adapters.program.bodies (_: 7) (sel.not (sel.attrs { x = 1; }))) null;
+      expectedError = {
+        type = "ThrownError";
+        msg = "^gen-select\\.adapters\\.program\\.bodies: atomOf named a `attrs` selector with a int; an atom is a string the caller names$";
+      };
+    };
+  };
 }

@@ -185,6 +185,7 @@ in
     expected = [
       "lib/adapters/graph.nix"
       "lib/adapters/product.nix"
+      "lib/adapters/program.nix"
       "lib/adapters/registry.nix"
       "lib/adapters/scope.nix"
       "lib/constructors.nix"

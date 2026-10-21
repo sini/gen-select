@@ -85,6 +85,7 @@ default resolves `algebra` from `ci/flake.lock`, never the root `flake.lock`.
 | `adapters.product.inSlice`         | `{ <dim> = { kind; entry; }; … } -> selector` (sugar: `and` of one `coord` per dim)                                                                            |
 | `adapters.graph.mkPredicate`       | `selector -> ctx -> id -> bool`                                                                                                                                |
 | `adapters.graph.mkSelectPredicate` | `selector -> ctx -> data -> bool` (reads `data.id`)                                                                                                            |
+| `adapters.program.bodies`          | `(selector -> string) -> selector -> [ { pos; neg; } ]` (one gen-program `declaration` body per DNF disjunct; `atomOf` names each leaf's atom)                 |
 
 **Context contract** (consumed, not exported). Every `ctx` supplies five accessors: `data : id -> attrset`, `parent : id -> id|null`, `children : id -> [id]`, `ancestors : id -> [id]`, `siblings : id -> [id]`. `data` may project reserved `__identity` (`{ id_hash; kind; entry; }` or `null`) and `__coords`.
 
@@ -93,7 +94,7 @@ default resolves `algebra` from `ci/flake.lock`, never the root `flake.lock`.
 **`__` keys crossing the boundary** (R12 stated contracts; the census that reads these lines takes the
 first line of each):
 
-- `__sel` — writer the selector constructors (`lib/constructors.nix`, `lib/adapters/product.nix`), reader `matches` (`lib/match.nix`); read by gen-dispatch (`lib/adapters/select.nix`):
+- `__sel` — writer the selector constructors (`lib/constructors.nix`, `lib/adapters/product.nix`), reader `matches` (`lib/match.nix`) and `adapters.program.bodies` (`lib/adapters/program.nix`); read by gen-dispatch (`lib/adapters/select.nix`):
   the selector's runtime tag (the list above). gen-dispatch reads it off plain data, declaring no
   input on this library.
 - `__identity` — writer the scope, registry and product adapters (`lib/adapters/`), reader the `entity`, `kind` and `subkind` arms of `matches` (`lib/match.nix`):
@@ -106,19 +107,20 @@ first line of each):
 
 ## Entry points by task
 
-| Task                                  | Reach for                                                                                                                           |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Match a selector against one node     | `matches sel id ctx`                                                                                                                |
-| Match on node attribute values        | `attrs { k = v; }`                                                                                                                  |
-| Match one specific entity             | `entity <kind-value> <registry-entry>` (needs an identity-projecting context; a kind-bearing one for a kind with sealed components) |
-| Match all entities of a kind          | `kind <kind-value>` (needs a kind-bearing projection)                                                                               |
-| Match by position in the tree         | `has` / `within` / `parentMatches` / `child` / `descendant`                                                                         |
-| Arbitrary predicate                   | `when fn`; pass an intensional record if the selector must be comparable                                                            |
-| Dedup selectors / compare rule sets   | `selectorEq` — `==` is finer (it distinguishes display `name`); `selectorEq` is the dedup relation                                  |
-| Bridge a gen-scope node tree          | `adapters.scope.mkContext`                                                                                                          |
-| Bridge a gen-schema per-kind registry | `adapters.registry.mkContext` (pass `kind`)                                                                                         |
-| Bridge a gen-product cell lattice     | `adapters.product.mkContext` (pass `kinds`) + `coord` / `inSlice`                                                                   |
-| Hand a selector to a gen-graph query  | `adapters.graph.mkPredicate` / `mkSelectPredicate`                                                                                  |
+| Task                                    | Reach for                                                                                                                                           |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Match a selector against one node       | `matches sel id ctx`                                                                                                                                |
+| Match on node attribute values          | `attrs { k = v; }`                                                                                                                                  |
+| Match one specific entity               | `entity <kind-value> <registry-entry>` (needs an identity-projecting context; a kind-bearing one for a kind with sealed components)                 |
+| Match all entities of a kind            | `kind <kind-value>` (needs a kind-bearing projection)                                                                                               |
+| Match by position in the tree           | `has` / `within` / `parentMatches` / `child` / `descendant`                                                                                         |
+| Arbitrary predicate                     | `when fn`; pass an intensional record if the selector must be comparable                                                                            |
+| Dedup selectors / compare rule sets     | `selectorEq` — `==` is finer (it distinguishes display `name`); `selectorEq` is the dedup relation                                                  |
+| Bridge a gen-scope node tree            | `adapters.scope.mkContext`                                                                                                                          |
+| Bridge a gen-schema per-kind registry   | `adapters.registry.mkContext` (pass `kind`)                                                                                                         |
+| Bridge a gen-product cell lattice       | `adapters.product.mkContext` (pass `kinds`) + `coord` / `inSlice`                                                                                   |
+| Hand a selector to a gen-graph query    | `adapters.graph.mkPredicate` / `mkSelectPredicate`                                                                                                  |
+| Hand a selector to gen-program's solver | `adapters.program.bodies atomOf sel`, one declaration per body over your head; for linear size, compile compound sub-selectors to heads you declare |
 
 ## Measured traps
 
@@ -173,7 +175,7 @@ nix eval --json .#lib --apply 'l: { top = builtins.attrNames l; adapters = built
 Current output (verbatim):
 
 ```json
-{"adapters":{"graph":["mkPredicate","mkSelectPredicate"],"product":["coord","inSlice","mkContext"],"registry":["mkContext"],"scope":["mkContext"]},"top":["adapters","and","any","anyOf","attrs","child","descendant","entity","has","isIdentified","kind","matches","not","parentMatches","selectorEq","star","subkind","when","within"]}
+{"adapters":{"graph":["mkPredicate","mkSelectPredicate"],"product":["coord","inSlice","mkContext"],"program":["bodies"],"registry":["mkContext"],"scope":["mkContext"]},"top":["adapters","and","any","anyOf","attrs","child","descendant","entity","has","isIdentified","kind","matches","not","parentMatches","selectorEq","star","subkind","when","within"]}
 ```
 
 **Checks.** Test-runner invocation (from the repo root; CI runs the same command with `working-directory: ci`, `.github/workflows/ci.yml:13,18`):

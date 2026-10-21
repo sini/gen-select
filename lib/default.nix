@@ -165,6 +165,7 @@ let
   scopeAdapter = import ./adapters/scope.nix { inherit isSchemaKind projectedKindKey; };
   graphAdapter = import ./adapters/graph.nix { inherit (match) matches; };
   registryAdapter = import ./adapters/registry.nix { inherit isSchemaKind projectedKindKey; };
+  programAdapter = import ./adapters/program.nix { };
   productAdapter = import ./adapters/product.nix {
     inherit (constructors) and;
     inherit isSchemaKind kindKey projectedKindKey;
@@ -178,5 +179,6 @@ constructors
     graph = graphAdapter;
     registry = registryAdapter;
     product = productAdapter;
+    program = programAdapter;
   };
 }

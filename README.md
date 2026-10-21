@@ -42,6 +42,7 @@ Selectors are plain attrsets tagged with `__sel`. No special types, no evaluatio
 | [gen-select](https://github.com/sini/gen-select)     | **This lib** — Selector algebra (pattern matching over graph positions)                                                |
 | [gen-bind](https://github.com/sini/gen-bind)         | Module binding (inject external args into NixOS modules)                                                               |
 | [gen-dispatch](https://github.com/sini/gen-dispatch) | Relational rule dispatch STEP (stratified phases, conflict resolution)                                                 |
+| [gen-program](https://github.com/sini/gen-program)   | Well-founded solver over rule programs (`adapters.program` compiles a selector into its rule bodies)                   |
 | [gen-memo](https://github.com/sini/gen-memo)         | The incremental plane — decides reuse, never evaluates (change propagation, AFFECTED set)                              |
 | [gen-vars](https://github.com/sini/gen-vars)         | Pure-Nix vars/secrets (den-agnostic)                                                                                   |
 
@@ -284,6 +285,39 @@ Matches cells within a gen-product slice by **product coordinates** given as reg
 
 Two residues are stated rather than closed, and both are `sel.entity`'s too. A kind that is **not** its entry's kind but mints the entry's mark (`inSlice { host = { kind = k2; entry = s1; }; }` on `s2`'s cell, where `k2` sealed-collides with `s1`'s kind) is taken on the caller's word, because a gen-schema entry carries its stamp and not its kind; detecting it needs the entry to carry its kind, which is a gen-schema change. And a wrong kind at a *different* mark on a migrated selector is unchecked by the match, which reads no node kind there. A coordinate over a kind with sealed components holds that kind's sealed subjects, which may be functions, so `builtins.toJSON` of such a selector aborts (as it does for `sel.entity`); Nix `==` on two such selectors still decides.
 
+#### adapters.program — gen-program bridge
+
+```
+adapters.program.bodies : (selector -> string) -> selector -> [ { pos : [string]; neg : [string]; } ]
+```
+
+Compiles a selector into the rule bodies of one head for gen-program's well-founded solver. A rule body is a conjunction of literals, so the selector's boolean skeleton is put in disjunctive normal form: negation is pushed to the leaves (De Morgan, double negation) and `and` distributes over `anyOf`. Each returned body becomes one `declaration` over the caller's head:
+
+```nix
+genProgram.program frozen (
+  map (b: b // { inherit head relata; }) (genSelect.adapters.program.bodies atomOf selector)
+)
+```
+
+`star`, `and`, `anyOf` and `not` are the skeleton; every other selector (`attrs`, `entity`, `kind`, `subkind`, `coord`, `has`, `within`, `parentMatches`, `when`) is a **leaf**, and its atom is the string `atomOf` returns for it. `atomOf` is called on leaves only and the adapter never reads a leaf's payload: atoms are the caller's, and neither this adapter nor gen-program mints one. `child`, `descendant` and `inSlice` compile through the constructors they expand to. `star` is the empty body (true); `anyOf []` and `not star` give no body (false). A non-selector at any depth, and an `atomOf` returning a non-string, are refused by name.
+
+**No body is simplified away.** De Morgan, double negation and distributivity hold in Kleene's three-valued logic, so solving the bodies gives the head the selector's value under every true/false/undefined assignment of its leaves. The complement law does not hold there: `and [ a (not a) ]` keeps its body `{ pos = [ "a" ]; neg = [ "a" ]; }`, which is undefined, not false, when `a` is undefined.
+
+**Stratification is the caller's program.** When `atomOf` names no atom that is, or depends on, the head, the emitted rules are stratified relative to it. Otherwise the program has a cycle, possibly through negation, and gen-program's stable-model oracle adjudicates it: the adapter refuses nothing for it, and `not (attrs { h = true; })` with `atomOf` naming the head `h` comes back undefined and `refused`.
+
+**Size.** The body count is the selector's DNF size, exponential in the worst case: `and` of n two-way `anyOf`s gives 2ⁿ bodies, and no DNF over the same atoms is smaller. The bodies themselves are cheap, and they are computed once per selector, not per node. The cost is in the solve, at about 190 thunks per emitted body. A caller wanting linear size **composes**: it compiles each compound sub-selector to a head it declares, and names that head as a leaf in the selector above it. No atom is minted, because the caller declared every head:
+
+```nix
+let
+  declsOf = head: s: map (b: b // { inherit head; relata = [ ]; }) (bodies atomOf s);
+  pair = i: sel.anyOf [ (sel.attrs { "a${i}" = true; }) (sel.attrs { "b${i}" = true; }) ];
+  idx = [ "0" "1" "2" "3" ];
+in
+# 2n + 1 rules where the direct compile of `and (map pair idx)` emits 2ⁿ, with the same verdict for "h"
+builtins.concatMap (i: declsOf "x${i}" (pair i)) idx
+++ declsOf "h" (sel.and (map (i: sel.attrs { "x${i}" = true; }) idx))
+```
+
 ## Demo Templates
 
 ### CSS Selectors (`examples/css-selectors/`)
@@ -326,7 +360,7 @@ cd examples/sql-where && just ci
 and `nix flake check ./ci` are unguarded: they read a git-filtered copy of the tree, so an untracked
 cell is silently absent and the run stays green.
 
-The core suite is **286 tests across 25 suites** (`nix-unit --flake ./ci#tests` ⇒ `286/286 successful`; the refusal-message plane `./ci#testsError` ⇒ `60/60`), driven by [nix-unit](https://github.com/nix-community/nix-unit). The twenty-second suite, `gen-ci-examples`, is gen-harness's examples guard (declared in `ci/tests/examples.nix`, `gen.ci.examples`): it holds that `examples/` directory names equal the declared names, and that every declared example forces under `deepSeq`. Alongside the original structural suites (`constructors`, `match-basic`, `match-structural`, `composition`, `sugar`, `when`, `adapters`, `adapter-registry`, `purity`) the identity-selector work adds `constructors-identity`, `match-identity`, `adapter-scope-identity`, `adapter-registry-identity`, `adapter-product`, `coord-sealed`, `subkind`, and `integration-scope`. The last is the acceptance test for the identity/kind routing surface: it drives `sel.kind`/`sel.entity` through a **real `gen-scope.eval` graph seeded from real gen-schema instances**, including the neededBy predicate shape. The `purity` suite is the Class-A invariant, and it now has two arms. It scans every `lib/**.nix` (plus the root `flake.nix`/`default.nix`) for forbidden tokens (`nixpkgs`, `lib.`, `evalModules`, `mkOption`) and fails CI if a nixpkgs or module-system tether creeps back in; and it pins the library's dependency budget at exactly one by asserting the root flake's declared inputs are `[ "gen-algebra" ]`, read from the lock. `gen-algebra` left the forbidden list when the edge was taken deliberately, and the budget arm is what keeps the narrowed invariant as strong as the one it replaced — dropping the token alone would have let a second dependency in unnoticed. Identity validation itself is still structural (`entry ? id_hash`, not a gen-schema import). A sixteenth suite, `entry`, holds the non-flake contract instead: `import ./. { }` must resolve its one dependency from `./ci/flake.lock` and match what the flake path builds.
+The core suite is **294 tests across 26 suites** (`nix-unit --flake ./ci#tests` ⇒ `294/294 successful`; the refusal-message plane `./ci#testsError` ⇒ `62/62`), driven by [nix-unit](https://github.com/nix-community/nix-unit). The twenty-second suite, `gen-ci-examples`, is gen-harness's examples guard (declared in `ci/tests/examples.nix`, `gen.ci.examples`): it holds that `examples/` directory names equal the declared names, and that every declared example forces under `deepSeq`. Alongside the original structural suites (`constructors`, `match-basic`, `match-structural`, `composition`, `sugar`, `when`, `adapters`, `adapter-registry`, `purity`) the identity-selector work adds `constructors-identity`, `match-identity`, `adapter-scope-identity`, `adapter-registry-identity`, `adapter-product`, `coord-sealed`, `subkind`, and `integration-scope`. The last is the acceptance test for the identity/kind routing surface: it drives `sel.kind`/`sel.entity` through a **real `gen-scope.eval` graph seeded from real gen-schema instances**, including the neededBy predicate shape. The `purity` suite is the Class-A invariant, and it now has two arms. It scans every `lib/**.nix` (plus the root `flake.nix`/`default.nix`) for forbidden tokens (`nixpkgs`, `lib.`, `evalModules`, `mkOption`) and fails CI if a nixpkgs or module-system tether creeps back in; and it pins the library's dependency budget at exactly one by asserting the root flake's declared inputs are `[ "gen-algebra" ]`, read from the lock. `gen-algebra` left the forbidden list when the edge was taken deliberately, and the budget arm is what keeps the narrowed invariant as strong as the one it replaced — dropping the token alone would have let a second dependency in unnoticed. Identity validation itself is still structural (`entry ? id_hash`, not a gen-schema import). `adapter-program` holds `adapters.program.bodies` to its two equivalences, with `matches` at every two-valued context and with Kleene's logic at every three-valued assignment, plus a class sweep that reads the tags `matches` dispatches on from `lib/match.nix` and fails on one the adapter's cells do not build, and the composition that keeps the rule count linear. A sixteenth suite, `entry`, holds the non-flake contract instead: `import ./. { }` must resolve its one dependency from `./ci/flake.lock` and match what the flake path builds.
 
 ## Theoretical Foundations
 
