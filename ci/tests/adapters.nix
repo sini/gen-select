@@ -30,21 +30,14 @@ let
   };
   mockScopeResult = {
     node = id: nodeMap.${id};
-    get =
-      id: attrName:
-      if attrName == "children" then
-        {
-          "env:prod" = {
-            "host:web" = nodeMap."host:web";
-          };
-          "host:web" = {
-            "user:tux" = nodeMap."user:tux";
-          };
-          "user:tux" = { };
-        }
-        .${id}
-      else
-        throw "unexpected attr ${attrName}";
+    childrenIds =
+      id:
+      {
+        "env:prod" = [ "host:web" ];
+        "host:web" = [ "user:tux" ];
+        "user:tux" = [ ];
+      }
+      .${id};
   };
 
   ctx = sel.adapters.scope.mkContext mockScopeResult;
@@ -117,7 +110,7 @@ in
                 type = "userdata";
               };
             };
-            get = _: _: throw "unused";
+            childrenIds = _: throw "unused";
           };
         in
         (shadowCtx.data "svc:db").type;
@@ -128,7 +121,7 @@ in
       expr =
         let
           bareCtx = sel.adapters.scope.mkContext {
-            inherit (mockScopeResult) node get;
+            inherit (mockScopeResult) node childrenIds;
             project = n: n.decls;
           };
         in

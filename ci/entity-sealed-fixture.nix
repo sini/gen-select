@@ -137,7 +137,7 @@ in
       parent = null;
       decls = { };
     };
-    get = _: _: { };
+    childrenIds = _: [ ];
     entryFor = id: nodes.${id};
   };
   # C-2: a hand-built context whose `__identity` record omits `kind` altogether

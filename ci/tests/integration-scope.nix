@@ -106,7 +106,8 @@ let
   # (scope.nix) would not find it — the default now reads only the node's own
   # top-level id_hash, mirroring the registry adapter's entryFor default.
   ctx = sel.adapters.scope.mkContext {
-    inherit (result) node get;
+    inherit (result) node;
+    childrenIds = genScope.childrenIds result;
     entryFor = id: (result.node id).decls.registration or null;
   };
   allIds = builtins.attrNames roots;
@@ -142,7 +143,7 @@ let
   sprout = (genScope.eval { } { children = _self: _id: { }; } kinded).get "a" "derived-children";
   kindedCtx = sel.adapters.scope.mkContext {
     node = id: if id == "sprout" then sprout.sprout else kinded.nodes.${id};
-    get = _: _: { };
+    childrenIds = _: [ ];
     entryFor = id: { id_hash = "h-${id}"; };
   };
   throws = x: !(builtins.tryEval (builtins.deepSeq x x)).success;

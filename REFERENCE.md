@@ -200,13 +200,18 @@ an adapter directly.
 ### `adapters.scope.mkContext`
 
 ```
-{ node, get,
+{ node,
+  childrenIds,                                                          # id -> [id]
   project  ? (n: (n.decls or {}) // { inherit (n) type; }),
   entryFor ? (id: let n = node id; in if n ? id_hash then n else null),
 } -> context
 ```
 
-Bridges gen-scope's accessor pair. `data id = (project (node id)) // { __identity = …; }`
+Bridges gen-scope's `node` accessor and its query surface: `childrenIds` is
+`genScope.childrenIds <evaluation>` (selected, spawned and `nta` children in production order;
+an on-demand `nta` family is absent, as from gen-scope's enumerated view), required, with a
+named throw on a non-function or a non-list result. `children = childrenIds`; `siblings id` is
+the parent's `childrenIds` minus `id`, `[ ]` at a root. `data id = (project (node id)) // { __identity = …; }`
 — the `__identity` record (or `null`) is composed outside the projection and merged last
 (a decl named `__identity` cannot shadow it). `__identity.kind` is a named REFUSAL: a
 positional node `type` is a name, not a kind declaration, so `sel.kind` over this adapter

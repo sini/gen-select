@@ -64,7 +64,7 @@ let
       parent = null;
       id_hash = "h-n1";
     };
-    get = _: _: [ ];
+    childrenIds = _: [ ];
   };
 
   # den-hoag-l0y (β): the sealed-collision fixture, shared with ./tests/entity-sealed.nix.
@@ -103,7 +103,7 @@ let
       parent = null;
       decls = { };
     };
-    get = _: _: [ ];
+    childrenIds = _: [ ];
     entryFor = id: if id == "host:axon" then { name = "axon"; } else null;
   };
   # The fixture's `note` carries a default, open content gen-schema seals per construction
@@ -794,7 +794,7 @@ in
                 id_hash = "h-n1";
                 kindValue = v;
               };
-              get = _: _: [ ];
+              childrenIds = _: [ ];
             };
         in
         assert F.tr (sel.matches (sel.kind kG) "n1" (ctxWith kG)) == true;
@@ -880,7 +880,7 @@ in
               parent = null;
               decls = { };
             };
-            get = _: _: throw "get unused in this test";
+            childrenIds = _: throw "childrenIds unused in this test";
             entryFor = { id }: null; # closed-pattern formal — arity erased, un-closable
           };
         in
@@ -909,6 +909,26 @@ in
       expectedError = {
         type = "TypeError";
         msg = "expected a set but found a string: \"c1\"";
+      };
+    };
+
+    test-childrenids-pattern-formal-uncatchable = {
+      expr =
+        let
+          ctx = sel.adapters.scope.mkContext {
+            node = _: {
+              id = "n1";
+              type = "x";
+              parent = null;
+              decls = { };
+            };
+            childrenIds = { id }: [ ]; # closed-pattern formal
+          };
+        in
+        ctx.children "n1";
+      expectedError = {
+        type = "TypeError";
+        msg = "expected a set but found a string: \"n1\"";
       };
     };
   };

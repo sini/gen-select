@@ -27,7 +27,7 @@ let
   };
   baseScope = {
     node = _: idHashNode;
-    get = _: _: throw "get unused in these tests";
+    childrenIds = _: throw "childrenIds unused in these tests";
   };
 in
 {
@@ -74,11 +74,39 @@ in
         let
           ctx = sel.adapters.scope.mkContext {
             node = _: declsEntryOnlyNode;
-            get = _: _: throw "get unused in these tests";
+            childrenIds = _: throw "childrenIds unused in these tests";
           }; # no explicit entryFor: the default reads no decls key
         in
         (ctx.data "n1").__identity;
       expected = null;
+    };
+
+    # ---- childrenIds (den-hoag-5lgmi) — required, doored; mode D lives on ../tests-error.nix ----
+    test-childrenids-nonfunction-throws = {
+      expr =
+        let
+          ctx = sel.adapters.scope.mkContext (baseScope // { childrenIds = [ ]; });
+        in
+        throws (ctx.children "n1");
+      expected = true;
+    };
+    # `id: get id "children"` — a `get` migration that keeps the attribute read.
+    test-childrenids-wrong-return-throws = {
+      expr =
+        let
+          ctx = sel.adapters.scope.mkContext (baseScope // { childrenIds = _: { c = { }; }; });
+        in
+        throws (ctx.children "n1");
+      expected = true;
+    };
+    # `genScope.childrenIds` without its evaluation.
+    test-childrenids-underapplied-throws = {
+      expr =
+        let
+          ctx = sel.adapters.scope.mkContext (baseScope // { childrenIds = _a: _b: [ ]; });
+        in
+        throws (ctx.children "n1");
+      expected = true;
     };
 
     # ---- O6/O7/O8: coordsFor — no default, but the required formal was doorless; now doored ----

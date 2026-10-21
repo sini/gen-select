@@ -3,7 +3,11 @@
   mkContext =
     {
       node,
-      get,
+      # id -> [id]: the scope's ordered child relation. Pass gen-scope's query surface,
+      # `childrenIds = genScope.childrenIds <evaluation>;`, which composes the selected,
+      # spawned and `nta` halves in production order. No default: the `children` attribute
+      # alone is the selected half, a different node set than the evaluator materializes.
+      childrenIds,
       # Projection from a scope node to the attrset that `attrs` selectors
       # match against. The default surfaces the node's `type` alongside its
       # decls so positional-type `attrs` matching works out of the box; node
@@ -31,6 +35,24 @@
       # default: a context that declares nothing in flight is unchanged.
       inFlight ? [ ],
     }:
+    let
+      # The totality doors on the required `childrenIds` (product.nix's `coordsFor` shape):
+      # a non-function, a wrong-shaped result or an under-applied query would otherwise
+      # surface from `children` as a plausible non-list, and from `siblings`/`has` as an
+      # uncatchable type error (ADR-0025 item 1).
+      childrenOf =
+        id:
+        if !(builtins.isFunction childrenIds) then
+          throw "gen-select: adapters.scope.mkContext's `childrenIds` must be a function (id -> [id]); got ${builtins.typeOf childrenIds}."
+        else
+          let
+            c = childrenIds id;
+          in
+          if !(builtins.isList c) then
+            throw "gen-select: adapters.scope.mkContext's `childrenIds` must return a list of child ids for node ${id}; got ${builtins.typeOf c} (an under-applied `genScope.childrenIds` returns a function here)."
+          else
+            c;
+    in
     {
       inherit inFlight;
       # __identity is composed OUTSIDE the projection and merged last, so it is
@@ -92,7 +114,7 @@
                 };
         };
       parent = id: (node id).parent;
-      children = id: builtins.attrNames (get id "children");
+      children = childrenOf;
       ancestors =
         id:
         let
@@ -114,6 +136,6 @@
         let
           p = (node id).parent;
         in
-        if p == null then [ ] else builtins.filter (cid: cid != id) (builtins.attrNames (get p "children"));
+        if p == null then [ ] else builtins.filter (cid: cid != id) (childrenOf p);
     };
 }

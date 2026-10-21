@@ -1,5 +1,5 @@
 # E6 (scope-adapter projection coherence, by construction) + E8 (backward-compatible,
-# additive enrichment). Mock { node, get } — the real gen-scope.eval path is
+# additive enrichment). Mock { node, childrenIds } — the real gen-scope.eval path is
 # integration-scope.
 #
 # ★ `sel.kind` OVER THIS ADAPTER IS REFUSED (den-hoag-l0y). A gen-scope node's `type` is a positional
@@ -9,7 +9,7 @@
 # still answers (`attrs` on the projected `type`, `sel.entity`). Positive `sel.kind`-over-scope
 # coverage is a deferred guarantee against that ruling.
 #
-# ★ THE `{ node, get }` MOCK STAYS; THE KIND VALUES CANNOT. `sel.kind` reads the mint-backed mark
+# ★ THE `{ node, childrenIds }` MOCK STAYS; THE KIND VALUES CANNOT. `sel.kind` reads the mint-backed mark
 # gen-schema stamps at construction (ADR-0034), so a bare `{ kind = …; options = { }; }` is the
 # value the mark exists to refuse. The two kinds come out of a real schema; what this file measures
 # — the scope adapter's projection — is untouched.
@@ -54,7 +54,7 @@ let
   };
   base = {
     node = id: nodeMap.${id};
-    get = _: _: throw "get unused in these tests";
+    childrenIds = _: throw "childrenIds unused in these tests";
     # Explicit: these fixtures simulate a den-hoag-shaped consumer (identity
     # stashed under decls.registration, not the node's own top-level id_hash), so
     # entryFor's framework-agnostic default (scope.nix) would not find it.

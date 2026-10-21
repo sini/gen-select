@@ -217,21 +217,21 @@ The `adapters` attrset bridges selectors to concrete graph representations. Each
 ```
 adapters.scope.mkContext : {
   node,
-  get,
+  childrenIds,                                                 # id -> [id]: genScope.childrenIds <evaluation>
   project  ? (n: (n.decls or {}) // { inherit (n) type; }),   # projection surfacing node type
   entryFor ? (id: let n = node id; in if n ? id_hash then n else null),  # id -> entry | null
 } -> context
 ```
 
-Builds a selector context from gen-scope's accessor pair. Maps scope accessors to the five context fields:
+Builds a selector context from gen-scope's `node` accessor and its query surface. `childrenIds` is gen-scope's `childrenIds` applied to the evaluation (`childrenIds = genScope.childrenIds ev;`): the selected, spawned and `nta` children in production order. It is required, with no default: the node's `children` attribute alone is the selected half. An on-demand `nta` family is absent from it, as it is from gen-scope's enumerated view. Maps them to the five context fields:
 
-| Context field | Implementation                                   |
-| ------------- | ------------------------------------------------ |
-| `data`        | `id: (project (node id)) // { __identity = …; }` |
-| `parent`      | `id: (node id).parent`                           |
-| `children`    | `id: attrNames (get id "children")`              |
-| `ancestors`   | walks `parent` chain, cycle-safe                 |
-| `siblings`    | children of parent, excluding self               |
+| Context field | Implementation                                                               |
+| ------------- | ---------------------------------------------------------------------------- |
+| `data`        | `id: (project (node id)) // { __identity = …; }`                             |
+| `parent`      | `id: (node id).parent`                                                       |
+| `children`    | `childrenIds`, doored (a non-function or a non-list result is a named throw) |
+| `ancestors`   | walks `parent` chain, cycle-safe                                             |
+| `siblings`    | `childrenIds` of the parent, excluding self; `[ ]` at a root                 |
 
 The enriched adapter composes a reserved `__identity` record (record or `null`) **outside** the projection and merges it last, so identity/kind selectors work through it and a user decl named `__identity` can never shadow it. `__identity.kind` is the key of the gen-schema kind value the node carries (`n.kindValue`, which gen-scope stamps on every node of a kind declared `mkKind { kindValue = schema.<kind>; }`), so `sel.kind` compares minted identities; a node carrying no value is a named refusal, and so is one carrying a value with no mint (a positional node `type` is a name, not a kind declaration, and is never projected as one). The carried value is the one gen-scope admitted: its evaluator refuses a node whose value contradicts its registered kind's, and in a scope whose registry declares no value, a node-carried value is that node's own declaration and is authoritative here; `entryFor` defaults to the node itself when it carries `id_hash` (else `null`); a framework whose identity lives under its own key supplies `entryFor`. `__identity` is always present through this adapter, so entity/kind selectors are never silently inert.
 
@@ -326,7 +326,7 @@ cd examples/sql-where && just ci
 and `nix flake check ./ci` are unguarded: they read a git-filtered copy of the tree, so an untracked
 cell is silently absent and the run stays green.
 
-The core suite is **271 tests across 23 suites** (`nix-unit --flake ./ci#tests` ⇒ `271/271 successful`; the refusal-message plane `./ci#testsError` ⇒ `55/55`), driven by [nix-unit](https://github.com/nix-community/nix-unit). The twenty-second suite, `gen-ci-examples`, is gen-harness's examples guard (declared in `ci/tests/examples.nix`, `gen.ci.examples`): it holds that `examples/` directory names equal the declared names, and that every declared example forces under `deepSeq`. Alongside the original structural suites (`constructors`, `match-basic`, `match-structural`, `composition`, `sugar`, `when`, `adapters`, `adapter-registry`, `purity`) the identity-selector work adds `constructors-identity`, `match-identity`, `adapter-scope-identity`, `adapter-registry-identity`, `adapter-product`, `coord-sealed`, `subkind`, and `integration-scope`. The last is the acceptance test for the identity/kind routing surface: it drives `sel.kind`/`sel.entity` through a **real `gen-scope.eval` graph seeded from real gen-schema instances**, including the neededBy predicate shape. The `purity` suite is the Class-A invariant, and it now has two arms. It scans every `lib/**.nix` (plus the root `flake.nix`/`default.nix`) for forbidden tokens (`nixpkgs`, `lib.`, `evalModules`, `mkOption`) and fails CI if a nixpkgs or module-system tether creeps back in; and it pins the library's dependency budget at exactly one by asserting the root flake's declared inputs are `[ "gen-algebra" ]`, read from the lock. `gen-algebra` left the forbidden list when the edge was taken deliberately, and the budget arm is what keeps the narrowed invariant as strong as the one it replaced — dropping the token alone would have let a second dependency in unnoticed. Identity validation itself is still structural (`entry ? id_hash`, not a gen-schema import). A sixteenth suite, `entry`, holds the non-flake contract instead: `import ./. { }` must resolve its one dependency from `./ci/flake.lock` and match what the flake path builds.
+The core suite is **286 tests across 25 suites** (`nix-unit --flake ./ci#tests` ⇒ `286/286 successful`; the refusal-message plane `./ci#testsError` ⇒ `60/60`), driven by [nix-unit](https://github.com/nix-community/nix-unit). The twenty-second suite, `gen-ci-examples`, is gen-harness's examples guard (declared in `ci/tests/examples.nix`, `gen.ci.examples`): it holds that `examples/` directory names equal the declared names, and that every declared example forces under `deepSeq`. Alongside the original structural suites (`constructors`, `match-basic`, `match-structural`, `composition`, `sugar`, `when`, `adapters`, `adapter-registry`, `purity`) the identity-selector work adds `constructors-identity`, `match-identity`, `adapter-scope-identity`, `adapter-registry-identity`, `adapter-product`, `coord-sealed`, `subkind`, and `integration-scope`. The last is the acceptance test for the identity/kind routing surface: it drives `sel.kind`/`sel.entity` through a **real `gen-scope.eval` graph seeded from real gen-schema instances**, including the neededBy predicate shape. The `purity` suite is the Class-A invariant, and it now has two arms. It scans every `lib/**.nix` (plus the root `flake.nix`/`default.nix`) for forbidden tokens (`nixpkgs`, `lib.`, `evalModules`, `mkOption`) and fails CI if a nixpkgs or module-system tether creeps back in; and it pins the library's dependency budget at exactly one by asserting the root flake's declared inputs are `[ "gen-algebra" ]`, read from the lock. `gen-algebra` left the forbidden list when the edge was taken deliberately, and the budget arm is what keeps the narrowed invariant as strong as the one it replaced — dropping the token alone would have let a second dependency in unnoticed. Identity validation itself is still structural (`entry ? id_hash`, not a gen-schema import). A sixteenth suite, `entry`, holds the non-flake contract instead: `import ./. { }` must resolve its one dependency from `./ci/flake.lock` and match what the flake path builds.
 
 ## Theoretical Foundations
 

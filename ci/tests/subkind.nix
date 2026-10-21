@@ -95,7 +95,7 @@ let
       id_hash = "h-n1";
       kindValue = sub;
     };
-    get = _: _: [ ];
+    childrenIds = _: [ ];
   };
   scopeFields = builtins.attrNames (scopeCtx.data "n1").__identity.kind;
   productFields =
