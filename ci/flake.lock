@@ -441,11 +441,11 @@
         "gen-types": "gen-types"
       },
       "locked": {
-        "lastModified": 1793339330,
-        "narHash": "sha256-jPvVlzxmPWuFi5XD+3CXcbj2fdl5IdnfLNSLovHsZmE=",
+        "lastModified": 1793356309,
+        "narHash": "sha256-FdB1Zue+7KhhonkgRoW3E64qRpDc0DoRgTsr++/7bZs=",
         "owner": "sini",
         "repo": "gen-merge",
-        "rev": "49d7a273c0e089ff6b37fdda36db97e5bc66bb8b",
+        "rev": "83e76aafa661f7ab3f941edeb2b9fbf052868a1b",
         "type": "github"
       },
       "original": {
